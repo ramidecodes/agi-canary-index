@@ -7,12 +7,15 @@
 import { inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { sources } from "@/lib/db/schema";
 import { bulkSourcesActionSchema } from "@/lib/db/validators";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const authRes = await requireAuth();
+  if (authRes) return authRes;
   try {
     const body = (await request.json()) as unknown;
     const parsed = bulkSourcesActionSchema.safeParse(body);

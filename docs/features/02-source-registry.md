@@ -1,6 +1,6 @@
 # Source Registry & Management
 
-**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (14 Tier-0/Tier-1 sources). Auth (Clerk) planned for later.
+**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (14 Tier-0/Tier-1 sources). Auth via Clerk: `/admin` and `/api/admin` protected; sign-in at `/sign-in`. See [AUTH.md](../AUTH.md).
 
 ## Goal
 
@@ -127,7 +127,7 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 - [ ] Trust weight correctly propagates to signal confidence
 - [ ] Source changes take effect on next pipeline run
 - [ ] Bulk operations complete in < 2 seconds
-- [ ] Admin interface protected; authentication via Clerk (future)
+- [x] Admin interface protected; authentication via Clerk (see [AUTH.md](../AUTH.md))
 
 ## Edge Cases
 
@@ -176,7 +176,7 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 
 **Security:**
 
-- Admin-only access (Clerk authentication planned)
+- Admin-only access (Clerk authentication implemented; see [AUTH.md](../AUTH.md))
 - API keys stored in environment variables, not in source config
 
 **UX:**

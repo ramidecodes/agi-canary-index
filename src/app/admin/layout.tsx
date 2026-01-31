@@ -1,10 +1,11 @@
 /**
  * Admin layout: nav and container.
  * Theme from root ThemeProvider (defaultTheme="dark"); styles follow docs/base-descriptions/UI-guidelines.md.
- * Auth (Clerk) will wrap this when implemented.
+ * Protected by Clerk middleware; UserButton for sign-out.
  * @see docs/features/02-source-registry.md
  */
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -26,7 +27,10 @@ export default function AdminLayout({
               <Link href="/admin/sources">Sources</Link>
             </Button>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

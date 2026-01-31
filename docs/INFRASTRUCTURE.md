@@ -24,17 +24,19 @@ This document describes the infrastructure setup for the AGI Canary Watcher proj
 
 ### Vercel (App)
 
-| Variable               | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `DATABASE_URL`         | Neon pooled connection string                      |
-| `OPENROUTER_API_KEY`   | OpenRouter API key for AI inference                |
-| `R2_ACCOUNT_ID`        | Cloudflare account ID (for app to fetch documents) |
-| `R2_ACCESS_KEY_ID`     | R2 API token access key                            |
-| `R2_SECRET_ACCESS_KEY` | R2 API token secret                                |
-| `R2_BUCKET_NAME`       | R2 bucket name for document blobs                  |
-| `R2_ENDPOINT`          | R2 S3-compatible endpoint URL                      |
+| Variable                            | Description                                        |
+| ----------------------------------- | -------------------------------------------------- |
+| `DATABASE_URL`                      | Neon pooled connection string                      |
+| `OPENROUTER_API_KEY`                | OpenRouter API key for AI inference                |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (admin auth)                 |
+| `CLERK_SECRET_KEY`                  | Clerk secret key (admin auth)                      |
+| `R2_ACCOUNT_ID`                     | Cloudflare account ID (for app to fetch documents) |
+| `R2_ACCESS_KEY_ID`                  | R2 API token access key                            |
+| `R2_SECRET_ACCESS_KEY`              | R2 API token secret                                |
+| `R2_BUCKET_NAME`                    | R2 bucket name for document blobs                  |
+| `R2_ENDPOINT`                       | R2 S3-compatible endpoint URL                      |
 
-Model ID for signal extraction is hardcoded in `src/lib/ai-models.ts`; see [docs/MODELS.md](MODELS.md).
+Clerk optional redirect URLs: see [.env.example](../.env.example). Model ID for signal extraction is hardcoded in `src/lib/ai-models.ts`; see [docs/MODELS.md](MODELS.md).
 
 ### Cloudflare (Pipeline — Cron + Workers)
 

@@ -7,6 +7,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { sources } from "@/lib/db/schema";
 import { updateSourceSchema } from "@/lib/db/validators";
 
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 
 export async function PATCH(request: Request, { params }: { params: Params }) {
+  const authRes = await requireAuth();
+  if (authRes) return authRes;
   const { id } = await params;
   try {
     const body = (await request.json()) as unknown;

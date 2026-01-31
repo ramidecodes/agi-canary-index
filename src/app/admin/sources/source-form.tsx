@@ -105,7 +105,7 @@ export function SourceForm({ mode, initialValues, onSubmit }: Props) {
       setTestResult(null);
       setError(null);
     },
-    []
+    [],
   );
 
   const handleTestFetch = useCallback(async () => {
@@ -175,7 +175,7 @@ export function SourceForm({ mode, initialValues, onSubmit }: Props) {
         setSubmitLoading(false);
       }
     },
-    [values, onSubmit, router]
+    [values, onSubmit, router],
   );
 
   return (

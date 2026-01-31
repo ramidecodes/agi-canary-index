@@ -7,12 +7,15 @@
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { sources } from "@/lib/db/schema";
 import { insertSourceSchema, type InsertSource } from "@/lib/db/validators";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const authRes = await requireAuth();
+  if (authRes) return authRes;
   try {
     const db = getDb();
     const rows = await db.select().from(sources).orderBy(sources.name);
@@ -27,6 +30,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authRes = await requireAuth();
+  if (authRes) return authRes;
   try {
     const body = (await request.json()) as unknown;
     const parsed = insertSourceSchema.safeParse(body);

@@ -155,9 +155,8 @@ Phase 5: Enhancement
 ## Notes
 
 - Each FRED is self-contained with full requirements
-- **Authentication:** Admin features (Source Registry, manual pipeline trigger) will use [Clerk](https://clerk.com/) when implemented. Add to roadmap when admin UI is built.
+- **Authentication:** Admin features (Source Registry, manual pipeline trigger) use [Clerk](https://clerk.com/) — implemented; see [AUTH.md](AUTH.md).
 - App deploys to Vercel; pipeline deploys to Cloudflare (hybrid architecture)
 - Features marked with the same phase number can potentially be developed in parallel
 - The UI features (Phase 3-4) can start with mock/seed data before the pipeline is complete
 - Consider implementing a basic version of 3.1 (Home Page) early to validate the design direction
-- **Authentication:** Admin features (Source Registry, manual pipeline trigger) will use [Clerk](https://clerk.com/) when implemented

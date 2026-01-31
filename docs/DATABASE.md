@@ -87,7 +87,7 @@ Seeds: canary definitions (e.g. arc_agi, long_horizon, safety_canary), one sampl
 
 ## RLS (Row-Level Security)
 
-All tables have RLS enabled with a permissive policy for `public` (allow all) so the app and Workers can read/write. When Clerk is added, policies should be tightened (e.g. restrict admin-only tables to authenticated roles).
+All tables have RLS enabled with a permissive policy for `public` (allow all) so the app and Workers can read/write. Clerk is implemented for admin UI/API; route protection is via middleware and `requireAuth()` in handlers. RLS can be tightened later (e.g. restrict admin-only tables to authenticated roles) if needed.
 
 ## Capability Axes (reference)
 

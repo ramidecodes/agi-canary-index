@@ -11,7 +11,8 @@ agi-canary-index/
 ├── public/                   # Static assets
 ├── src/
 │   ├── app/                  # Next.js App Router
-│   └── lib/                  # Shared libraries and services
+│   ├── lib/                  # Shared libraries and services
+│   └── middleware.ts         # Clerk auth: protect /admin and /api/admin
 ├── .env.example
 ├── drizzle.config.ts        # Drizzle Kit config (migrations)
 ├── next.config.ts
@@ -26,11 +27,13 @@ agi-canary-index/
 
 Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui** and **next-themes**.
 
-- `layout.tsx` — Root layout
+- `layout.tsx` — Root layout (ClerkProvider, ThemeProvider, Toaster)
 - `page.tsx` — Home page
 - `globals.css` — Global styles
-- **`admin/`** — Admin UI (Source Registry; auth via Clerk planned)
-  - `layout.tsx` — Admin nav (Home, Sources)
+- **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
+- **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
+- **`admin/`** — Admin UI (Source Registry; protected by Clerk)
+  - `layout.tsx` — Admin nav (Home, Sources, UserButton, ThemeToggle)
   - **`sources/`** — Source registry
     - `page.tsx` — List sources, health status, bulk actions
     - `source-form.tsx` — Shared form (add/edit) with test fetch
@@ -60,7 +63,12 @@ Shared code: DB, AI models, and future services.
   - `seed.ts` — Seed script (`pnpm run db:seed`); seeds 14 Tier-0/Tier-1 sources
 - **`sources.ts`** — Source registry constants and helpers
   - `AUTO_DISABLE_FAILURE_THRESHOLD`, `getSourceHealthStatus()`, `SEED_SOURCES`
+- **`auth.ts`** — Server-side auth for admin API routes (`requireAuth()`)
 - **`ai-models.ts`** — AI model IDs and config (see [MODELS.md](MODELS.md))
+
+### `src/middleware.ts`
+
+Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated requests to those routes are redirected to sign-in. See [AUTH.md](AUTH.md).
 
 ## `drizzle/`
 

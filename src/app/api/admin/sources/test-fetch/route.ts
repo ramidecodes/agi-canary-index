@@ -6,12 +6,15 @@
  */
 
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 const TEST_FETCH_TIMEOUT_MS = 30_000;
 const MAX_REDIRECTS = 3;
 
 export async function POST(request: Request) {
+  const authRes = await requireAuth();
+  if (authRes) return authRes;
   try {
     const body = (await request.json()) as {
       url?: string;

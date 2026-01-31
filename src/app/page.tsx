@@ -15,6 +15,7 @@ export default function Home() {
         <div className="flex flex-col gap-4 sm:flex-row">
           <Link
             href="/admin/sources"
+            prefetch={false}
             className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-6 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Admin: Source Registry
