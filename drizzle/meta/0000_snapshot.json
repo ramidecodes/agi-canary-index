@@ -62,9 +62,7 @@
           "name": "canary_definitions_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -167,9 +165,7 @@
           "name": "daily_snapshots_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -254,12 +250,8 @@
           "name": "documents_item_id_items_id_fk",
           "tableFrom": "documents",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -271,9 +263,7 @@
           "name": "documents_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -426,12 +416,8 @@
           "name": "items_run_id_pipeline_runs_id_fk",
           "tableFrom": "items",
           "tableTo": "pipeline_runs",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["run_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -439,12 +425,8 @@
           "name": "items_source_id_sources_id_fk",
           "tableFrom": "items",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -456,9 +438,7 @@
           "name": "items_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -541,9 +521,7 @@
           "name": "pipeline_runs_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -634,12 +612,8 @@
           "name": "signals_document_id_documents_id_fk",
           "tableFrom": "signals",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -651,9 +625,7 @@
           "name": "signals_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -769,9 +741,7 @@
           "name": "sources_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -866,9 +836,7 @@
           "name": "timeline_events_public_all",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "true",
           "withCheck": "true"
         }
@@ -881,69 +849,37 @@
     "public.cadence": {
       "name": "cadence",
       "schema": "public",
-      "values": [
-        "daily",
-        "weekly",
-        "monthly"
-      ]
+      "values": ["daily", "weekly", "monthly"]
     },
     "public.domain_type": {
       "name": "domain_type",
       "schema": "public",
-      "values": [
-        "evaluation",
-        "policy",
-        "research",
-        "commentary"
-      ]
+      "values": ["evaluation", "policy", "research", "commentary"]
     },
     "public.item_status": {
       "name": "item_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "acquired",
-        "processed",
-        "failed"
-      ]
+      "values": ["pending", "acquired", "processed", "failed"]
     },
     "public.pipeline_run_status": {
       "name": "pipeline_run_status",
       "schema": "public",
-      "values": [
-        "running",
-        "completed",
-        "failed"
-      ]
+      "values": ["running", "completed", "failed"]
     },
     "public.source_tier": {
       "name": "source_tier",
       "schema": "public",
-      "values": [
-        "TIER_0",
-        "TIER_1",
-        "DISCOVERY"
-      ]
+      "values": ["TIER_0", "TIER_1", "DISCOVERY"]
     },
     "public.source_type": {
       "name": "source_type",
       "schema": "public",
-      "values": [
-        "rss",
-        "search",
-        "curated",
-        "api",
-        "x"
-      ]
+      "values": ["rss", "search", "curated", "api", "x"]
     },
     "public.timeline_event_type": {
       "name": "timeline_event_type",
       "schema": "public",
-      "values": [
-        "reality",
-        "fiction",
-        "speculative"
-      ]
+      "values": ["reality", "fiction", "speculative"]
     }
   },
   "schemas": {},

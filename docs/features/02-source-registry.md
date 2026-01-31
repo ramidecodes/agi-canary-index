@@ -1,5 +1,7 @@
 # Source Registry & Management
 
+**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (14 Tier-0/Tier-1 sources). Auth (Clerk) planned for later.
+
 ## Goal
 
 Provide a curated, tiered registry of trusted data sources that feed the AGI Canary Watcher. The registry must:
@@ -157,6 +159,12 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 6. **arXiv keyword filter too broad**
    - Expected behavior: High volume of low-relevance items
    - Handling strategy: AI triage step marks items as "needs review"
+
+## UI Stack
+
+- **shadcn/ui** — Forms (Input, Label, Select, Textarea, Checkbox), tables (Table), badges (Badge), buttons (Button), breadcrumbs (Breadcrumb)
+- **next-themes** — Dark/light mode toggle; theme persists across sessions
+- **Sonner** — Toast notifications for async operations (success, error)
 
 ## Non-Functional Requirements
 

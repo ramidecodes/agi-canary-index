@@ -42,7 +42,7 @@ export const dailySnapshotsRelations = relations(dailySnapshots, () => ({}));
 
 export const canaryDefinitionsRelations = relations(
   canaryDefinitions,
-  () => ({})
+  () => ({}),
 );
 
 export const timelineEventsRelations = relations(timelineEvents, () => ({}));

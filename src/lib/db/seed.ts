@@ -2,11 +2,13 @@
  * Seed script for AGI Canary Watcher database.
  * Run: pnpm run db:seed
  * Requires DATABASE_URL in .env and migrations applied.
+ * @see docs/features/02-source-registry.md for source list.
  */
 
 import "dotenv/config";
 import { createDb } from "./index";
 import { canaryDefinitions, sources, timelineEvents } from "./schema";
+import { SEED_SOURCES } from "../sources";
 
 async function seed() {
   const url = process.env.DATABASE_URL;
@@ -84,20 +86,30 @@ async function seed() {
   }
   console.log(`  Inserted/updated ${canaries.length} canary definitions.`);
 
-  console.log("Seeding sample source (skip if already present)...");
-  const existing = await db.select().from(sources).limit(1);
-  if (existing.length === 0) {
+  console.log("Seeding source registry (Tier-0 and Tier-1)...");
+  const existingNames = new Set(
+    (await db.select({ name: sources.name }).from(sources)).map((r) => r.name),
+  );
+  let inserted = 0;
+  for (const s of SEED_SOURCES) {
+    if (existingNames.has(s.name)) continue;
     await db.insert(sources).values({
-      name: "AI News (sample)",
-      url: "https://example.com/ai-news",
-      tier: "TIER_1",
-      trustWeight: "0.8",
-      cadence: "daily",
-      domainType: "commentary",
-      sourceType: "rss",
+      name: s.name,
+      url: s.url,
+      tier: s.tier,
+      trustWeight: s.trustWeight,
+      cadence: s.cadence,
+      domainType: s.domainType,
+      sourceType: s.sourceType,
+      queryConfig: s.queryConfig ?? null,
       isActive: true,
     });
+    existingNames.add(s.name);
+    inserted++;
   }
+  console.log(
+    `  Inserted ${inserted} sources; ${existingNames.size} total names in registry.`,
+  );
 
   console.log("Seeding sample timeline events...");
   await db.insert(timelineEvents).values([

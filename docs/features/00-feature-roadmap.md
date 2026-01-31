@@ -147,6 +147,11 @@ Phase 5: Enhancement
 5. The Home Page (06) can be built with mock data before the pipeline is complete
 6. Extended UI (09-10) and enhancements (11-12) can be implemented in any order after core UI
 
+## UI Stack
+
+- **shadcn/ui** — Use for forms, tables, badges, buttons, and admin UI. Add components via `pnpm dlx shadcn@latest add <component>`
+- **next-themes** — Dark/light mode with system preference; default theme: dark (Instrumental Minimalism)
+
 ## Notes
 
 - Each FRED is self-contained with full requirements

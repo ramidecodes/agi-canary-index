@@ -104,6 +104,18 @@ export const insertSourceSchema = z.object({
   updatedAt: z.coerce.date().optional(),
 });
 
+/** Partial update for PATCH (admin source registry). */
+export const updateSourceSchema = insertSourceSchema.partial().extend({
+  id: z.string().uuid().optional(),
+});
+
+/** Bulk action body for admin source registry. */
+export const bulkSourcesActionSchema = z.object({
+  sourceIds: z.array(z.string().uuid()).min(1),
+  action: z.enum(["enable", "disable", "change_tier"]),
+  tier: sourceTierSchema.optional(),
+});
+
 export const insertPipelineRunSchema = z.object({
   id: z.string().uuid().optional(),
   startedAt: z.coerce.date().optional(),
@@ -197,6 +209,8 @@ export type ItemStatus = z.infer<typeof itemStatusSchema>;
 export type TimelineEventType = z.infer<typeof timelineEventTypeSchema>;
 
 export type InsertSource = z.infer<typeof insertSourceSchema>;
+export type UpdateSource = z.infer<typeof updateSourceSchema>;
+export type BulkSourcesAction = z.infer<typeof bulkSourcesActionSchema>;
 export type InsertPipelineRun = z.infer<typeof insertPipelineRunSchema>;
 export type InsertItem = z.infer<typeof insertItemSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;

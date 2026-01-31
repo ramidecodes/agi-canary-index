@@ -11,6 +11,10 @@ Create the main landing page that serves as the "AGI Canary Control Room." This 
 
 The home page is the signature experience of the AGI Canary Watcher—a serious scientific instrument, not a hype dashboard.
 
+## UI Stack
+
+Use **shadcn/ui** components where applicable (Button, Badge, Card, etc.) and **next-themes** for theme-aware styling. The app defaults to dark theme (Instrumental Minimalism).
+
 ## User Story
 
 As a visitor to the AGI Canary Watcher, I want to see a comprehensive overview of current AI capability progress with confidence indicators, so that I can quickly understand where we are and what's changing.
