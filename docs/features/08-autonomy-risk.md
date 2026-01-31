@@ -37,7 +37,7 @@ As a safety researcher or policymaker, I want to monitor autonomy and risk-relat
    - Uncertainty range as blurred zone
    - Never shows "AGI"—always capability gradient
 
-3. **Risk Canaries Panel**
+3. **Risk canaries Panel**
 
    - Grid/list of risk-related canaries:
      - Long-horizon planning 🟡
