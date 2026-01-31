@@ -74,7 +74,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 
 9. **Error Handling**
    - Continue on individual source failures
-   - Log errors to source_fetch_logs
+   - Log errors to source record (error_count, pipeline_run.error_log)
    - Increment source error_count on failure
    - Partial success is acceptable
 
@@ -102,11 +102,10 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 - `OPENROUTER_API_KEY` - Used for Perplexity (web search) and Grok (X search). Single key for all AI.
 - Cron schedule in wrangler.jsonc `triggers.crons` (default: "0 6 \* \* \*")
 
-**Optional: Workers Queues**
+**Pipeline Orchestration (MVP):**
 
-- For reliability, use Queues to enqueue acquisition batches instead of `ctx.waitUntil()`
-- Producer: Discovery Worker; consumer: Acquisition Worker
-- Batch size 50, `max_batch_timeout: 30`. See [Workers Queues](https://developers.cloudflare.com/queues/).
+- Discovery triggers Acquisition via HTTP call (simpler for daily batch). Use `fetch()` to call Acquisition Worker URL after discovery completes.
+- **Optional later:** Workers Queues for retry/durability at scale. Defer until HTTP proves insufficient.
 
 ## User Flow
 
@@ -117,7 +116,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 3. Worker creates new `pipeline_runs` record (status: running)
 4. For each active source (in parallel batches of 5):
    - Based on source_type, execute appropriate fetch strategy
-   - Log attempt to `source_fetch_logs`
+   - Update sources.last_success_at and error_count on success/failure
    - On success: extract URLs, canonicalize, collect batch
    - On failure: log error, increment error_count, continue
 5. Aggregate all discovered URLs
@@ -144,7 +143,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 - [ ] Deduplication prevents same URL from being added twice
 - [ ] Source failures don't block other sources
 - [ ] Pipeline run records created with accurate statistics
-- [ ] Fetch logs capture success/failure per source
+- [ ] Source health (last_success_at, error_count) updated per run
 - [ ] Manual trigger works for admin testing
 - [ ] Dry run mode available for validation
 - [ ] Average run completes in < 5 minutes

@@ -2,14 +2,15 @@
 
 ## Goal
 
-Create an evidence exploration interface—"The Evidence Graph"—that lets skeptics audit the data behind every metric. This page must:
+Create an evidence exploration interface that lets skeptics audit the data behind every metric. This page must:
 
 - Show the provenance of all claims and scores
 - Enable filtering and exploration of the signal database
-- Visualize relationships between claims, sources, and axes
 - Build trust through transparency
 
 This is where journalists, researchers, and skeptics will verify the AGI Canary Watcher's credibility.
+
+**Scope:** Start with list view + filters + export. Graph visualization is a Phase 2 enhancement (see Future Enhancements).
 
 ## User Story
 
@@ -17,18 +18,7 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
 
 ## Functional Requirements
 
-1. **Signal Graph Visualization**
-
-   - Network graph showing relationships:
-     - ○ Circles: Claims/Signals
-     - □ Squares: Benchmarks/Metrics
-     - △ Triangles: Papers/Sources
-     - ◇ Diamonds: Organizations (labs, institutions)
-   - Edges show relationships: supports, contradicts, cites
-   - Cluster by capability axis or time period
-   - Hover → highlight connected nodes
-
-2. **Signal List View**
+1. **Signal List View (Primary)**
 
    - Sortable, filterable table of all signals
    - Columns:
@@ -40,7 +30,7 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
      - Classification type
    - Click row → expand detail view
 
-3. **Filtering System**
+2. **Filtering System**
 
    - By capability axis (checkboxes for 9 axes)
    - By time range (date picker)
@@ -49,7 +39,7 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
    - By classification (benchmark, research, opinion, etc.)
    - "High confidence only" quick filter
 
-4. **Signal Detail Panel**
+3. **Signal Detail Panel**
 
    - Expanded view of single signal:
      - Full claim summary
@@ -61,30 +51,29 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
      - Link to original URL
    - Related signals shown
 
-5. **Source Analysis**
+4. **Source Profile (from list)**
 
-   - Click source node → source profile:
+   - Click source name in list → filter to signals from that source
+   - Source profile panel shows:
      - All signals from this source
      - Trust tier and weight
-     - Historical reliability
-     - Topic coverage
-   - Aggregate view of source contributions
+     - Aggregate contribution stats
 
-6. **Export Functionality**
+5. **Export Functionality**
 
    - Export filtered signals as CSV
    - Export as JSON for programmatic use
    - Copy citation for specific signal
    - Share link with filters applied
 
-7. **Search**
+6. **Search**
 
    - Full-text search across claim summaries
    - Search source names
    - Search benchmark names
    - Results ranked by relevance and confidence
 
-8. **Provenance Trail**
+7. **Provenance Trail**
    - For any displayed metric on other pages
    - "How was this calculated?" link
    - Shows all contributing signals
@@ -104,42 +93,19 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
 
 - `GET /api/signals?filters` - Filtered signal list
 - `GET /api/signals/{id}` - Single signal detail
-- `GET /api/signals/graph?filters` - Graph data structure
 - `GET /api/sources/{id}/signals` - Signals from specific source
 - `GET /api/signals/export?filters&format=csv|json` - Export
 - `GET /api/signals/search?q=query` - Full-text search
 
-**Graph Data Structure:**
-
-```typescript
-interface GraphNode {
-  id: string;
-  type: "signal" | "benchmark" | "source" | "organization";
-  label: string;
-  metadata: Record<string, unknown>;
-  x?: number; // for pre-computed layouts
-  y?: number;
-}
-
-interface GraphEdge {
-  source: string;
-  target: string;
-  type: "supports" | "contradicts" | "cites" | "produces";
-  weight?: number;
-}
-```
-
 ## User Flow
 
-### Exploring the Graph
+### Exploring Signals
 
 1. User navigates to `/signals`
-2. Graph visualization loads with recent signals
-3. User sees clusters around capability axes
-4. User hovers over a signal node
-5. Connected sources and benchmarks highlight
-6. User clicks signal → detail panel opens
-7. User reads full claim, clicks source link
+2. List view loads with recent signals
+3. User scans table, sees claim summaries and sources
+4. User clicks row → detail panel expands
+5. User reads full claim, clicks source link
 
 ### Filtering for Audit
 
@@ -162,99 +128,86 @@ interface GraphEdge {
 ### Source Deep-Dive
 
 1. User notices many signals from "Stanford HAI"
-2. User clicks Stanford HAI organization node
-3. Source profile shows:
-   - 47 signals total
+2. User clicks source name or filters by source
+3. Source profile panel shows:
+   - All signals from Stanford HAI
    - TIER_0, trust weight 0.95
-   - Topics: benchmarks, policy
-4. User can explore all Stanford HAI contributions
+   - Aggregate stats
+4. User can export or drill into individual signals
 
 ## Acceptance Criteria
 
-- [ ] Graph visualization renders with nodes and edges
-- [ ] All 4 node types visually distinct
-- [ ] Hover highlights connected nodes
 - [ ] List view shows all signals with sorting
 - [ ] All filters function correctly
 - [ ] Filter combinations work (AND logic)
 - [ ] Signal detail panel shows full information
-- [ ] Source profile shows aggregate stats
+- [ ] Source profile shows aggregate stats when filtering by source
 - [ ] CSV export includes all filtered signals
 - [ ] JSON export has correct structure
 - [ ] Search returns relevant results
-- [ ] Page handles 1000+ signals without lag
-- [ ] Mobile shows list view (graph simplified)
+- [ ] Page handles 1000+ signals without lag (virtual list)
+- [ ] Mobile: list view with simplified layout
 
 ## Edge Cases
 
-1. **Very large graph (1000+ signals)**
-
-   - Expected behavior: Virtual rendering, progressive loading
-   - Handling strategy: Show most recent/relevant, "load more" option
-
-2. **No signals match filters**
+1. **No signals match filters**
 
    - Expected behavior: Empty state with clear message
    - Handling strategy: "No signals found" with filter summary, reset link
 
-3. **Conflicting signals (same topic, different conclusions)**
+2. **Conflicting signals (same topic, different conclusions)**
 
-   - Expected behavior: Both shown, edge marked "contradicts"
+   - Expected behavior: Both shown, marked as conflicting
    - Handling strategy: Visual indicator for conflicts, both retain confidence
 
-4. **Very low confidence signal**
+3. **Very low confidence signal**
 
    - Expected behavior: Shown if above 0.3, marked as low confidence
    - Handling strategy: Visual dimming, "Low confidence" badge
 
-5. **Source URL no longer valid**
+4. **Source URL no longer valid**
 
    - Expected behavior: Signal retained, link marked stale
    - Handling strategy: "Link may be unavailable" warning, cached metadata shown
 
-6. **User exports very large dataset**
+5. **User exports very large dataset**
 
    - Expected behavior: Export works but may take time
    - Handling strategy: Progress indicator, cap at 10,000 rows with warning
-
-7. **Graph too dense to read**
-   - Expected behavior: Zoom controls, clustering
-   - Handling strategy: Force-directed layout, cluster expansion, zoom to fit
 
 ## Non-Functional Requirements
 
 **Performance:**
 
-- Initial load: < 3 seconds (graph + initial signals)
+- Initial load: < 2 seconds
 - Filter response: < 500ms
 - Search response: < 500ms
 - Export generation: < 5 seconds for 1000 signals
 
 **Visual Design:**
 
-- Graph on dark background, nodes as colored shapes
 - List view with clear row separation
 - Consistent with overall app aesthetic
-- Graph should feel "alive" but not chaotic
 
 **Accessibility:**
 
-- List view fully accessible (primary)
-- Graph has text alternatives
+- List view fully accessible
 - Keyboard navigation for list
 - Export available for screen reader users
 
 **Responsive:**
 
-- Desktop: Graph + list side-by-side or toggle
-- Tablet: Tabbed graph/list view
-- Mobile: List view only, graph disabled
+- Desktop: Full list with sidebar filters
+- Tablet: Stacked layout
+- Mobile: List view with bottom sheet for filters
 
 **Technical:**
 
 - Next.js 16 App Router, React 19. App deployed to Vercel only.
-- D3 force-directed layout for graph
-- React-window for virtual list
+- React-window for virtual list (1000+ rows)
 - SWR for paginated data fetching
 - URL state for shareable filters
-- Web Worker for large graph layouts
+
+## Future Enhancements
+
+- **Signal Graph Visualization:** Network graph with nodes (signals, benchmarks, sources, organizations) and edges (supports, contradicts, cites). Requires D3/VisX force-directed layout, Web Worker for large graphs. Defer until list view proves insufficient for audit workflows.

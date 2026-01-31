@@ -140,7 +140,7 @@ Aggregated daily state for display.
 - `canary_statuses` (jsonb): Array of {canary_id, status, last_change, confidence}
 - `coverage_score` (decimal 0-1): How well-tested is current state
 - `signal_ids` (uuid[]): Contributing signals
-- `notes` (text[]): Editorial commentary
+- `notes` (text[], optional): Reserved for future editorial context; not used in MVP
 - `created_at` (timestamp)
 
 ### `canary_definitions`

@@ -74,11 +74,7 @@ As a researcher or journalist investigating AI progress, I want to explore detai
    - "Show speculative" - include opinion/extrapolation signals
    - Filter affects both radar and breakdown
 
-7. **Comparison Mode**
-   - Select two time points
-   - Radar shows both overlaid (solid vs dashed)
-   - Breakdown shows side-by-side with diff highlighting
-   - Useful for: "How much changed in 6 months?"
+**Deferred to Phase 2:** Comparison mode (select two time points, overlay both on radar). Single-date scrubber is sufficient for MVP.
 
 ## Data Requirements
 
@@ -102,7 +98,6 @@ As a researcher or journalist investigating AI progress, I want to explore detai
 - Selected date (controlled by scrubber)
 - Active axis (for detail view)
 - Filter toggles state
-- Comparison mode dates
 
 ## User Flow
 
@@ -137,15 +132,6 @@ As a researcher or journalist investigating AI progress, I want to explore detai
 6. External link opens to actual source
 7. Journalist can verify claim
 
-### Comparison Mode
-
-1. User enables comparison mode
-2. Selects: Today vs 1 year ago
-3. Radar shows both profiles overlaid
-4. Significant differences highlighted
-5. Breakdown shows delta columns
-6. User identifies biggest improvements and gaps
-
 ## Acceptance Criteria
 
 - [ ] Radar renders with all 9 axes and uncertainty bands
@@ -156,7 +142,6 @@ As a researcher or journalist investigating AI progress, I want to explore detai
 - [ ] Source map shows relevant sources per axis
 - [ ] Axis detail modal shows historical chart
 - [ ] Filter toggles affect displayed data
-- [ ] Comparison mode renders dual profiles
 - [ ] External source links work (new tab)
 - [ ] Page loads in < 2 seconds
 - [ ] Animations are 60fps smooth

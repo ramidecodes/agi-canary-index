@@ -72,8 +72,7 @@ As a mobile user checking AGI Canary Watcher, I want a simplified view optimized
 
    - `/timeline` on mobile
    - Vertical scroll (not horizontal)
-   - Single track at a time (toggle Reality/Fiction)
-   - Event cards instead of graph points
+   - Event cards
    - Search prominently available
 
 8. **Mobile News View**

@@ -39,11 +39,10 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
    - Bucket name: configurable per environment (e.g. `canary-documents-dev`, `canary-documents-prod`)
    - Workers use `env.DOCUMENTS.put()` / `env.DOCUMENTS.get()` — no S3 API credentials
 
-5. **Optional: Workers Queues**
+5. **Pipeline Orchestration (MVP)**
 
-   - Producer (Discovery) enqueues acquisition batches
-   - Consumer (Acquisition) processes batches
-   - Batch size: 50, `max_batch_timeout: 30` seconds
+   - Discovery triggers Acquisition via HTTP (simpler for daily batch). No Queues required for MVP.
+   - **Optional later:** Workers Queues for retry/durability; defer until needed.
 
 6. **Worker Limits**
 
@@ -79,7 +78,6 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 
 - `DATABASE_URL` — Neon connection (via `wrangler secret put`; use with `@neondatabase/serverless`)
 - `DOCUMENTS` — R2 bucket for document blobs
-- Optional: `REQUEST_QUEUE`, `RESPONSE_QUEUE` if using Queues
 
 ## User Flow
 
@@ -87,7 +85,7 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 2. Developer sets secrets: `wrangler secret put DATABASE_URL`, `wrangler secret put OPENROUTER_API_KEY`, `wrangler secret put FIRECRAWL_API_KEY`
 3. Developer runs `pnpm run infra:deploy` to deploy Workers
 4. Cron triggers Discovery Worker daily at 6 AM UTC
-5. Discovery writes to Neon via Neon serverless driver, enqueues to Acquisition (or triggers via HTTP)
+5. Discovery writes to Neon, then triggers Acquisition via HTTP
 
 ## Acceptance Criteria
 

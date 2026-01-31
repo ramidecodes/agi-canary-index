@@ -92,11 +92,11 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 **Execution Location:**
 
-- Runs as Cloudflare Worker (Queue consumer or HTTP-triggered). Recommend Worker for cost and separation from Vercel app. Can alternatively run as Next.js API route on Vercel if desired.
+- Runs as Cloudflare Worker, triggered by HTTP from Discovery Worker (MVP). Can alternatively run as Next.js API route on Vercel if desired.
 
-**Batch Processing (Queues):**
+**Batch Processing (MVP):**
 
-- If using Workers Queues, consumer receives batch; process each URL, ack individually for partial failure handling. See [Workers Queues](https://developers.cloudflare.com/queues/).
+- Discovery calls Acquisition via HTTP with batch of pending item IDs. Acquisition processes batch, returns when done. For daily ~50-100 items, HTTP trigger is sufficient. Queues can be added later for retry/durability at scale.
 
 ## User Flow
 

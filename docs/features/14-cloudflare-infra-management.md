@@ -2,7 +2,7 @@
 
 ## Goal
 
-Provide reproducible, script-based management of Cloudflare pipeline infrastructure so that R2, Queues, and Workers can be provisioned, updated, and torn down without manual dashboard steps. This ensures consistent setup across dev/staging/prod and enables CI/CD deployment.
+Provide reproducible, script-based management of Cloudflare pipeline infrastructure so that R2 and Workers can be provisioned, updated, and torn down without manual dashboard steps. This ensures consistent setup across dev/staging/prod and enables CI/CD deployment.
 
 ## User Story
 
@@ -12,7 +12,7 @@ As a developer setting up or deploying the AGI Canary pipeline, I want to run in
 
 1. **Wrangler-based Scripts**
 
-   - `pnpm run infra:provision` — Create R2 bucket, Queues (if used); idempotent on re-run
+   - `pnpm run infra:provision` — Create R2 bucket; idempotent on re-run
    - `pnpm run infra:deploy` — Deploy Workers via `wrangler deploy` with env selection
    - `pnpm run infra:secrets` — Interactive or scripted secret setup (prompts for values, runs `wrangler secret put`)
    - `pnpm run infra:teardown` — Remove resources with confirmation prompt
@@ -21,13 +21,11 @@ As a developer setting up or deploying the AGI Canary pipeline, I want to run in
 
    - Support `dev`, `staging`, `prod` via `--env` flag or `ENV` variable
    - Separate R2 bucket names per env: `canary-documents-dev`, `canary-documents-staging`, `canary-documents-prod`
-   - Separate Queue names per env (if used)
    - Secrets scoped per wrangler environment
 
 3. **Resource Provisioning**
 
    - **R2 bucket:** `wrangler r2 bucket create <name>` (or check existence, skip if exists)
-   - **Queues:** `wrangler queues create <producer-name>`, `wrangler queues create <consumer-name>` (if using Queues)
    - **Neon:** Workers use `DATABASE_URL` secret (Neon pooled connection string); set via `wrangler secret put DATABASE_URL` or `infra:secrets`
 
 4. **Documentation**

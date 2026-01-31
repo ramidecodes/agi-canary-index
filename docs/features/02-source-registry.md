@@ -5,7 +5,7 @@
 Provide a curated, tiered registry of trusted data sources that feed the AGI Canary Watcher. The registry must:
 
 - Distinguish between authoritative sources (Tier-0) and commentary (Tier-1)
-- Enable source health monitoring and automatic failover
+- Enable source health monitoring (last success, error count, auto-disable)
 - Support different fetch mechanisms (RSS, search API, curated pages, X/Twitter via Grok)
 - Provide an admin interface for source management
 
@@ -46,17 +46,17 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 
 4. **Health Monitoring**
 
-   - Track last successful fetch timestamp
-   - Count consecutive failures
+   - Track last successful fetch timestamp (sources.last_success_at)
+   - Count consecutive failures (sources.error_count)
    - Auto-disable after N failures (configurable, default 5)
-   - Alert mechanism for degraded sources
+   - Status indicators derived from sources table (no separate fetch logs for MVP)
 
 5. **Admin Interface**
 
-   - List all sources with status indicators
+   - List all sources with status indicators (green/yellow/red from last_success_at, error_count)
    - Add/edit/archive sources
    - Test fetch functionality
-   - View fetch history and error logs
+   - Manual refresh to update status (no aggressive polling)
    - Bulk enable/disable operations
 
 6. **Trust Weight System**
@@ -69,23 +69,7 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 
 **Uses Tables from 01-database-schema:**
 
-- `sources` - Main source registry
-
-**New Tables:**
-
-### `source_fetch_logs`
-
-History of fetch attempts per source.
-
-- `id` (uuid, PK): Unique identifier
-- `source_id` (uuid, FK → sources): Which source
-- `run_id` (uuid, FK → pipeline_runs, nullable): Associated pipeline run
-- `attempted_at` (timestamp): When fetch started
-- `completed_at` (timestamp, nullable): When fetch ended
-- `status` (enum: success, partial, failed): Result
-- `items_found` (integer): URLs discovered
-- `error_message` (text, nullable): Error details
-- `response_time_ms` (integer, nullable): Latency
+- `sources` - Main source registry (last_success_at, error_count provide health status)
 
 **Seed Data:**
 Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
@@ -114,14 +98,13 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 
 1. Admin views `/admin/sources` dashboard
 2. Dashboard shows sources in cards/rows with:
-   - Status indicator (green/yellow/red)
+   - Status indicator (green/yellow/red from last_success_at, error_count)
    - Last success timestamp
    - Error count badge
    - Trust weight display
-3. Admin clicks on degraded source
-4. System shows fetch history with error logs
-5. Admin can:
-   - Retry fetch manually
+3. Admin clicks "Refresh" to update status (or on page load)
+4. Admin clicks on degraded source to:
+   - Retry fetch manually (Test Fetch)
    - Edit configuration
    - Temporarily disable source
 
@@ -138,12 +121,11 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 - [ ] Admin can add new sources with all configuration options
 - [ ] Test fetch validates source before saving
 - [ ] Sources auto-disable after 5 consecutive failures
-- [ ] Health dashboard shows real-time status for all sources
-- [ ] Fetch logs retained for 30 days minimum
+- [ ] Health dashboard shows status for all sources (from sources table)
 - [ ] Trust weight correctly propagates to signal confidence
 - [ ] Source changes take effect on next pipeline run
 - [ ] Bulk operations complete in < 2 seconds
-- [ ] Admin interface accessible only to authenticated admins
+- [ ] Admin interface protected; authentication via Clerk (future)
 
 ## Edge Cases
 
@@ -186,9 +168,8 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 
 **Security:**
 
-- Admin-only access (authentication required)
-- API keys stored encrypted in environment variables, not in source config
-- Audit log for all source modifications
+- Admin-only access (Clerk authentication planned)
+- API keys stored in environment variables, not in source config
 
 **UX:**
 
@@ -201,5 +182,5 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 
 - Server-side source management (no client-side secrets)
 - Optimistic UI updates with rollback on failure
-- Real-time status via polling (30-second interval)
+- Status via manual refresh or on page load (avoid aggressive polling)
 - Admin runs on Vercel; uses `DATABASE_URL` (Neon pooled) for database access. Pipeline secrets (OPENROUTER_API_KEY, FIRECRAWL_API_KEY) live on Cloudflare Workers; app secrets on Vercel.

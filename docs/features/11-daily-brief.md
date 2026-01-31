@@ -4,7 +4,7 @@
 
 Create a daily summary and news section that surfaces "what moved the needle" each day. This feature must:
 
-- Provide a concise, editorial summary of daily changes
+- Provide a concise summary of daily changes
 - List recent source articles with relevance explanations
 - Be shareable and screenshot-ready
 - Serve as the "news feed" for regular visitors
@@ -70,14 +70,7 @@ As a regular visitor to the AGI Canary Watcher, I want to see a daily summary of
    - Social meta tags for link previews
    - Screenshot-friendly layout (clean, self-contained)
 
-7. **Editorial Notes**
-
-   - Occasional human-written context
-   - "Editor's note: This week saw..."
-   - Clearly marked as editorial, not automated
-   - Stored in daily_snapshots.notes
-
-8. **Coverage Reporting**
+7. **Coverage Reporting**
    - "Sources checked: X"
    - "Signals extracted: Y"
    - "Coverage score: Z%"
@@ -87,7 +80,7 @@ As a regular visitor to the AGI Canary Watcher, I want to see a daily summary of
 
 **Reads from Tables:**
 
-- `daily_snapshots` - Brief data, notes, coverage
+- `daily_snapshots` - Brief data, coverage
 - `signals` - Individual signals for expansion
 - `documents` - Article metadata for news list
 - `items` - URLs and titles
@@ -110,7 +103,6 @@ interface DailyBrief {
   coverageScore: number;
   signalsProcessed: number;
   sourcesChecked: number;
-  notes: string[];
   generatedAt: string;
 }
 
@@ -177,7 +169,6 @@ interface BriefItem {
 - [ ] "Copy brief" produces formatted text
 - [ ] Share links work with proper meta tags
 - [ ] Coverage metrics displayed accurately
-- [ ] Editorial notes render when present
 - [ ] Page loads in < 2 seconds
 - [ ] Pagination works for large article lists
 
