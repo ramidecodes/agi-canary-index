@@ -31,40 +31,48 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
    - Handle various RSS formats (RSS 2.0, Atom 1.0)
    - Respect feed update timestamps
 
-3. **Perplexity Search Discovery**
+3. **Web Search Discovery (Perplexity via OpenRouter)**
 
-   - Query Perplexity Search API with configured keywords
+   - Use `perplexity/sonar` via OpenRouter for web search; model in `src/lib/ai-models.ts` (`WEB_SEARCH_MODEL`)
+   - Single `OPENROUTER_API_KEY` for all AI calls (discovery + extraction)
    - Keywords: "AGI evaluation", "AI benchmark", "ARC-AGI", "frontier model", "AI capability", "METR evaluation", "OECD AI"
    - Filter by recency (last 7 days)
-   - Extract: URL, title, snippet, source domain
+   - Extract: URL, title, snippet, source domain from citations
 
-4. **Curated Source Discovery**
+4. **X Search Discovery (Optional, Feature-Flagged)**
+
+   - Use `x-ai/grok-4.1-fast` via OpenRouter to query X (Twitter) for AI-related posts and links
+   - Grok has real-time X data access; model constant in `src/lib/ai-models.ts` (`X_SEARCH_MODEL`)
+   - Source type: `x`; can be disabled without breaking pipeline (regulatory considerations)
+   - Extract: URL, title/snippet, author, engagement signals
+
+5. **Curated Source Discovery**
 
    - Check specific pages for new content (lab research pages, report indexes)
    - Compare against last known state
    - Detect new publications or updates
 
-5. **URL Canonicalization**
+6. **URL Canonicalization**
 
    - Strip tracking parameters (utm\_\*, fbclid, etc.)
    - Remove fragments unless semantically meaningful
    - Normalize protocol (prefer https)
    - Generate consistent URL hash for deduplication
 
-6. **Deduplication**
+7. **Deduplication**
 
    - Check URL hash against items table
    - Skip URLs seen in past 30 days
    - Track "refresh" candidates (old URLs with new content signals)
 
-7. **Batch Output**
+8. **Batch Output**
 
    - Create pipeline_run record
    - Insert new items with status "pending"
    - Log discovery statistics per source
    - Return batch summary for monitoring
 
-8. **Error Handling**
+9. **Error Handling**
    - Continue on individual source failures
    - Log errors to source_fetch_logs
    - Increment source error_count on failure
@@ -79,15 +87,26 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 - `pipeline_runs` - Create run record, track progress
 - `source_fetch_logs` - Log fetch attempts and results
 
+**Cloudflare Bindings:**
+
+- **Hyperdrive:** Workers connect to Neon via Hyperdrive binding, not raw connection string. Use `env.HYPERDRIVE.connectionString` for database access. No `DATABASE_URL` in Worker; add `hyperdrive` binding to wrangler.jsonc. See [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive).
+
 **External Services:**
 
-- Perplexity Search API (discovery)
+- Perplexity Sonar via OpenRouter (web discovery; `perplexity/sonar`)
+- xAI Grok via OpenRouter (X/Twitter discovery, optional)
 - HTTP/RSS fetch (native)
 
-**Environment Variables:**
+**Environment Variables / Secrets:**
 
-- `PERPLEXITY_API_KEY` - API key for search
-- `DISCOVERY_CRON_SCHEDULE` - Cron expression (default: "0 6 \* \* \*")
+- `OPENROUTER_API_KEY` - Used for Perplexity (web search) and Grok (X search). Single key for all AI.
+- Cron schedule in wrangler.jsonc `triggers.crons` (default: "0 6 \* \* \*")
+
+**Optional: Workers Queues**
+
+- For reliability, use Queues to enqueue acquisition batches instead of `ctx.waitUntil()`
+- Producer: Discovery Worker; consumer: Acquisition Worker
+- Batch size 50, `max_batch_timeout: 30`. See [Workers Queues](https://developers.cloudflare.com/queues/).
 
 ## User Flow
 
@@ -197,5 +216,11 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 **Technical:**
 
 - Cloudflare Worker for execution
-- Uses Neon Postgres for state
+- Uses Neon Postgres via Hyperdrive binding for state
 - Idempotent operations where possible
+- **Worker limits:** Discovery runs in single invocation; stay under 5 min CPU. Use `limits.cpu_ms: 300000` in wrangler if needed. Parallel fetches: max 5 concurrent to avoid subrequest limits.
+
+**References:**
+
+- [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+- [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive)

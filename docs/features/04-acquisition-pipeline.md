@@ -75,18 +75,26 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 - `documents` - Create document records
 - `pipeline_runs` - Update processing counts
 
+**Cloudflare Bindings:**
+
+- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "canary-documents" }]`. Simpler and native. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
+
 **External Services:**
 
 - Firecrawl API (content fetching and cleaning)
-- Cloudflare R2 (blob storage)
 
-**Environment Variables:**
+**Environment Variables / Secrets:**
 
-- `FIRECRAWL_API_KEY` - Firecrawl authentication
-- `R2_ACCESS_KEY_ID` - R2 access credentials
-- `R2_SECRET_ACCESS_KEY` - R2 secret
-- `R2_BUCKET_NAME` - Storage bucket name
-- `R2_ENDPOINT` - R2 endpoint URL
+- `FIRECRAWL_API_KEY` - Firecrawl authentication (via `wrangler secret put`)
+- No R2 credentials needed when using Worker binding
+
+**Execution Location:**
+
+- Runs as Cloudflare Worker (Queue consumer or HTTP-triggered). Recommend Worker for cost and separation from Vercel app. Can alternatively run as Next.js API route on Vercel if desired.
+
+**Batch Processing (Queues):**
+
+- If using Workers Queues, consumer receives batch; process each URL, ack individually for partial failure handling. See [Workers Queues](https://developers.cloudflare.com/queues/).
 
 ## User Flow
 
@@ -210,6 +218,11 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 **Technical:**
 
-- Runs as Cloudflare Worker or Vercel function
+- Runs as Cloudflare Worker (recommended) or Vercel API route
 - Chunked processing to avoid timeout
 - Idempotent: re-running doesn't duplicate documents
+
+**References:**
+
+- [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/)
+- [Workers Queues](https://developers.cloudflare.com/queues/)

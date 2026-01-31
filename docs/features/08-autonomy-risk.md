@@ -238,6 +238,7 @@ As a safety researcher or policymaker, I want to monitor autonomy and risk-relat
 
 **Technical:**
 
+- Next.js 16 App Router, React 19. App deployed to Vercel only.
 - D3/VisX for gauge and chart
 - SWR for data fetching
 - Zustand for expansion state

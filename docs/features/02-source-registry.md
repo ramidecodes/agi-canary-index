@@ -6,7 +6,7 @@ Provide a curated, tiered registry of trusted data sources that feed the AGI Can
 
 - Distinguish between authoritative sources (Tier-0) and commentary (Tier-1)
 - Enable source health monitoring and automatic failover
-- Support different fetch mechanisms (RSS, search API, curated pages)
+- Support different fetch mechanisms (RSS, search API, curated pages, X/Twitter via Grok)
 - Provide an admin interface for source management
 
 This feature ensures the pipeline ingests high-quality, traceable information that maintains the application's epistemic credibility.
@@ -40,7 +40,7 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 3. **Source Configuration**
 
    - Each source has: name, URL, tier, trust weight (0-1), cadence, domain type
-   - Source type determines fetch strategy: RSS, search API, curated scrape
+   - Source type determines fetch strategy: RSS, search API, curated scrape, X (Grok, feature-flagged)
    - Query configuration for search-based sources (keywords, domains)
    - Active/inactive toggle without deletion
 
@@ -103,7 +103,7 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
    - Trust Weight (slider: 0.0-1.0)
    - Cadence (dropdown: daily, weekly, monthly)
    - Domain Type (dropdown: evaluation, policy, research, commentary)
-   - Source Type (dropdown: rss, search, curated, api)
+   - Source Type (dropdown: rss, search, curated, api, x)
    - Query Config (JSON editor, optional)
 4. Admin fills form and clicks "Test Fetch"
 5. System attempts to fetch from source, displays results preview
@@ -202,3 +202,4 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 - Server-side source management (no client-side secrets)
 - Optimistic UI updates with rollback on failure
 - Real-time status via polling (30-second interval)
+- Admin runs on Vercel; uses `DATABASE_URL` (Neon pooled) for database access. Pipeline secrets (OPENROUTER_API_KEY, FIRECRAWL_API_KEY) live on Cloudflare Workers; app secrets on Vercel.

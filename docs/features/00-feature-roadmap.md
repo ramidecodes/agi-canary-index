@@ -2,26 +2,64 @@
 
 This document outlines the implementation order for all features. Each feature builds upon previous ones, ensuring progressive development.
 
+## Architecture: Hybrid Approach
+
+- **App:** Next.js 16 on Vercel — UI, API routes, AI signal processing (AI SDK + OpenRouter)
+- **Pipeline:** Cloudflare Workers — Discovery, Acquisition, orchestration. Workers use Hyperdrive (Neon) and R2
+
+```mermaid
+flowchart TB
+    subgraph Cloudflare [Cloudflare Workers]
+        Cron[Cron Trigger]
+        Discovery[Discovery Worker]
+        Queue[Queues Optional]
+        Acquire[Acquisition Worker]
+    end
+
+    subgraph Vercel [Vercel]
+        API[Next.js API Route]
+        AI[AI SDK plus OpenRouter]
+    end
+
+    subgraph Storage [Storage]
+        Neon[(Neon Postgres)]
+        R2[(R2)]
+    end
+
+    Cron --> Discovery
+    Discovery -->|Enqueue batches| Queue
+    Queue --> Acquire
+    Acquire -->|Fetch and Store| R2
+    Acquire -->|Write metadata| Neon
+    Acquire -->|HTTP trigger| API
+    API --> AI
+    AI -->|Write signals| Neon
+    Discovery -->|Hyperdrive| Neon
+    Acquire -->|Hyperdrive| Neon
+```
+
 ## Implementation Phases
 
 ### Phase 1: Foundation
 
-Features that establish the core data structures and configuration.
+Features that establish the core data structures, pipeline infrastructure, and configuration.
 
-| Order | Feature                       | FRED                    | Dependencies |
-| ----- | ----------------------------- | ----------------------- | ------------ |
-| 1.1   | Database Schema & Core Models | `01-database-schema.md` | None         |
-| 1.2   | Source Registry & Management  | `02-source-registry.md` | 1.1          |
+| Order | Feature                       | FRED                                | Dependencies |
+| ----- | ----------------------------- | ----------------------------------- | ------------ |
+| 1.0   | Pipeline Infrastructure       | `13-pipeline-infrastructure.md`     | None         |
+| 1.1   | Database Schema & Core Models | `01-database-schema.md`             | None         |
+| 1.2   | Source Registry & Management  | `02-source-registry.md`             | 1.1          |
+| 1.3   | Cloudflare Infra Management   | `14-cloudflare-infra-management.md` | 1.0          |
 
 ### Phase 2: Data Pipeline
 
 Features that power the data ingestion and processing system.
 
-| Order | Feature                       | FRED                         | Dependencies |
-| ----- | ----------------------------- | ---------------------------- | ------------ |
-| 2.1   | Discovery Pipeline            | `03-discovery-pipeline.md`   | 1.1, 1.2     |
-| 2.2   | Content Acquisition Pipeline  | `04-acquisition-pipeline.md` | 2.1          |
-| 2.3   | AI Signal Processing Pipeline | `05-signal-processing.md`    | 2.2          |
+| Order | Feature                       | FRED                         | Dependencies  |
+| ----- | ----------------------------- | ---------------------------- | ------------- |
+| 2.1   | Discovery Pipeline            | `03-discovery-pipeline.md`   | 1.0, 1.1, 1.2 |
+| 2.2   | Content Acquisition Pipeline  | `04-acquisition-pipeline.md` | 1.0, 2.1      |
+| 2.3   | AI Signal Processing Pipeline | `05-signal-processing.md`    | 2.2           |
 
 ### Phase 3: Core UI
 
@@ -55,12 +93,24 @@ Polish and extended functionality.
 
 ```
 Phase 1: Foundation
-┌─────────────────────┐     ┌─────────────────────┐
+┌─────────────────────┐
+│  1.0 Pipeline       │
+│  Infrastructure     │
+└─────────┬───────────┘
+          │
+┌─────────▼───────────┐     ┌─────────────────────┐
 │  1.1 Database       │────▶│  1.2 Source         │
 │  Schema             │     │  Registry           │
 └─────────┬───────────┘     └─────────┬───────────┘
           │                           │
-          ▼                           ▼
+          └───────────┬───────────────┘
+                      │
+          ┌───────────▼───────────┐
+          │  1.3 Cloudflare Infra │
+          │  Management           │
+          └───────────────────────┘
+                      │
+                      ▼
 Phase 2: Data Pipeline
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │  2.1 Discovery      │────▶│  2.2 Acquisition    │────▶│  2.3 Signal         │
@@ -92,15 +142,17 @@ Phase 5: Enhancement
 
 ## Quick Start
 
-1. Start with `01-database-schema.md` - this is required for everything else
-2. Implement `02-source-registry.md` to define trusted data sources
-3. Build the pipeline features (03-05) in parallel with UI features (06-08)
-4. The Home Page (06) can be built with mock data before the pipeline is complete
-5. Extended UI (09-10) and enhancements (11-12) can be implemented in any order after core UI
+1. Start with `13-pipeline-infrastructure.md` and `01-database-schema.md` — infrastructure and data foundation
+2. Implement `14-cloudflare-infra-management.md` for scriptable provisioning and deploy
+3. Implement `02-source-registry.md` to define trusted data sources
+4. Build the pipeline features (03-05) in parallel with UI features (06-08)
+5. The Home Page (06) can be built with mock data before the pipeline is complete
+6. Extended UI (09-10) and enhancements (11-12) can be implemented in any order after core UI
 
 ## Notes
 
 - Each FRED is self-contained with full requirements
+- App deploys to Vercel; pipeline deploys to Cloudflare (hybrid architecture)
 - Features marked with the same phase number can potentially be developed in parallel
 - The UI features (Phase 3-4) can start with mock/seed data before the pipeline is complete
 - Consider implementing a basic version of 3.1 (Home Page) early to validate the design direction

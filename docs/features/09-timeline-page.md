@@ -238,6 +238,7 @@ As a visitor interested in AI progress history, I want to explore a timeline of 
 
 **Technical:**
 
+- Next.js 16 App Router, React 19. App deployed to Vercel only.
 - D3 or VisX for timeline visualization
 - Virtual scrolling for performance
 - SWR for data fetching

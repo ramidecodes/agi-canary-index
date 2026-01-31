@@ -252,6 +252,7 @@ interface GraphEdge {
 
 **Technical:**
 
+- Next.js 16 App Router, React 19. App deployed to Vercel only.
 - D3 force-directed layout for graph
 - React-window for virtual list
 - SWR for paginated data fetching

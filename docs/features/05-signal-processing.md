@@ -26,8 +26,9 @@ As the AGI Canary Watcher system, I want to extract structured capability signal
 
 2. **AI-Powered Extraction**
 
-   - Use Vercel AI SDK with structured output
-   - Model: configurable (default: GPT-4o or Claude 3.5)
+   - Use AI SDK v6 `generateObject()` for structured output (not `generateText` + manual parse)
+   - Schema via Zod; ensures valid JSON
+   - Model: `anthropic/claude-sonnet-4.5` (hardcoded in `src/lib/ai-models.ts`); see [docs/MODELS.md](../MODELS.md)
    - Extract from each document:
      - Claim summary (1-2 sentences)
      - Classification (benchmark, policy, research, opinion, announcement)
@@ -89,13 +90,17 @@ As the AGI Canary Watcher system, I want to extract structured capability signal
 
 **External Services:**
 
-- Vercel AI SDK with configured provider (OpenAI/Anthropic)
+- Vercel AI SDK v6 with `generateObject()` for structured output
+- OpenRouter as AI provider (unified access to OpenAI, Anthropic, etc.) via `@openrouter/ai-sdk-provider`
 
-**Environment Variables:**
+**Execution Location:**
 
-- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` - AI provider credentials
-- `AI_MODEL` - Model identifier (default: gpt-4o)
-- `SCORING_VERSION` - Current scoring logic version
+- **Runs on Vercel** (Next.js API route). AI SDK runs natively in Node.js. Triggered by HTTP from Acquisition Worker or by Queue message. Workers have `nodejs_compat` but AI SDK + generateObject may have edge cases; Vercel is recommended for reliability.
+
+**Environment Variables (Vercel):**
+
+- `OPENROUTER_API_KEY` - OpenRouter API key (single key for all models)
+- Model ID is hardcoded in `src/lib/ai-models.ts` (`SIGNAL_EXTRACTION_MODEL`), not configured via env
 
 **AI Prompt Structure:**
 
@@ -123,12 +128,28 @@ Extract:
 If no capability-relevant information found, return null.
 ```
 
+**Implementation (AI SDK v6 + OpenRouter):**
+
+```typescript
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { SIGNAL_EXTRACTION_MODEL } from "@/lib/ai-models";
+
+const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
+const { object } = await generateObject({
+  model: openrouter(SIGNAL_EXTRACTION_MODEL),
+  schema: signalSchema,
+  prompt: "...",
+});
+```
+
 ## User Flow
 
 ### Automated Processing
 
 1. Acquisition pipeline completes, documents ready
-2. Signal processing worker picks up batch of 10 documents
+2. Signal processing (Vercel API route) picks up batch of 10 documents (triggered by Worker HTTP or Queue)
 3. For each document:
    - Fetch clean markdown from R2
    - Construct AI prompt with document + metadata
@@ -250,7 +271,13 @@ If no capability-relevant information found, return null.
 
 **Technical:**
 
-- Vercel AI SDK with structured output
+- AI SDK v6 `generateObject()` with Zod schema for structured output
+- OpenRouter provider: `createOpenRouter()` from `@openrouter/ai-sdk-provider`
 - Zod schemas for response validation
-- Drizzle for database operations
+- Drizzle for database operations (app uses Neon pooled connection)
 - Idempotent: re-running skips already-processed documents
+
+**References:**
+
+- [AI SDK generateObject](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-object)
+- [OpenRouter Vercel AI SDK](https://openrouter.ai/docs/community/vercel-ai-sdk)

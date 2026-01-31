@@ -67,7 +67,7 @@ Trusted data sources for the pipeline.
 - `trust_weight` (decimal 0-1): Confidence multiplier
 - `cadence` (enum: daily, weekly, monthly): Expected update frequency
 - `domain_type` (enum: evaluation, policy, research, commentary): Content type
-- `source_type` (enum: rss, search, curated, api): How to fetch
+- `source_type` (enum: rss, search, curated, api, x): How to fetch (`x` = X/Twitter via Grok, optional)
 - `query_config` (jsonb): Source-specific configuration
 - `is_active` (boolean): Whether to include in pipeline runs
 - `last_success_at` (timestamp): Last successful fetch
@@ -185,6 +185,13 @@ Events for the timeline visualization.
 - `daily_snapshots.date` for time-series queries
 - `timeline_events.date` for timeline rendering
 
+**Neon + Hyperdrive (Cloudflare Pipeline Workers):**
+
+- Pipeline Workers connect to Neon via [Cloudflare Hyperdrive](https://neon.tech/docs/guides/cloudflare-hyperdrive)
+- Use direct (non-pooled) connection string for Hyperdrive; Hyperdrive provides connection pooling
+- Create `hyperdrive-user` role in Neon per the Hyperdrive guide
+- App (Vercel) uses `@neondatabase/serverless` or pooled connection—different from Workers
+
 ## User Flow
 
 N/A - This is an infrastructure feature. The schema is consumed by the pipeline and UI features.
@@ -224,8 +231,13 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
    - Handling strategy: Store large content in R2, only summaries in JSONB
 
 5. **Pipeline failure mid-run**
+
    - Expected behavior: Partial progress saved, resumable
    - Handling strategy: Item-level status tracking, idempotent processing
+
+6. **Connection exhaustion / Neon cold start**
+   - Expected behavior: Queries succeed after brief delay
+   - Handling strategy: Hyperdrive handles reconnection; Neon serverless may suspend; document cold-start behavior for Workers
 
 ## Non-Functional Requirements
 
@@ -254,3 +266,4 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
 - Zod schemas for validation
 - Compatible with Neon Postgres serverless
 - Schema versioning via Drizzle migrations
+- **Drizzle + Hyperdrive (Workers):** Use `pg` or `postgres.js` driver with `env.HYPERDRIVE.connectionString`; Drizzle supports both. Avoid `@neondatabase/serverless` when using Hyperdrive in Workers.

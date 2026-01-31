@@ -223,6 +223,7 @@ As a researcher or journalist investigating AI progress, I want to explore detai
 
 **Technical:**
 
+- Next.js 16 App Router, React 19. App deployed to Vercel only.
 - D3/VisX for radar and line charts
 - React transition for radar morphing
 - SWR for data fetching with caching

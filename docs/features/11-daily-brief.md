@@ -249,6 +249,7 @@ interface BriefItem {
 
 **Technical:**
 
+- Next.js 16 App Router, React 19. App deployed to Vercel only.
 - SWR for data fetching with cache
 - Pagination via cursor, not offset
 - URL state for filters and date

@@ -228,6 +228,7 @@ As a mobile user checking AGI Canary Watcher, I want a simplified view optimized
 
 **Technical:**
 
+- App deployed to Vercel. Core Web Vitals targets for Vercel Edge/Serverless.
 - CSS-first responsive design
 - React Server Components for initial load
 - Lazy load below-fold content

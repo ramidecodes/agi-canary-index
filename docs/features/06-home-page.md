@@ -103,6 +103,10 @@ As a visitor to the AGI Canary Watcher, I want to see a comprehensive overview o
 - Selected time range for radar
 - Hovered axis/canary for tooltips
 
+**Data Fetching (Vercel):**
+
+- App deploys to Vercel only. Use `@neondatabase/serverless` or Neon pooled connection for database access. Hyperdrive is for Cloudflare Workers only; app does not use it.
+
 ## User Flow
 
 ### First Visit
@@ -221,8 +225,10 @@ As a visitor to the AGI Canary Watcher, I want to see a comprehensive overview o
 
 **Technical:**
 
+- Next.js 16 App Router, React 19 features (e.g. `use()`)
 - React Server Components for initial render
 - Client components for interactive elements
 - D3 or VisX for radar chart
 - Zustand for client state
 - SWR for data fetching
+- App deployed to Vercel only (hybrid architecture)
