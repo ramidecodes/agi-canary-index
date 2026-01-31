@@ -185,12 +185,12 @@ Events for the timeline visualization.
 - `daily_snapshots.date` for time-series queries
 - `timeline_events.date` for timeline rendering
 
-**Neon + Hyperdrive (Cloudflare Pipeline Workers):**
+**Neon + Workers (Cloudflare Pipeline):**
 
-- Pipeline Workers connect to Neon via [Cloudflare Hyperdrive](https://neon.tech/docs/guides/cloudflare-hyperdrive)
-- Use direct (non-pooled) connection string for Hyperdrive; Hyperdrive provides connection pooling
-- Create `hyperdrive-user` role in Neon per the Hyperdrive guide
-- App (Vercel) uses `@neondatabase/serverless` or pooled connection—different from Workers
+- Pipeline Workers connect to Neon via [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) (`@neondatabase/serverless`)
+- Use `DATABASE_URL` secret (Neon pooled connection string) — same as Vercel app
+- Use `drizzle-orm/neon-http` with `neon()` for Drizzle in Workers
+- App (Vercel) and Workers both use `@neondatabase/serverless` with pooled connection
 
 ## User Flow
 
@@ -237,7 +237,7 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
 
 6. **Connection exhaustion / Neon cold start**
    - Expected behavior: Queries succeed after brief delay
-   - Handling strategy: Hyperdrive handles reconnection; Neon serverless may suspend; document cold-start behavior for Workers
+   - Handling strategy: Neon serverless driver handles HTTP-based connections; document cold-start behavior for Workers
 
 ## Non-Functional Requirements
 
@@ -266,4 +266,4 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
 - Zod schemas for validation
 - Compatible with Neon Postgres serverless
 - Schema versioning via Drizzle migrations
-- **Drizzle + Hyperdrive (Workers):** Use `pg` or `postgres.js` driver with `env.HYPERDRIVE.connectionString`; Drizzle supports both. Avoid `@neondatabase/serverless` when using Hyperdrive in Workers.
+- **Drizzle + Neon Serverless (Workers):** Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)`; Drizzle supports Neon's serverless driver. See [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers).

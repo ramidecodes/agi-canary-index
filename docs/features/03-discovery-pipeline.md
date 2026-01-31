@@ -89,7 +89,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 
 **Cloudflare Bindings:**
 
-- **Hyperdrive:** Workers connect to Neon via Hyperdrive binding, not raw connection string. Use `env.HYPERDRIVE.connectionString` for database access. No `DATABASE_URL` in Worker; add `hyperdrive` binding to wrangler.jsonc. See [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive).
+- **Neon:** Workers connect to Neon via [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) (`@neondatabase/serverless`). Use `DATABASE_URL` secret; set via `wrangler secret put DATABASE_URL`. Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)` for Drizzle.
 
 **External Services:**
 
@@ -216,11 +216,11 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 **Technical:**
 
 - Cloudflare Worker for execution
-- Uses Neon Postgres via Hyperdrive binding for state
+- Uses Neon Postgres via Neon serverless driver (`DATABASE_URL`) for state
 - Idempotent operations where possible
 - **Worker limits:** Discovery runs in single invocation; stay under 5 min CPU. Use `limits.cpu_ms: 300000` in wrangler if needed. Parallel fetches: max 5 concurrent to avoid subrequest limits.
 
 **References:**
 
 - [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
-- [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive)
+- [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers)

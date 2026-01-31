@@ -18,7 +18,7 @@ This document describes the infrastructure setup for the AGI Canary Watcher proj
   - **Cloudflare Cron** triggers the pipeline daily (e.g. 6 AM UTC) — not Vercel cron
   - **Cloudflare Workers** run Discovery and Acquisition
   - **R2** stores document blobs
-- **Neon:** Postgres database (app uses pooled connection; Workers use Hyperdrive)
+- **Neon:** Postgres database (app and Workers both use `@neondatabase/serverless` with pooled `DATABASE_URL`)
 
 ## Environment Variables
 
@@ -42,31 +42,22 @@ Pipeline scheduling uses **Cloudflare Cron** (in wrangler.jsonc), not Vercel. Se
 
 | Secret               | Description                                              |
 | -------------------- | -------------------------------------------------------- |
+| `DATABASE_URL`       | Neon pooled connection string (same as Vercel app)       |
 | `OPENROUTER_API_KEY` | Perplexity (web search) + Grok (X search) via OpenRouter |
 | `FIRECRAWL_API_KEY`  | Firecrawl API for content acquisition                    |
-
-### Infra-Only (Not in Code)
-
-| Variable                 | Description                                                                                                                                                |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEON_CONNECTION_STRING` | Neon direct (non-pooled) connection string for Hyperdrive. Stored in `.env.infra`; used by `infra:provision` to create Hyperdrive config. Never committed. |
 
 ## Setup Steps
 
 ### 1. Neon Database
 
 1. Create a Neon project at [console.neon.tech](https://console.neon.tech)
-2. Create a `hyperdrive-user` role for Cloudflare Hyperdrive (uncheck connection pooling when copying connection string)
-3. Copy the pooled connection string for the app (`DATABASE_URL`)
-4. Copy the direct connection string for Hyperdrive (store in `.env.infra` as `NEON_CONNECTION_STRING`)
+2. Copy the pooled connection string from Connection Details (use pooled connection for both app and Workers)
 
 ### 2. Cloudflare Pipeline Infrastructure
 
-1. Copy `.env.infra.example` to `.env.infra`
-2. Add `NEON_CONNECTION_STRING` to `.env.infra`
-3. Run `pnpm run infra:provision --env dev` to create R2 bucket and Hyperdrive config
-4. Run `pnpm run infra:secrets` to set OPENROUTER_API_KEY and FIRECRAWL_API_KEY
-5. Run `pnpm run infra:deploy --env dev` to deploy Workers
+1. Run `pnpm run infra:provision --env dev` to create R2 bucket
+2. Run `pnpm run infra:secrets` to set DATABASE_URL, OPENROUTER_API_KEY, and FIRECRAWL_API_KEY
+3. Run `pnpm run infra:deploy --env dev` to deploy Workers
 
 ### 3. Vercel App
 
@@ -76,21 +67,21 @@ Pipeline scheduling uses **Cloudflare Cron** (in wrangler.jsonc), not Vercel. Se
 
 ## Scripts (from FRED 14)
 
-- `pnpm run infra:provision` — Create R2 bucket, Hyperdrive config
+- `pnpm run infra:provision` — Create R2 bucket
 - `pnpm run infra:deploy` — Deploy Workers
 - `pnpm run infra:secrets` — Interactive secret setup
 - `pnpm run infra:teardown` — Remove resources (with confirmation)
 
 ## Troubleshooting
 
-- **Hyperdrive connection fails:** Ensure Neon connection string uses direct (non-pooled) format. Check `hyperdrive-user` role exists.
+- **Database connection fails:** Ensure DATABASE_URL secret is set with Neon pooled connection string. See [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers).
 - **R2 put fails:** Verify R2 bucket exists and binding is correct in wrangler.jsonc
 - **Worker timeout:** Increase `limits.cpu_ms` in wrangler.jsonc for long-running discovery
-- **Secrets not found:** Run `wrangler secret put OPENROUTER_API_KEY` and `wrangler secret put FIRECRAWL_API_KEY`
+- **Secrets not found:** Run `wrangler secret put DATABASE_URL`, `wrangler secret put OPENROUTER_API_KEY`, and `wrangler secret put FIRECRAWL_API_KEY`
 
 ## References
 
 - [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
-- [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive)
+- [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers)
 - [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/)
 - [Workers Queues](https://developers.cloudflare.com/queues/)

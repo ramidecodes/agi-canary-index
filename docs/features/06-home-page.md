@@ -105,7 +105,7 @@ As a visitor to the AGI Canary Watcher, I want to see a comprehensive overview o
 
 **Data Fetching (Vercel):**
 
-- App deploys to Vercel only. Use `@neondatabase/serverless` or Neon pooled connection for database access. Hyperdrive is for Cloudflare Workers only; app does not use it.
+- App deploys to Vercel only. Use `@neondatabase/serverless` with Neon pooled `DATABASE_URL` for database access.
 
 ## User Flow
 

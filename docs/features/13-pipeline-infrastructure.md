@@ -26,12 +26,12 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
    - Cron trigger: `triggers: { crons: ["0 6 * * *"] }` (daily at 6 AM UTC)
    - Worker entry point: `workers/pipeline/index.ts` or equivalent
 
-3. **Hyperdrive Binding (Neon)**
+3. **Neon Database (Neon Serverless Driver)**
 
-   - Workers connect to Neon Postgres via Hyperdrive (connection pooling)
-   - Binding: `HYPERDRIVE` with `connectionString` from Hyperdrive config
-   - Create Hyperdrive config via `wrangler hyperdrive create` with Neon direct (non-pooled) connection string
-   - Reference: [Neon + Hyperdrive](https://neon.tech/docs/guides/cloudflare-hyperdrive)
+   - Workers connect to Neon Postgres via [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) (`@neondatabase/serverless`)
+   - Secret: `DATABASE_URL` (Neon pooled connection string) — set via `wrangler secret put DATABASE_URL`
+   - Same connection string as Vercel app; use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)` in Workers
+   - Reference: [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers)
 
 4. **R2 Bucket Binding**
 
@@ -70,7 +70,6 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "triggers": { "crons": ["0 6 * * *"] },
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<config-id>" }],
   "r2_buckets": [{ "binding": "DOCUMENTS", "bucket_name": "canary-documents" }],
   "vars": { "SCORING_VERSION": "1.0.0" }
 }
@@ -78,22 +77,22 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 
 **Bindings Summary:**
 
-- `HYPERDRIVE` — Neon connection (via Hyperdrive)
+- `DATABASE_URL` — Neon connection (via `wrangler secret put`; use with `@neondatabase/serverless`)
 - `DOCUMENTS` — R2 bucket for document blobs
 - Optional: `REQUEST_QUEUE`, `RESPONSE_QUEUE` if using Queues
 
 ## User Flow
 
-1. Developer runs `pnpm run infra:provision` (from FRED 14) to create R2 bucket and Hyperdrive config
-2. Developer sets secrets: `wrangler secret put OPENROUTER_API_KEY`, `wrangler secret put FIRECRAWL_API_KEY`
+1. Developer runs `pnpm run infra:provision` (from FRED 14) to create R2 bucket
+2. Developer sets secrets: `wrangler secret put DATABASE_URL`, `wrangler secret put OPENROUTER_API_KEY`, `wrangler secret put FIRECRAWL_API_KEY`
 3. Developer runs `pnpm run infra:deploy` to deploy Workers
 4. Cron triggers Discovery Worker daily at 6 AM UTC
-5. Discovery writes to Neon via Hyperdrive, enqueues to Acquisition (or triggers via HTTP)
+5. Discovery writes to Neon via Neon serverless driver, enqueues to Acquisition (or triggers via HTTP)
 
 ## Acceptance Criteria
 
 - [ ] wrangler.jsonc exists with required fields
-- [ ] Hyperdrive binding configured and connects to Neon
+- [ ] DATABASE_URL secret set and Workers connect to Neon via Neon serverless driver
 - [ ] R2 binding configured; Workers can put/get objects
 - [ ] Cron trigger fires at scheduled time
 - [ ] Observability enabled (head_sampling_rate: 1)
@@ -103,10 +102,10 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 
 ## Edge Cases
 
-1. **Hyperdrive config missing or invalid**
+1. **DATABASE_URL secret not set**
 
-   - Expected behavior: Deployment or runtime error
-   - Handling strategy: Provision Hyperdrive before deploy; validate connection string format
+   - Expected behavior: Runtime error when Worker queries database
+   - Handling strategy: Run `wrangler secret put DATABASE_URL` before deploy; document in INFRASTRUCTURE.md
 
 2. **R2 bucket does not exist**
 
@@ -119,8 +118,8 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
    - Handling strategy: Document required secrets in INFRASTRUCTURE.md; CI checks before deploy
 
 4. **Multiple environments (dev/staging/prod)**
-   - Expected behavior: Separate bucket names, Hyperdrive configs per env
-   - Handling strategy: wrangler environment overrides; see FRED 14
+   - Expected behavior: Separate bucket names per env; DATABASE_URL can be same or different per env
+   - Handling strategy: wrangler environment overrides; secrets scoped per env; see FRED 14
 
 ## Non-Functional Requirements
 
@@ -138,6 +137,6 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 **References:**
 
 - [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
-- [Hyperdrive + Neon](https://neon.tech/docs/guides/cloudflare-hyperdrive)
+- [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers)
 - [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/)
 - [Workers Queues](https://developers.cloudflare.com/queues/)

@@ -5,7 +5,7 @@ This document outlines the implementation order for all features. Each feature b
 ## Architecture: Hybrid Approach
 
 - **App:** Next.js 16 on Vercel — UI, API routes, AI signal processing (AI SDK + OpenRouter)
-- **Pipeline:** Cloudflare Workers — Discovery, Acquisition, orchestration. Workers use Hyperdrive (Neon) and R2
+- **Pipeline:** Cloudflare Workers — Discovery, Acquisition, orchestration. Workers use Neon serverless driver and R2
 
 ```mermaid
 flowchart TB
@@ -34,8 +34,8 @@ flowchart TB
     Acquire -->|HTTP trigger| API
     API --> AI
     AI -->|Write signals| Neon
-    Discovery -->|Hyperdrive| Neon
-    Acquire -->|Hyperdrive| Neon
+    Discovery -->|DATABASE_URL| Neon
+    Acquire -->|DATABASE_URL| Neon
 ```
 
 ## Implementation Phases

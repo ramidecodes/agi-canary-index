@@ -77,7 +77,8 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 **Cloudflare Bindings:**
 
-- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "canary-documents" }]`. Simpler and native. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
+- **Neon:** Use [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) with `DATABASE_URL` secret for reading items, updating status, writing documents. Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)`.
+- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "canary-documents" }]`. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
 
 **External Services:**
 
@@ -85,7 +86,8 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 **Environment Variables / Secrets:**
 
-- `FIRECRAWL_API_KEY` - Firecrawl authentication (via `wrangler secret put`)
+- `DATABASE_URL` — Neon pooled connection string (via `wrangler secret put`); same as Discovery Worker
+- `FIRECRAWL_API_KEY` — Firecrawl authentication (via `wrangler secret put`)
 - No R2 credentials needed when using Worker binding
 
 **Execution Location:**
