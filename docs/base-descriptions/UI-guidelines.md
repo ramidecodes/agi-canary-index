@@ -194,11 +194,13 @@ Typography
 8. Concrete Next.js stack (practical)
 
 Since you’re already deep in Next:
-• Next.js App Router
+• Next.js 16 App Router
+• **shadcn/ui** — Component library; use for forms, tables, badges, admin UI
+• **next-themes** — Dark/light mode; default: dark (Instrumental Minimalism)
 • React Three Fiber (for radar / 3D subtle depth)
 • D3 + VisX (timelines, graphs)
 • Zustand (time + filter state)
-• Tailwind (with a strict design token system)
+• Tailwind v4 (design tokens via shadcn CSS variables)
 • Canvas / WebGL for noise + glow layers
 
 Optional:
