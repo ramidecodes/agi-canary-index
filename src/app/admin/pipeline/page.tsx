@@ -81,23 +81,23 @@ function PipelineStepCard({
 export default function AdminPipelinePage() {
   const [discoverDryRun, setDiscoverDryRun] = useState(false);
   const [snapshotDate, setSnapshotDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
+    new Date().toISOString().slice(0, 10)
   );
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [acquireLoading, setAcquireLoading] = useState(false);
   const [processLoading, setProcessLoading] = useState(false);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [discoverResult, setDiscoverResult] = useState<DiscoverResult | null>(
-    null,
+    null
   );
   const [acquireResult, setAcquireResult] = useState<AcquireResult | null>(
-    null,
+    null
   );
   const [processResult, setProcessResult] = useState<ProcessResult | null>(
-    null,
+    null
   );
   const [snapshotResult, setSnapshotResult] = useState<SnapshotResult | null>(
-    null,
+    null
   );
 
   const handleDiscover = useCallback(async () => {
@@ -114,7 +114,7 @@ export default function AdminPipelinePage() {
       if (res.ok) {
         if (data.skipped && data.skipReason === "run_already_in_progress") {
           toast.warning(
-            "Discovery skipped: a run is already in progress. Click again to force a new run.",
+            "Discovery skipped: a run is already in progress. Click again to force a new run."
           );
         } else {
           const msg = discoverDryRun
@@ -149,7 +149,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.itemsAcquired ?? 0} documents acquired (${
             data.itemsProcessed ?? 0
-          } processed)`,
+          } processed)`
         );
       } else {
         toast.error(data.error ?? "Acquisition failed");
@@ -176,7 +176,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.documentsProcessed ?? 0} docs processed, ${
             data.signalsCreated ?? 0
-          } signals created`,
+          } signals created`
         );
       } else {
         toast.error(data.error ?? "Signal processing failed");
@@ -207,7 +207,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.signalCount ?? 0} signals aggregated${
             data.created ? ", snapshot created" : ""
-          }`,
+          }`
         );
       } else {
         toast.error(data.error ?? "Snapshot creation failed");

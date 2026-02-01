@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   if (!apiKey) {
     return NextResponse.json(
       { error: "OPENROUTER_API_KEY not configured" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
