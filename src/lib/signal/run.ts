@@ -55,65 +55,47 @@ interface AcquiredDocRow {
   publishedAt: Date | null;
 }
 
+const ACQUIRED_DOC_SELECT = {
+  documentId: documents.id,
+  itemId: documents.itemId,
+  runId: items.runId,
+  cleanBlobKey: documents.cleanBlobKey,
+  sourceName: sources.name,
+  tier: sources.tier,
+  trustWeight: sources.trustWeight,
+  publishedAt: items.publishedAt,
+};
+
 /**
- * Fetch next batch of acquired, unprocessed documents (Tier-0 first).
+ * Fetch acquired, unprocessed documents. When documentIds provided, returns those;
+ * otherwise returns next batch ordered by tier and acquiredAt (Tier-0 first).
  */
 async function getAcquiredDocuments(
   db: ReturnType<typeof createDb>,
   limit: number,
   documentIds?: string[],
 ): Promise<AcquiredDocRow[]> {
-  if (documentIds?.length) {
-    const rows = await db
-      .select({
-        documentId: documents.id,
-        itemId: documents.itemId,
-        runId: items.runId,
-        cleanBlobKey: documents.cleanBlobKey,
-        sourceName: sources.name,
-        tier: sources.tier,
-        trustWeight: sources.trustWeight,
-        publishedAt: items.publishedAt,
-      })
-      .from(documents)
-      .innerJoin(items, eq(documents.itemId, items.id))
-      .innerJoin(sources, eq(items.sourceId, sources.id))
-      .where(
-        and(
-          isNull(documents.processedAt),
-          isNotNull(documents.cleanBlobKey),
-          eq(items.status, "acquired"),
-          inArray(documents.id, documentIds),
-        ),
-      )
-      .limit(limit);
-    return rows as AcquiredDocRow[];
-  }
+  const baseConditions = [
+    isNull(documents.processedAt),
+    isNotNull(documents.cleanBlobKey),
+    eq(items.status, "acquired"),
+  ];
+  const whereClause = documentIds?.length
+    ? and(...baseConditions, inArray(documents.id, documentIds))
+    : and(...baseConditions);
 
-  const rows = await db
-    .select({
-      documentId: documents.id,
-      itemId: documents.itemId,
-      runId: items.runId,
-      cleanBlobKey: documents.cleanBlobKey,
-      sourceName: sources.name,
-      tier: sources.tier,
-      trustWeight: sources.trustWeight,
-      publishedAt: items.publishedAt,
-    })
+  const baseQuery = db
+    .select(ACQUIRED_DOC_SELECT)
     .from(documents)
     .innerJoin(items, eq(documents.itemId, items.id))
     .innerJoin(sources, eq(items.sourceId, sources.id))
-    .where(
-      and(
-        isNull(documents.processedAt),
-        isNotNull(documents.cleanBlobKey),
-        eq(items.status, "acquired"),
-      ),
-    )
-    .orderBy(sources.tier, documents.acquiredAt)
-    .limit(limit);
+    .where(whereClause);
 
+  const orderedQuery = documentIds?.length
+    ? baseQuery
+    : baseQuery.orderBy(sources.tier, documents.acquiredAt);
+
+  const rows = await orderedQuery.limit(limit);
   return rows as AcquiredDocRow[];
 }
 
@@ -278,11 +260,21 @@ export async function runSignalProcessing(
     return stats;
   }
 
+  console.log(
+    JSON.stringify({
+      event: "signal_processing_start",
+      documentCount: batch.length,
+    }),
+  );
+
   for (let i = 0; i < batch.length; i += CONCURRENCY) {
     const chunk = batch.slice(i, i + CONCURRENCY);
+    const chunkIndex = Math.floor(i / CONCURRENCY) + 1;
+
     const chunkResults = await Promise.all(
       chunk.map((row) => processOneDocument(ctx, row, scoringVersion)),
     );
+
     for (const result of chunkResults) {
       stats.perDocument.push(result);
       if (result.success) {
@@ -292,8 +284,30 @@ export async function runSignalProcessing(
         stats.documentsFailed++;
       }
     }
+
+    const elapsedMs = Date.now() - startMs;
+    console.log(
+      JSON.stringify({
+        event: "signal_processing_chunk_complete",
+        chunkIndex,
+        chunkSize: chunk.length,
+        documentsProcessed: stats.documentsProcessed,
+        documentsFailed: stats.documentsFailed,
+        signalsCreated: stats.signalsCreated,
+        elapsedMs,
+      }),
+    );
   }
 
   stats.durationMs = Date.now() - startMs;
+  console.log(
+    JSON.stringify({
+      event: "signal_processing_completed",
+      documentsProcessed: stats.documentsProcessed,
+      documentsFailed: stats.documentsFailed,
+      signalsCreated: stats.signalsCreated,
+      durationMs: stats.durationMs,
+    }),
+  );
   return stats;
 }

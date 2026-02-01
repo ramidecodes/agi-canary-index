@@ -1,9 +1,11 @@
 /**
  * Curated page fetcher - extracts article links from HTML.
  * For lab research pages, report indexes, etc.
+ * Uses node-html-parser for fast, reliable DOM-based parsing.
  * @see docs/features/03-discovery-pipeline.md
  */
 
+import { parse } from "node-html-parser";
 import type { DiscoveredItem } from "./types";
 import { canonicalizeUrl, urlHash } from "./url";
 
@@ -21,9 +23,44 @@ const ARTICLE_PATH_PATTERNS = [
   /\/p\/\w+/i,
 ];
 
+function extractArticleLinks(
+  html: string,
+  baseUrl: URL
+): Array<{ href: string; text?: string }> {
+  const root = parse(html, {
+    lowerCaseTagName: true,
+    blockTextElements: { script: true, style: true },
+  });
+  const results: Array<{ href: string; text?: string }> = [];
+  const seen = new Set<string>();
+
+  for (const el of root.querySelectorAll("a[href]")) {
+    const rawHref = el.getAttribute("href");
+    if (!rawHref) continue;
+    try {
+      const resolved = new URL(rawHref, baseUrl);
+      if (resolved.protocol !== "http:" && resolved.protocol !== "https:")
+        continue;
+      if (resolved.hostname !== baseUrl.hostname) continue;
+      const path = resolved.pathname + resolved.search;
+      const looksLikeArticle = ARTICLE_PATH_PATTERNS.some((p) => p.test(path));
+      if (!looksLikeArticle && path === "/") continue;
+      if (path.length < 5) continue;
+      const href = resolved.href;
+      if (seen.has(href)) continue;
+      seen.add(href);
+      const text = el.text?.trim() || undefined;
+      results.push({ href, text });
+    } catch {
+      // Invalid URL, skip
+    }
+  }
+  return results;
+}
+
 export async function fetchCurated(
   pageUrl: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -46,7 +83,6 @@ export async function fetchCurated(
 
     const html = await res.text();
     const baseUrl = new URL(pageUrl);
-    await new Promise((r) => setImmediate(r)); // Yield before sync regex parse so event loop can serve other requests
     const links = extractArticleLinks(html, baseUrl);
     const limited = links.slice(0, MAX_LINKS);
 
@@ -82,32 +118,4 @@ export async function fetchCurated(
       error: isAbort ? "Fetch timed out (30s)" : msg,
     };
   }
-}
-
-function extractArticleLinks(
-  html: string,
-  baseUrl: URL,
-): Array<{ href: string; text?: string }> {
-  const results: Array<{ href: string; text?: string }> = [];
-  const hrefRe = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let m = hrefRe.exec(html);
-  while (m !== null) {
-    const rawHref = m[1];
-    const rawText = m[2].replace(/<[^>]+>/g, "").trim();
-    try {
-      const resolved = new URL(rawHref, baseUrl);
-      if (resolved.protocol !== "http:" && resolved.protocol !== "https:")
-        continue;
-      if (resolved.hostname !== baseUrl.hostname) continue;
-      const path = resolved.pathname + resolved.search;
-      const looksLikeArticle = ARTICLE_PATH_PATTERNS.some((p) => p.test(path));
-      if (!looksLikeArticle && path === "/") continue;
-      if (path.length < 5) continue;
-      results.push({ href: resolved.href, text: rawText || undefined });
-    } catch {
-      // Invalid URL, skip
-    }
-    m = hrefRe.exec(html);
-  }
-  return results;
 }

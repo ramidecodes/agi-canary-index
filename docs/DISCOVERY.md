@@ -15,7 +15,7 @@ The pipeline fetches from 3 active source types:
 
 1. **RSS** — Parse RSS/Atom feeds. Validated feeds include: METR blog, OpenAI News (`openai.com/news/rss.xml`), Anthropic News (`anthropic.com/news/feed_anthropic.xml`), DeepMind (`deepmind.com/blog/rss.xml`), arXiv cs.AI (`rss.arxiv.org/rss/cs.AI`), Google AI Blog (`research.google/blog/rss/`), LessWrong, Alignment Forum, Center for AI Safety.
 2. **Search** — Perplexity via OpenRouter (web search for AI-related content)
-3. **Curated** — HTML link extraction from lab pages (e.g., Stanford HAI, OECD AI, UK AISI, AI2 blog, Import AI). Note: Some curated pages may return 403 (e.g. OECD); use RSS where available.
+3. **Curated** — HTML link extraction from lab pages (e.g., Stanford HAI, OECD AI, UK AISI, AI2 blog, Import AI). Uses [node-html-parser](https://www.npmjs.com/package/node-html-parser) for fast, reliable DOM-based parsing (avoids regex backtracking and event-loop blocking). Note: Some curated pages may return 403 (e.g. OECD); use RSS where available.
 
 ### Data flow (Perplexity + Firecrawl)
 

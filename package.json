@@ -18,7 +18,10 @@
     "infra:secrets": "tsx scripts/infra-secrets.ts",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
-    "worker:deploy:prod": "wrangler deploy --env prod"
+    "worker:deploy:prod": "wrangler deploy --env prod",
+    "pipeline:discover:local": "tsx scripts/run-discovery-local.ts",
+    "pipeline:acquire:local": "tsx scripts/run-acquisition-local.ts",
+    "pipeline:signal:local": "tsx scripts/run-signal-local.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.980.0",
@@ -43,6 +46,7 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
+    "node-html-parser": "^7.0.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-svg-timeline": "^0.25.0",
