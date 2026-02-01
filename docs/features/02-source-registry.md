@@ -1,6 +1,6 @@
 # Source Registry & Management
 
-**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (16 Tier-0/Tier-1 + Discovery sources; upserts by name so re-running seed updates URLs and types). Auth via Clerk: `/admin` and `/api/admin` protected; sign-in at `/sign-in`. See [AUTH.md](../AUTH.md).
+**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (27 Tier-0/Tier-1 + Discovery sources; upserts by name so re-running seed updates URLs and types). Auth via Clerk: `/admin` and `/api/admin` protected; sign-in at `/sign-in`. See [AUTH.md](../AUTH.md).
 
 ## Goal
 
@@ -33,6 +33,14 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
    - arXiv cs.AI — RSS (`rss.arxiv.org/rss/cs.AI`)
    - Google AI Blog — RSS (`research.google/blog/rss/`)
    - AI2 (Allen Institute) — curated (`blog.allenai.org`)
+   - Berkeley BAIR Blog — RSS (UC Berkeley AI research; vision, robotics, foundational ML)
+   - MIT News - Artificial Intelligence — RSS (MIT AI breakthroughs)
+   - DeepLearning.AI - The Batch — curated (Andrew Ng’s weekly newsletter; expert commentary)
+   - Hugging Face Blog — RSS (open-source AI, models, datasets, practical research)
+   - AI Impacts — RSS (AI timelines, risks, forecasting; pairs with Epoch AI, ARC Prize)
+   - Microsoft AI Blog — RSS (research, applications, responsible AI)
+   - NVIDIA AI Blog — RSS (hardware-accelerated AI, new models, applied research)
+   - arXiv cs.LG — RSS (learning-specific papers; supplements cs.AI)
 
 2. **Pre-configured Tier-1 Sources**
 
@@ -40,6 +48,9 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
    - Alignment Forum
    - Import AI newsletter
    - Center for AI Safety
+   - Yoshua Bengio’s Blog — curated (safety and societal implications)
+   - Paul Christiano (Medium) — RSS (alignment, scalable oversight)
+   - MarkTechPost — RSS (paper summaries and trends)
 
 3. **Source Configuration**
 
@@ -121,7 +132,7 @@ Pre-populate sources table with the Tier-0/Tier-1/Discovery sources listed above
 
 ## Acceptance Criteria
 
-- [ ] Tier-0/Tier-1/Discovery sources seeded on deployment (16 in SEED_SOURCES; seed upserts by name)
+- [ ] Tier-0/Tier-1/Discovery sources seeded on deployment (27 in SEED_SOURCES; seed upserts by name)
 - [ ] Admin can add new sources with all configuration options
 - [ ] Test fetch validates source before saving
 - [ ] Sources auto-disable after 5 consecutive failures
