@@ -21,7 +21,8 @@
     "worker:deploy:prod": "wrangler deploy --env prod",
     "pipeline:discover:local": "tsx scripts/run-discovery-local.ts",
     "pipeline:acquire:local": "tsx scripts/run-acquisition-local.ts",
-    "pipeline:signal:local": "tsx scripts/run-signal-local.ts"
+    "pipeline:signal:local": "tsx scripts/run-signal-local.ts",
+    "pipeline:snapshot:local": "tsx scripts/run-snapshot-local.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.980.0",

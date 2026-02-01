@@ -1,6 +1,6 @@
 /**
  * Zod schemas for AI signal extraction output.
- * Used with generateObject() for structured capability claims.
+ * Used with generateText() + Output.object() (AI SDK v6) for structured capability claims.
  * @see docs/features/05-signal-processing.md
  */
 
@@ -41,6 +41,8 @@ export const axisImpactSchema = z.object({
     .number()
     .min(0)
     .max(1)
+    .optional()
+    .default(0.5)
     .describe("How confident in this assessment (0-1)"),
 });
 
@@ -66,7 +68,10 @@ export const benchmarkSchema = z
 /** Citation: quoted text and optional URL. */
 export const citationSchema = z.object({
   text: z.string().describe("Quoted statement or reference text"),
-  url: z.string().url().optional().describe("URL if present"),
+  url: z
+    .union([z.url(), z.literal("")])
+    .optional()
+    .describe("URL if present; omit or use empty string when none"),
 });
 
 /** Single extracted claim (one document can yield multiple). */
@@ -81,9 +86,11 @@ export const extractedClaimSchema = z.object({
     .array(axisImpactSchema)
     .min(1)
     .describe("At least one axis with direction, magnitude, uncertainty"),
-  benchmark: benchmarkSchema.describe(
-    "If a known benchmark is mentioned (ARC-AGI, SWE-bench, GPQA, MMMU, HELM, etc.), else null",
-  ),
+  benchmark: benchmarkSchema
+    .optional()
+    .describe(
+      "If a known benchmark is mentioned (ARC-AGI, SWE-bench, GPQA, MMMU, HELM, etc.), else null",
+    ),
   confidence: z
     .number()
     .min(0)

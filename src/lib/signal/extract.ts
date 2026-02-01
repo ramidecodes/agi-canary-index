@@ -1,10 +1,10 @@
 /**
  * AI-powered signal extraction from document content.
- * Uses AI SDK generateObject() with OpenRouter and Zod schema.
+ * Uses AI SDK v6 generateText() with Output.object() and OpenRouter.
  * @see docs/features/05-signal-processing.md
  */
 
-import { generateObject } from "ai";
+import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { SIGNAL_EXTRACTION_MODEL } from "@/lib/ai-models";
 import { signalExtractionSchema, type SignalExtraction } from "./schemas";
@@ -67,22 +67,33 @@ export async function extractSignals(
   const prompt = buildExtractionPrompt(markdownContent, ctx);
 
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model,
-      schema: signalExtractionSchema,
-      schemaName: "SignalExtraction",
-      schemaDescription:
-        "Structured capability claims extracted from a document about AI progress.",
+      output: Output.object({
+        schema: signalExtractionSchema,
+        name: "SignalExtraction",
+        description:
+          "Structured capability claims extracted from a document about AI progress.",
+      }),
       prompt,
       maxRetries: 1,
     });
 
-    const extraction = result.object;
+    const extraction = result.output;
     if (!extraction || !Array.isArray(extraction.claims)) {
       return { claims: [] };
     }
     return extraction;
-  } catch {
-    return { claims: [] };
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err)) {
+      console.error("[signal/extract] NoObjectGeneratedError:", {
+        cause: err.cause,
+        textPreview:
+          typeof err.text === "string" ? err.text.slice(0, 500) : err.text,
+        usage: err.usage,
+      });
+      return { claims: [] };
+    }
+    throw err;
   }
 }

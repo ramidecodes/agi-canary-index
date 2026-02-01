@@ -5,7 +5,7 @@ Implementation guide for the AI Signal Processing Pipeline (FRED: [05-signal-pro
 ## Overview
 
 1. **Document queue** — Process documents with status "acquired" (batch of 10; Tier-0 first).
-2. **AI extraction** — Fetch clean markdown from R2, call OpenRouter via AI SDK `generateObject()` with a Zod schema.
+2. **AI extraction** — Fetch clean markdown from R2, call OpenRouter via AI SDK v6 `generateText()` with `Output.object()` and a Zod schema.
 3. **Signal creation** — Map claims to `signals` table; adjust confidence by source `trust_weight`; filter below 0.3.
 4. **Mark processed** — Set `documents.processedAt` and `items.status = 'processed'`.
 5. **Daily snapshot** — Optional: aggregate signals for a date into `daily_snapshots` (axis scores).
@@ -53,7 +53,7 @@ Create or update the daily snapshot for a date. Requires Clerk auth.
 
 ### AI call (`src/lib/signal/extract.ts`)
 
-- Uses `createOpenRouter({ apiKey })` from `@openrouter/ai-sdk-provider` and `generateObject()` from `ai`.
+- Uses `createOpenRouter({ apiKey })` from `@openrouter/ai-sdk-provider` and `generateText()` with `Output.object()` from `ai` (AI SDK v6).
 - Model: `openrouter(SIGNAL_EXTRACTION_MODEL)` (e.g. `anthropic/claude-sonnet-4.5`).
 - On parse/validation failure or throw, returns `{ claims: [] }` (no retry with simpler prompt in current implementation; FRED allows one retry).
 
@@ -77,8 +77,21 @@ Create or update the daily snapshot for a date. Requires Clerk auth.
 2. **Process** (Vercel): call `POST /api/admin/pipeline/process` (optionally with `documentIds`). Repeats until no more acquired docs or use a scheduler.
 3. **Snapshot** (Vercel): call `POST /api/admin/pipeline/snapshot` with `{ date: "YYYY-MM-DD" }` after processing for that day.
 
+### Local pipeline flow
+
+For local development or manual runs:
+
+```bash
+pnpm pipeline:discover:local   # Step 1: discover items
+pnpm pipeline:acquire:local    # Step 2: acquire documents
+pnpm pipeline:signal:local     # Step 3: extract signals
+pnpm pipeline:snapshot:local   # Step 4: aggregate daily snapshot
+```
+
+Optional: `pnpm pipeline:snapshot:local -- --date=YYYY-MM-DD` to snapshot a specific date.
+
 ## References
 
-- [AI SDK generateObject](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-object)
+- [AI SDK v6 Generating Structured Data](https://v6.ai-sdk.dev/docs/ai-sdk-core/generating-structured-data)
 - [OpenRouter Vercel AI SDK](https://openrouter.ai/docs/community/vercel-ai-sdk)
 - [MODELS.md](MODELS.md) — Signal extraction model
