@@ -59,9 +59,13 @@ Pipeline scheduling uses **Cloudflare Cron** (in wrangler.jsonc), not Vercel. Se
 
 ### 2. Cloudflare Pipeline Infrastructure
 
-1. Run `pnpm run infra:provision --env dev` to create R2 bucket
-2. Run `pnpm run infra:secrets` to set DATABASE_URL, OPENROUTER_API_KEY, and FIRECRAWL_API_KEY
-3. Run `pnpm run infra:deploy --env dev` to deploy Workers
+Use `--env=dev|staging|prod` (with `--` so pnpm passes it to the script) or set `ENV`:
+
+1. Run `pnpm run infra:provision -- --env=dev` to create R2 bucket (idempotent)
+2. Run `pnpm run infra:secrets -- --env=dev` to set DATABASE_URL, OPENROUTER_API_KEY, and FIRECRAWL_API_KEY
+3. Run `pnpm run infra:deploy -- --env=dev` to deploy Workers
+
+Alternative: `ENV=prod pnpm run infra:deploy` (no `--` needed when using the `ENV` variable).
 
 ### 3. Vercel App
 
@@ -71,10 +75,12 @@ Pipeline scheduling uses **Cloudflare Cron** (in wrangler.jsonc), not Vercel. Se
 
 ## Scripts (from FRED 14)
 
-- `pnpm run infra:provision` — Create R2 bucket
-- `pnpm run infra:deploy` — Deploy Workers
-- `pnpm run infra:secrets` — Interactive secret setup
-- `pnpm run infra:teardown` — Remove resources (with confirmation)
+- `pnpm run infra:provision` — Create R2 bucket (idempotent; checks list first). Use `-- --env=dev|staging|prod` or `ENV=…`.
+- `pnpm run infra:deploy` — Deploy Workers. Use `-- --env=dev|staging|prod` or `ENV=…`.
+- `pnpm run infra:secrets` — Interactive secret setup. Use `-- --env=dev|staging|prod` or `ENV=…`.
+- `pnpm run infra:teardown` — Remove R2 bucket and Worker for env (with confirmation). Use `-- --env=dev|staging|prod` or `ENV=…`. Does not touch Neon or secrets.
+
+Scripts are tested on **macOS and Linux**. On Windows use WSL or run the TypeScript scripts with `tsx` and set `ENV` for env selection (bash deploy script may need Git Bash or WSL).
 
 ## Pipeline Flow
 
@@ -155,6 +161,16 @@ If no token is set, the endpoints are open (not recommended for production).
 - **Worker /discover or /acquire returns 401:** Set `DISCOVERY_TRIGGER_TOKEN` secret or remove token check
 - **Acquisition not triggered after discovery:** Set `ACQUISITION_WORKER_URL` in Worker env (wrangler secret or vars)
 - **Document content returns 503:** Set R2\_\* env vars in Vercel for S3 API; see [ACQUISITION.md](ACQUISITION.md)
+
+## CI Integration (e.g. GitHub Actions)
+
+Scripts are runnable in CI. Typical flow:
+
+1. **Provision** (once or per env): `ENV=prod pnpm run infra:provision` — creates R2 bucket only; idempotent.
+2. **Secrets**: Set `DATABASE_URL`, `OPENROUTER_API_KEY`, `FIRECRAWL_API_KEY` via repo/org secrets and run `wrangler secret put` in CI, or use `pnpm run infra:secrets` with non-interactive input (e.g. from env vars) if you add a CI mode.
+3. **Deploy**: `ENV=prod pnpm run infra:deploy` — uses `wrangler deploy --env prod` with secrets already set (from dashboard or previous step).
+
+Required CI secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (for wrangler). Optional: copy `.env.infra.example` to `.env.infra` and set values for scripted runs.
 
 ## References
 
