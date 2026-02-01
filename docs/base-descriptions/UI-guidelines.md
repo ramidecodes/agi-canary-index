@@ -198,7 +198,8 @@ Since you’re already deep in Next:
 • **shadcn/ui** — Component library; use for forms, tables, badges, admin UI
 • **next-themes** — Dark/light mode; default: dark (Instrumental Minimalism)
 • React Three Fiber (for radar / 3D subtle depth)
-• D3 + VisX (timelines, graphs)
+• **Recharts** — Line/area charts (axis history, autonomy history, confidence bands)
+• D3 + VisX (timelines, custom graphs, force-directed layout)
 • Zustand (time + filter state)
 • Tailwind v4 (design tokens via shadcn CSS variables)
 • Canvas / WebGL for noise + glow layers

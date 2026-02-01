@@ -209,7 +209,7 @@ As a researcher or journalist investigating AI progress, I want to explore detai
 **Technical:**
 
 - Next.js 16 App Router, React 19. App deployed to Vercel only.
-- D3/VisX for radar and line charts
-- React transition for radar morphing
-- SWR for data fetching with caching
-- URL state for shareable views (?date=2025-01-01&axis=reasoning)
+- **Radar:** Declarative SVG (same as home page); optional D3 scales/transitions for morphing.
+- **Line chart (axis detail modal):** **Recharts** (LineChart, AreaChart, Area, Line) for historical axis score with uncertainty band.
+- SWR for data fetching with caching.
+- URL state for shareable views (`?date=2025-01-01&axis=reasoning`).

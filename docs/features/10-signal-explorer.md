@@ -210,4 +210,4 @@ As a researcher or journalist verifying AGI Canary Watcher claims, I want to exp
 
 ## Future Enhancements
 
-- **Signal Graph Visualization:** Network graph with nodes (signals, benchmarks, sources, organizations) and edges (supports, contradicts, cites). Requires D3/VisX force-directed layout, Web Worker for large graphs. Defer until list view proves insufficient for audit workflows.
+- **Signal Graph Visualization:** Network graph with nodes (signals, benchmarks, sources, organizations) and edges (supports, contradicts, cites). Use **D3/VisX** for force-directed layout (Recharts does not provide graph viz); Web Worker for large graphs. Defer until list view proves insufficient for audit workflows.

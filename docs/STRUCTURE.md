@@ -32,6 +32,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 
 - `layout.tsx` — Root layout (ClerkProvider, ThemeProvider, Toaster)
 - `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
+- **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -57,6 +58,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`api/snapshot/`** — Public snapshot API
   - `latest/route.ts` — GET latest daily snapshot
   - `history/route.ts` — GET snapshot history (query: days)
+  - `[date]/route.ts` — GET snapshot for date (or nearest)
+  - `range/route.ts` — GET min/max snapshot dates
+- **`api/axis/[axis]/`** — Axis data for capability profile
+  - `history/route.ts` — GET axis history (query: days)
+  - `sources/route.ts` — GET sources contributing to axis
+- **`api/signals/route.ts`** — GET signals (query: axis, date, limit)
 - **`api/canaries/route.ts`** — GET canary definitions with status
 - **`api/timeline/recent/route.ts`** — GET recent timeline events
 - **`api/movement/today/route.ts`** — GET today's significant changes
@@ -69,11 +76,18 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`home/`** — Home page (Control Room) components
   - `home-page-client.tsx` — Client wrapper with SWR data fetching
   - `home-header.tsx`, `home-footer.tsx`
-  - `capability-radar.tsx` — D3 radar chart (9 axes)
+  - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page
   - `autonomy-thermometer.tsx`
   - `canary-strip.tsx` — Sticky canary indicators with popover
   - `todays-movement.tsx`, `timeline-preview.tsx`
-- **`ui/`** — shadcn components (button, card, popover, tooltip, etc.)
+- **`capabilities/`** — Capability Profile page components
+  - `capability-profile-client.tsx` — Client wrapper, SWR, URL state
+  - `time-scrubber.tsx` — Date slider + presets (shadcn Slider)
+  - `domain-breakdown.tsx` — Axis list, progress bars, sort
+  - `source-map-panel.tsx` — Sources for axis
+  - `axis-detail-modal.tsx` — Dialog with Recharts line/area chart
+  - `filter-toggles.tsx` — Benchmarks / claims / speculative (shadcn Checkbox)
+- **`ui/`** — shadcn components (button, card, dialog, slider, popover, tooltip, etc.)
 
 ### `src/lib/`
 
@@ -101,6 +115,9 @@ Shared code: DB, AI models, and future services.
 - **`home/`** — Home page types and Zustand store
   - `types.ts` — Snapshot, Canary, TimelineEvent, Movement
   - `store.ts` — useHomeStore (radar axis, canary hover, radar days)
+- **`capabilities/`** — Capability Profile state and types
+  - `store.ts` — useCapabilityProfileStore (selectedDate, activeAxis, filters, sortBy)
+  - `types.ts` — AxisHistoryPoint, AxisSourceEntry, SnapshotRange
 - **`signal/`** — AI signal processing pipeline (AI SDK v6 + OpenRouter)
   - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
   - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)
@@ -129,6 +146,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **ACQUISITION.md** — Acquisition pipeline implementation guide
 - **SIGNAL-PROCESSING.md** — Signal processing pipeline (AI extraction, snapshot)
 - **MODELS.md** — AI model IDs
+- **CAPABILITY-PROFILE.md** — Capability Profile page, APIs, Recharts usage
 - **STRUCTURE.md** — This file
 
 ## Scripts (from `package.json`)

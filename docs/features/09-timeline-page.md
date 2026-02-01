@@ -182,11 +182,11 @@ As a visitor interested in AI progress history, I want to explore a timeline of 
 **Technical:**
 
 - Next.js 16 App Router, React 19. App deployed to Vercel only.
-- D3 or VisX for timeline visualization
-- Virtual scrolling for performance
-- SWR for data fetching
-- URL state for shareable positions
-- Intersection Observer for lazy loading events
+- **Timeline:** Custom scroll + markers or D3/VisX (not a standard chart; no Recharts).
+- Virtual scrolling for performance.
+- SWR for data fetching.
+- URL state for shareable positions.
+- Intersection Observer for lazy loading events.
 
 ## Future Enhancements
 

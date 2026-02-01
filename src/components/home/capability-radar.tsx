@@ -27,6 +27,9 @@ interface CapabilityRadarProps {
   history: SnapshotHistoryEntry[];
   size?: number;
   className?: string;
+  /** When provided, use these instead of home store (e.g. capability profile page). */
+  selectedAxis?: string | null;
+  onAxisClick?: (axis: string) => void;
 }
 
 export function CapabilityRadar({
@@ -34,8 +37,19 @@ export function CapabilityRadar({
   history,
   size = 360,
   className = "",
+  selectedAxis: selectedAxisProp,
+  onAxisClick,
 }: CapabilityRadarProps) {
-  const { selectedRadarAxis, setSelectedRadarAxis } = useHomeStore();
+  const homeStore = useHomeStore();
+  const selectedRadarAxis =
+    selectedAxisProp !== undefined
+      ? selectedAxisProp
+      : homeStore.selectedRadarAxis;
+  const setSelectedRadarAxis = onAxisClick
+    ? (axis: string | null) => {
+        if (axis) onAxisClick(axis);
+      }
+    : homeStore.setSelectedRadarAxis;
 
   const { polygons, axisPoints, center } = useMemo(() => {
     const cx = size / 2;
@@ -58,7 +72,7 @@ export function CapabilityRadar({
     });
 
     const scoresToPolygon = (
-      scores: Record<string, { score?: number }>,
+      scores: Record<string, { score?: number }>
     ): string => {
       const pts = AXES.map((axis, i) => {
         const entry = scores[axis];
@@ -234,6 +248,45 @@ export function CapabilityRadar({
             const lx = center.x + labelR * Math.cos(angle);
             const ly = center.y + labelR * Math.sin(angle);
 
+            const labelContent = (
+              <text
+                x={lx}
+                y={ly}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="currentColor"
+                fillOpacity={isSelected ? 1 : 0.7}
+                fontSize={size > 400 ? "13" : "11"}
+                fontWeight={isSelected ? 600 : 400}
+                className="pointer-events-none select-none"
+              >
+                {label}
+              </text>
+            );
+
+            if (onAxisClick) {
+              return (
+                <g
+                  key={axis}
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer outline-none focus:ring-2 focus:ring-primary rounded"
+                  aria-label={`View ${label} details`}
+                  onMouseEnter={() => setSelectedRadarAxis(axis)}
+                  onMouseLeave={() => setSelectedRadarAxis(null)}
+                  onClick={() => onAxisClick(axis)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onAxisClick(axis);
+                    }
+                  }}
+                >
+                  {labelContent}
+                </g>
+              );
+            }
+
             return (
               <Link
                 key={axis}
@@ -242,19 +295,7 @@ export function CapabilityRadar({
                 onMouseEnter={() => setSelectedRadarAxis(axis)}
                 onMouseLeave={() => setSelectedRadarAxis(null)}
               >
-                <text
-                  x={lx}
-                  y={ly}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="currentColor"
-                  fillOpacity={isSelected ? 1 : 0.7}
-                  fontSize="11"
-                  fontWeight={isSelected ? 600 : 400}
-                  className="pointer-events-none select-none"
-                >
-                  {label}
-                </text>
+                {labelContent}
               </Link>
             );
           })}
