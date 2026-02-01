@@ -39,7 +39,7 @@ This document describes the AI models used in the AGI Canary Watcher and the rat
 3. **OpenRouter** — Single `OPENROUTER_API_KEY` for Perplexity, Grok, and Claude. No separate Perplexity API key.
 4. **127K context** — Sufficient for search queries and result synthesis.
 
-**Implementation:** Web discovery runs in the Cloudflare Discovery Worker. Uses OpenRouter chat completions with `perplexity/sonar`; responses include citations with URLs.
+**Implementation:** Web discovery runs in the Vercel pipeline. Uses OpenRouter chat completions with `perplexity/sonar`; responses include citations with URLs.
 
 **References:**
 

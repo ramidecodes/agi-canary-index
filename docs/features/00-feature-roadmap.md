@@ -2,22 +2,19 @@
 
 This document outlines the implementation order for all features. Each feature builds upon previous ones, ensuring progressive development.
 
-## Architecture: Hybrid Approach
+## Architecture
 
 - **App:** Next.js 16 on Vercel — UI, API routes, AI signal processing (AI SDK + OpenRouter)
-- **Pipeline:** Cloudflare Workers — Discovery, Acquisition, orchestration. Workers use Neon serverless driver and R2
+- **Pipeline:** Vercel — Discovery, Acquisition (Next.js API + Vercel Cron)
 
 ```mermaid
 flowchart TB
-    subgraph Cloudflare [Cloudflare Workers]
-        Cron[Cron Trigger]
-        Discovery[Discovery Worker]
-        Acquire[Acquisition Worker]
-    end
-
     subgraph Vercel [Vercel]
-        API[Next.js API Route]
+        Cron[Vercel Cron]
+        API[Next.js API]
         AI[AI SDK plus OpenRouter]
+        Discovery[Discovery]
+        Acquire[Acquisition]
     end
 
     subgraph Storage [Storage]
@@ -26,10 +23,9 @@ flowchart TB
     end
 
     Cron --> Discovery
-    Discovery -->|HTTP trigger| Acquire
+    Discovery --> Acquire
     Acquire -->|Fetch and Store| R2
     Acquire -->|Write metadata| Neon
-    Acquire -->|HTTP trigger| API
     API --> AI
     AI -->|Write signals| Neon
     Discovery -->|DATABASE_URL| Neon
@@ -47,7 +43,7 @@ Features that establish the core data structures, pipeline infrastructure, and c
 | 1.0   | Pipeline Infrastructure       | `13-pipeline-infrastructure.md`     | None         |
 | 1.1   | Database Schema & Core Models | `01-database-schema.md`             | None         |
 | 1.2   | Source Registry & Management  | `02-source-registry.md`             | 1.1          |
-| 1.3   | Cloudflare Infra Management   | `14-cloudflare-infra-management.md` | 1.0          |
+| 1.3   | R2 Infra Management           | `14-cloudflare-infra-management.md` | 1.0          |
 
 ### Phase 2: Data Pipeline
 
@@ -104,7 +100,7 @@ Phase 1: Foundation
           └───────────┬───────────────┘
                       │
           ┌───────────▼───────────┐
-          │  1.3 Cloudflare Infra │
+          │  1.3 R2 Infra         │
           │  Management           │
           └───────────────────────┘
                       │
@@ -156,7 +152,7 @@ Phase 5: Enhancement
 
 - Each FRED is self-contained with full requirements
 - **Authentication:** Admin features (Source Registry, manual pipeline trigger) use [Clerk](https://clerk.com/) — implemented; see [AUTH.md](AUTH.md).
-- App deploys to Vercel; pipeline deploys to Cloudflare (hybrid architecture)
+- App and pipeline deploy to Vercel
 - Features marked with the same phase number can potentially be developed in parallel
 - The UI features (Phase 3-4) can start with mock/seed data before the pipeline is complete
 - Consider implementing a basic version of 3.1 (Home Page) early to validate the design direction

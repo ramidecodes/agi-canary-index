@@ -13,7 +13,7 @@ Implementation guide for the AI Signal Processing Pipeline (FRED: [05-signal-pro
 ## Location
 
 - **App (Vercel):** `src/lib/signal/`, `src/app/api/admin/pipeline/process/`, `src/app/api/admin/pipeline/snapshot/`
-- **Runs in:** Next.js API routes (Node.js); not in Cloudflare Workers.
+- **Runs in:** Next.js API routes (Vercel).
 
 ## Environment (Vercel)
 
@@ -73,11 +73,9 @@ Create or update the daily snapshot for a date. Requires Clerk auth.
 
 ## Flow (manual or triggered)
 
-1. **Discovery** (Worker) → **Acquisition** (Worker) → documents and items in "acquired" state.
+1. **Discovery** (Vercel Cron) → **Acquisition** (same cron request) → documents and items in "acquired" state.
 2. **Process** (Vercel): call `POST /api/admin/pipeline/process` (optionally with `documentIds`). Repeats until no more acquired docs or use a scheduler.
 3. **Snapshot** (Vercel): call `POST /api/admin/pipeline/snapshot` with `{ date: "YYYY-MM-DD" }` after processing for that day.
-
-Triggering process from the Acquisition Worker (e.g. HTTP callback after acquire) is optional; see [00-feature-roadmap.md](features/00-feature-roadmap.md) (Acquire → API → AI).
 
 ## References
 

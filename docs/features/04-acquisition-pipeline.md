@@ -1,23 +1,21 @@
 # Content Acquisition Pipeline
 
-**Implemented:** Cloudflare Worker at `workers/pipeline/` (`POST /acquire`); acquisition lib at `src/lib/acquisition/`; document content at `GET /api/admin/documents/:id/content`; manual trigger at `POST /api/admin/pipeline/acquire` (proxies to Worker). Requires `FIRECRAWL_API_KEY` and R2 `DOCUMENTS` binding. See [docs/ACQUISITION.md](../ACQUISITION.md) for implementation guide.
+**Implemented:** Acquisition lib at `src/lib/acquisition/`; document content at `GET /api/admin/documents/[id]/content`; manual trigger at `POST /api/admin/pipeline/acquire`; cron runs acquisition after discovery. Requires `FIRECRAWL_API_KEY` and R2 (S3 API). See [docs/ACQUISITION.md](../ACQUISITION.md) for implementation guide.
 
 ## Implementation Details
 
-| Component           | Location                                            |
-| ------------------- | --------------------------------------------------- |
-| Worker route        | `workers/pipeline/index.ts` — `POST /acquire`       |
-| Orchestration       | `src/lib/acquisition/run.ts`                        |
+| Component           | Location                                      |
+| ------------------- | --------------------------------------------- |
+| Cron + manual       | `src/app/api/pipeline/cron/`, `api/admin/pipeline/acquire` |
+| Orchestration       | `src/lib/acquisition/run.ts`                  |
 | Firecrawl client    | `src/lib/acquisition/firecrawl.ts`                  |
 | Validation          | `src/lib/acquisition/validate.ts`                   |
 | Metadata extraction | `src/lib/acquisition/metadata.ts`                   |
 | Manual trigger API  | `src/app/api/admin/pipeline/acquire/route.ts`       |
 | Document content    | `src/app/api/admin/documents/[id]/content/route.ts` |
-| R2 client (app)     | `src/lib/r2.ts`                                     |
+| R2 client (app)     | `src/lib/r2.ts` (S3 API for R2)               |
 
 **Database:** `items` has `acquisition_attempt_count`, `acquisition_error`. Migration `0002_big_roxanne_simpson.sql`.
-
-**Wrangler:** `r2_buckets` binding `DOCUMENTS` for `agi-canary-documents-{env}`.
 
 ## Goal
 
@@ -94,24 +92,18 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 - `documents` - Create document records
 - `pipeline_runs` - Update processing counts
 
-**Cloudflare Bindings:**
+**Environment (Vercel):**
 
-- **Neon:** Use [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) with `DATABASE_URL` secret for reading items, updating status, writing documents. Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)`.
-- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "agi-canary-documents" }]`. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
+- **Neon:** Use `DATABASE_URL` in Vercel env; `drizzle-orm/neon-http` with `neon()`.
+- **R2:** Use S3-compatible API with `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 
 **External Services:**
 
 - Firecrawl API (content fetching and cleaning)
 
-**Environment Variables / Secrets:**
-
-- `DATABASE_URL` — Neon pooled connection string (via `wrangler secret put`); same as Discovery Worker
-- `FIRECRAWL_API_KEY` — Firecrawl authentication (via `wrangler secret put`)
-- No R2 credentials needed when using Worker binding
-
 **Execution Location:**
 
-- Runs as Cloudflare Worker, triggered by HTTP from Discovery Worker (MVP). Can alternatively run as Next.js API route on Vercel if desired.
+- Runs as Next.js API route on Vercel. Cron runs acquisition after discovery; manual trigger via Admin UI.
 
 **Batch Processing (MVP):**
 
@@ -122,7 +114,7 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 ### Automated Processing
 
 1. Discovery pipeline completes, items in "pending" status
-2. Acquisition worker picks up batch of 50 pending items
+2. Acquisition picks up batch of 50 pending items
 3. For each item:
    - Call Firecrawl scrape API with URL
    - On success:
@@ -239,11 +231,10 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 **Technical:**
 
-- Runs as Cloudflare Worker (recommended) or Vercel API route
+- Runs as Next.js API route on Vercel
 - Chunked processing to avoid timeout
 - Idempotent: re-running doesn't duplicate documents
 
 **References:**
 
-- [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/)
-- [Workers Queues](https://developers.cloudflare.com/queues/)
+- [Cloudflare R2](https://developers.cloudflare.com/r2/)

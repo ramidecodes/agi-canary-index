@@ -185,12 +185,11 @@ Events for the timeline visualization.
 - `daily_snapshots.date` for time-series queries
 - `timeline_events.date` for timeline rendering
 
-**Neon + Workers (Cloudflare Pipeline):**
+**Neon (Vercel):**
 
-- Pipeline Workers connect to Neon via [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) (`@neondatabase/serverless`)
-- Use `DATABASE_URL` secret (Neon pooled connection string) — same as Vercel app
-- Use `drizzle-orm/neon-http` with `neon()` for Drizzle in Workers
-- App (Vercel) and Workers both use `@neondatabase/serverless` with pooled connection
+- Pipeline and app connect to Neon via [Neon serverless driver](https://neon.tech/docs/guides/vercel) (`@neondatabase/serverless`)
+- Use `DATABASE_URL` (Neon pooled connection string) in Vercel env
+- Use `drizzle-orm/neon-http` with `neon()` for Drizzle
 
 ## User Flow
 
@@ -237,7 +236,7 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
 
 6. **Connection exhaustion / Neon cold start**
    - Expected behavior: Queries succeed after brief delay
-   - Handling strategy: Neon serverless driver handles HTTP-based connections; document cold-start behavior for Workers
+   - Handling strategy: Neon serverless driver handles HTTP-based connections; document cold-start behavior for serverless
 
 ## Non-Functional Requirements
 
@@ -266,4 +265,4 @@ N/A - This is an infrastructure feature. The schema is consumed by the pipeline 
 - Zod schemas for validation
 - Compatible with Neon Postgres serverless
 - Schema versioning via Drizzle migrations
-- **Drizzle + Neon Serverless (Workers):** Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)`; Drizzle supports Neon's serverless driver. See [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers).
+- **Drizzle + Neon Serverless:** Use `drizzle-orm/neon-http` with `neon()`; Drizzle supports Neon's serverless driver. See [Neon + Vercel](https://neon.tech/docs/guides/vercel).

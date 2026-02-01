@@ -1,12 +1,12 @@
 # Discovery Pipeline
 
-**Implemented:** Cloudflare Worker at `workers/pipeline/`; cron daily 6 AM UTC; manual trigger at `POST /api/admin/pipeline/discover`; discovery lib at `src/lib/discovery/` (AI SDK v6 + OpenRouter provider for web search). Run `pnpm worker:deploy` to deploy; set secrets via `pnpm infra:secrets`.
+**Implemented:** Vercel Cron at `/api/pipeline/cron` (daily 6 AM UTC); manual trigger at `POST /api/admin/pipeline/discover`; discovery lib at `src/lib/discovery/` (AI SDK v6 + OpenRouter provider for web search). See [docs/DISCOVERY.md](../DISCOVERY.md).
 
 ## Goal
 
 Build the first stage of the data pipeline that discovers new candidate URLs from configured sources. The discovery pipeline must:
 
-- Execute on a daily schedule via Cloudflare Worker Cron
+- Execute on a daily schedule via Vercel Cron
 - Aggregate URLs from RSS feeds, search APIs (Perplexity), and curated sources
 - Deduplicate against previously seen content
 - Produce a clean batch of candidate URLs for acquisition
@@ -21,7 +21,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 
 1. **Scheduled Execution**
 
-   - Run daily via Cloudflare Worker Cron trigger
+   - Run daily via Vercel Cron trigger
    - Configurable run time (default: 6 AM UTC)
    - Manual trigger option for testing
    - Skip if previous run still in progress
@@ -89,9 +89,10 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 - `pipeline_runs` - Create run record, track progress
 - `source_fetch_logs` - Log fetch attempts and results
 
-**Cloudflare Bindings:**
+**Environment (Vercel):**
 
-- **Neon:** Workers connect to Neon via [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) (`@neondatabase/serverless`). Use `DATABASE_URL` secret; set via `wrangler secret put DATABASE_URL`. Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)` for Drizzle.
+- **Neon:** Use `DATABASE_URL` in Vercel env; `drizzle-orm/neon-http` with `neon()` for Drizzle.
+- **Cron:** `vercel.json` defines `0 6 * * *` (6 AM UTC daily); `CRON_SECRET` for auth.
 
 **External Services:**
 
@@ -99,23 +100,17 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 - xAI Grok via OpenRouter (X/Twitter discovery, optional)
 - HTTP/RSS fetch (native)
 
-**Environment Variables / Secrets:**
+**Pipeline Orchestration:**
 
-- `OPENROUTER_API_KEY` - Used for Perplexity (web search) and Grok (X search). Single key for all AI.
-- Cron schedule in wrangler.jsonc `triggers.crons` (default: "0 6 \* \* \*")
-
-**Pipeline Orchestration (MVP):**
-
-- Discovery triggers Acquisition via HTTP call (simpler for daily batch). Use `fetch()` to call Acquisition Worker URL after discovery completes.
-- **Optional later:** Workers Queues for retry/durability at scale. Defer until HTTP proves insufficient.
+- Cron runs discovery then acquisition (same request) for first 50 inserted items.
 
 ## User Flow
 
 ### Automated Daily Run
 
-1. Cloudflare Worker Cron triggers at scheduled time
-2. Worker checks for in-progress runs, skips if found
-3. Worker creates new `pipeline_runs` record (status: running)
+1. Vercel Cron triggers `GET /api/pipeline/cron` at scheduled time
+2. Route checks for in-progress runs, skips if found
+3. Creates new `pipeline_runs` record (status: running)
 4. For each active source (in parallel batches of 5):
    - Based on source_type, execute appropriate fetch strategy
    - Update sources.last_success_at and error_count on success/failure
@@ -233,12 +228,12 @@ fetch("/api/admin/pipeline/discover", {
 
 **Technical:**
 
-- Cloudflare Worker for execution
+- Vercel Functions for execution
 - Uses Neon Postgres via Neon serverless driver (`DATABASE_URL`) for state
 - Idempotent operations where possible
-- **Worker limits:** Discovery runs in single invocation; stay under 5 min CPU. Use `limits.cpu_ms: 300000` in wrangler if needed. Parallel fetches: max 5 concurrent to avoid subrequest limits.
+- **Limits:** Discovery runs in single invocation; stay under 5 min (Vercel `maxDuration`). Parallel fetches: max 5 concurrent.
 
 **References:**
 
-- [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
-- [Neon + Cloudflare Workers](https://neon.tech/docs/guides/cloudflare-workers)
+- [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs)
+- [Neon + Vercel](https://neon.tech/docs/guides/vercel)

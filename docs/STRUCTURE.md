@@ -9,9 +9,8 @@ agi-canary-index/
 ├── drizzle/                 # Drizzle migrations and meta
 ├── docs/                     # Project documentation
 ├── public/                   # Static assets
-├── scripts/                  # Infra scripts (provision, deploy, secrets)
-├── workers/pipeline/         # Cloudflare Worker (Discovery + Acquisition)
-├── wrangler.jsonc            # Cloudflare Worker config (cron, env overrides)
+├── scripts/                  # Infra scripts (provision R2, teardown)
+├── vercel.json               # Vercel Cron (daily pipeline)
 ├── src/
 │   ├── app/                  # Next.js App Router
 │   ├── lib/                  # Shared libraries and services
@@ -56,11 +55,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `[id]/route.ts` — PATCH update
   - `test-fetch/route.ts` — POST test fetch (validate URL)
   - `bulk/route.ts` — POST bulk enable/disable/change tier
-- **`api/admin/pipeline/`** — Pipeline triggers
+- **`api/admin/pipeline/`** — Pipeline triggers (Clerk auth)
   - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`)
-  - `acquire/route.ts` — POST manual acquisition (proxies to Worker)
+  - `acquire/route.ts` — POST manual acquisition (Firecrawl + R2)
   - `process/route.ts` — POST signal processing (body: `{ documentIds?: string[] }`); AI extraction, signal creation
   - `snapshot/route.ts` — POST daily snapshot (body: `{ date?: string }`); aggregates signals for date
+- **`api/pipeline/cron/`** — Vercel Cron entry (Bearer CRON_SECRET); runs discover → acquire daily
 - **`api/admin/documents/[id]/content/`** — Document content
   - `route.ts` — GET markdown from R2
 - **`api/snapshot/`** — Public snapshot API
@@ -236,8 +236,5 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 | `pnpm db:push`         | Push schema (dev)              |
 | `pnpm db:studio`       | Drizzle Studio                 |
 | `pnpm db:seed`         | Run seed script                |
-| `pnpm worker:dev`      | Run pipeline Worker locally    |
-| `pnpm worker:deploy`   | Deploy pipeline to Cloudflare  |
 | `pnpm infra:provision` | Create R2 bucket               |
-| `pnpm infra:deploy`    | Deploy Workers                 |
-| `pnpm infra:secrets`   | Set wrangler secrets           |
+| `pnpm infra:teardown`  | Remove R2 bucket for env       |

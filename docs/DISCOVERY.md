@@ -1,12 +1,12 @@
 # Discovery Pipeline - Implementation Guide
 
-The Discovery Pipeline automatically finds relevant AI content from configured sources daily via Cloudflare Worker Cron triggers.
+The Discovery Pipeline automatically finds relevant AI content from configured sources daily via Vercel Cron.
 
 ## Architecture
 
-- **Cloudflare Worker** (`workers/pipeline/index.ts`) — Cron + HTTP handlers
+- **Vercel Cron** — Daily 6 AM UTC triggers `/api/pipeline/cron` (Bearer `CRON_SECRET`)
 - **Discovery Library** (`src/lib/discovery/`) — Fetch strategies (RSS, search, curated, X)
-- **Next.js API** (`/api/admin/pipeline/discover`) — Manual trigger for testing
+- **Next.js API** (`/api/admin/pipeline/discover`) — Manual trigger (Clerk auth)
 - **AI SDK v6** — Web search via OpenRouter provider (`@openrouter/ai-sdk-provider`)
 
 ## Discovery Sources
@@ -34,7 +34,7 @@ The AI categorizes results (`capability`, `agent_autonomy`, `infrastructure`, `p
 
 ### Automated (Daily Cron)
 
-1. **6 AM UTC**: Cloudflare Cron triggers Worker `scheduled()` handler
+1. **6 AM UTC**: Vercel Cron triggers `GET /api/pipeline/cron` with Bearer token
 2. **Check for in-progress runs**: Skip if a run is already executing
 3. **Create pipeline_run**: Insert with `status: running`
 4. **Fetch from sources** (parallel batches of 5):
@@ -44,7 +44,7 @@ The AI categorizes results (`capability`, `agent_autonomy`, `infrastructure`, `p
 5. **Deduplicate**: Check `items.url_hash` for URLs seen in last 30 days
 6. **Insert new items**: Write to `items` with `status: pending`
 7. **Update pipeline_run**: Set `status: completed`, write counts
-8. **(Optional) Trigger Acquisition**: HTTP call to Acquisition Worker if configured
+8. **Trigger Acquisition**: Same request runs acquisition for first 50 inserted items
 
 ### Manual Trigger (Admin)
 
@@ -86,17 +86,6 @@ Response:
 }
 ```
 
-**Via Worker HTTP (optional token-gated):**
-
-If `DISCOVERY_TRIGGER_TOKEN` is set:
-
-```bash
-curl -X POST https://agi-canary-pipeline.your-worker.workers.dev/discover \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-Returns same JSON stats as above.
-
 ## URL Canonicalization
 
 URLs are canonicalized before deduplication:
@@ -122,60 +111,38 @@ Hash: SHA-256 of canonical URL → `items.url_hash` for fast lookup.
 - **Auto-disable**: Sources with `error_count >= 5` are flagged (manual re-enable via admin)
 - **Partial success**: Pipeline completes if any source succeeds
 - **Timeouts**: RSS/curated (30s), search (60s), X (45s) with retries
+- **Run failures**: If discovery throws, pipeline run is marked `failed` with `error_log`
 
 ## Deployment
 
-### Initial Setup
+### Setup
 
-```bash
-# 1. Set secrets (interactive)
-pnpm infra:secrets
-# Prompts for: DATABASE_URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY
-
-# 2. Deploy Worker
-pnpm worker:deploy
-# Or: pnpm infra:deploy --env=dev
-
-# 3. Verify cron is active
-npx wrangler deployments list
-```
-
-### Testing Locally
-
-```bash
-# Test with wrangler dev (simulates cron)
-pnpm worker:dev --test-scheduled
-
-# In another terminal, trigger:
-curl "http://localhost:8787/__scheduled?cron=0+6+*+*+*"
-```
+1. Set environment variables in Vercel (see [INFRASTRUCTURE.md](INFRASTRUCTURE.md))
+2. Set `CRON_SECRET` for Vercel Cron auth
+3. Deploy to Vercel — cron activates automatically
 
 ### Verify Cron
 
-After deploy, check Cloudflare dashboard:
-
-- Workers & Pages → agi-canary-pipeline → Triggers
-- Cron should show: `0 6 * * *` (daily 6 AM UTC)
-- Past Events table shows execution history
+In Vercel dashboard → Project → Cron Jobs: `0 6 * * *` (daily 6 AM UTC)
 
 ## Observability
 
-- **Cloudflare Logs**: `wrangler tail` for live logs
+- **Vercel Logs**: Function logs for `/api/pipeline/cron`
 - **Database**: Query `pipeline_runs` and `source_fetch_logs` for history
 - **Metrics**: `items_discovered`, `sources_succeeded`, `sources_failed`, `duration_ms`
 
 ## Limits
 
-- **CPU time**: 5 minutes (300,000ms) per invocation
-- **Concurrent fetches**: 5 per batch (avoids subrequest limits)
+- **Function duration**: 5 minutes (Vercel `maxDuration`)
+- **Concurrent fetches**: 5 per batch
 - **Max items per RSS**: 500 (sorted by date, newest first)
 
 ## Troubleshooting
 
 | Issue                         | Solution                                                                                         |
 | ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| Worker times out              | Check source fetch times; reduce concurrency or disable slow sources                             |
-| "DATABASE_URL not set"        | Run `pnpm infra:secrets` or `wrangler secret put DATABASE_URL`                                   |
+| Function times out            | Check source fetch times; reduce concurrency or disable slow sources                             |
+| "DATABASE_URL not set"        | Set env vars in Vercel project settings                                                          |
 | Perplexity returns no results | Check OPENROUTER_API_KEY; verify quota on [openrouter.ai/credits](https://openrouter.ai/credits) |
 | Duplicate URLs inserted       | Check `items.url` unique constraint; canonicalization may differ                                 |
 | Source stuck in "red" health  | Reset `error_count` via admin or re-test fetch                                                   |

@@ -1,6 +1,6 @@
 Here’s a clean, production-friendly stack + pipeline that fits your constraints (Next.js on Vercel + AI SDK, Neon Postgres, R2, daily scraping, news section) and avoids the usual scraping pain.
 
-I’ll give you: 1. Recommended architecture 2. Scraping → processing → storage pipeline 3. Where Perplexity vs Firecrawl vs Grok fit 4. Concrete TypeScript skeletons (Vercel cron + Cloudflare Worker cron) 5. DB + storage model (minimal but extensible)
+I’ll give you: 1. Recommended architecture 2. Scraping → processing → storage pipeline 3. Where Perplexity vs Firecrawl vs Grok fit 4. Concrete TypeScript skeletons (Vercel cron) 5. DB + storage model (minimal but extensible)
 
 ⸻
 

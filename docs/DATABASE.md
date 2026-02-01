@@ -6,7 +6,7 @@ Database schema, migrations, and usage. Schema is defined in code (Drizzle ORM) 
 
 - **ORM:** Drizzle ORM
 - **Database:** Neon Postgres (serverless)
-- **Driver:** `@neondatabase/serverless` (HTTP; used by Vercel app and Cloudflare Workers)
+- **Driver:** `@neondatabase/serverless` (HTTP; used by Vercel app)
 - **Validation:** Zod (see `src/lib/db/validators.ts`)
 
 ## Schema Overview
@@ -55,12 +55,6 @@ const db = getDb();
 const runs = await db.select().from(pipelineRuns).limit(10);
 ```
 
-In **Cloudflare Workers**, pass the connection string from the request context:
-
-```ts
-import { createDb } from "@/lib/db";
-const db = createDb(env.DATABASE_URL);
-```
 
 ## Migrations
 
@@ -89,7 +83,7 @@ Seeds: canary definitions (e.g. arc_agi, long_horizon, safety_canary), 15 Tier-0
 
 ## RLS (Row-Level Security)
 
-All tables have RLS enabled with a permissive policy for `public` (allow all) so the app and Workers can read/write. Clerk is implemented for admin UI/API; route protection is via middleware and `requireAuth()` in handlers. RLS can be tightened later (e.g. restrict admin-only tables to authenticated roles) if needed.
+All tables have RLS enabled with a permissive policy for `public` (allow all) so the app can read/write. Clerk is implemented for admin UI/API; route protection is via middleware and `requireAuth()` in handlers. RLS can be tightened later (e.g. restrict admin-only tables to authenticated roles) if needed.
 
 ## Capability Axes (reference)
 

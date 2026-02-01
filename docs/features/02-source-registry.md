@@ -191,4 +191,4 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 - Server-side source management (no client-side secrets)
 - Optimistic UI updates with rollback on failure
 - Status via manual refresh or on page load (avoid aggressive polling)
-- Admin runs on Vercel; uses `DATABASE_URL` (Neon pooled) for database access. Pipeline secrets (OPENROUTER_API_KEY, FIRECRAWL_API_KEY) live on Cloudflare Workers; app secrets on Vercel.
+- Admin runs on Vercel; uses `DATABASE_URL` (Neon pooled) for database access. Pipeline and app share env vars (OPENROUTER_API_KEY, FIRECRAWL_API_KEY) in Vercel.

@@ -95,7 +95,7 @@ As the AGI Canary Watcher system, I want to extract structured capability signal
 
 **Execution Location:**
 
-- **Runs on Vercel** (Next.js API route). AI SDK runs natively in Node.js. Triggered by HTTP from Acquisition Worker or by Queue message. Workers have `nodejs_compat` but AI SDK + generateObject may have edge cases; Vercel is recommended for reliability.
+- **Runs on Vercel** (Next.js API route). AI SDK runs natively in Node.js. Triggered manually from Admin UI or by external scheduler.
 
 **Environment Variables (Vercel):**
 
@@ -149,7 +149,7 @@ const { object } = await generateObject({
 ### Automated Processing
 
 1. Acquisition pipeline completes, documents ready
-2. Signal processing (Vercel API route) picks up batch of 10 documents (triggered by Worker HTTP or Queue)
+2. Signal processing (Vercel API route) picks up batch of 10 documents (triggered manually from Admin UI)
 3. For each document:
    - Fetch clean markdown from R2
    - Construct AI prompt with document + metadata
