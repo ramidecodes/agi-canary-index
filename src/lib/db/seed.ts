@@ -66,6 +66,70 @@ async function seed() {
       displayOrder: 2,
       isActive: true,
     },
+    // Risk canaries for Autonomy & Risk page (08-autonomy-risk.md)
+    // long_horizon already defined above; risk page also includes it via axes_watched
+    {
+      id: "self_improvement",
+      name: "Recursive self-improvement",
+      description:
+        "Signals suggesting improved ability to modify own code or improve capabilities autonomously.",
+      axesWatched: ["learning_efficiency", "tool_use"],
+      thresholds: {
+        green: "none observed",
+        yellow: "early signals",
+        red: "concerning",
+      },
+      displayOrder: 11,
+      isActive: true,
+    },
+    {
+      id: "economic_impact",
+      name: "Economic displacement",
+      description:
+        "Indicators of AI capability to displace human labor in knowledge work.",
+      axesWatched: ["reasoning", "tool_use"],
+      thresholds: { green: "contained", yellow: "partial", red: "significant" },
+      displayOrder: 12,
+      isActive: true,
+    },
+    {
+      id: "alignment_coverage",
+      name: "Alignment eval coverage",
+      description:
+        "How well current autonomy levels are being evaluated for safety and alignment.",
+      axesWatched: ["alignment_safety"],
+      thresholds: {
+        green: "well-tested",
+        yellow: "partial coverage",
+        red: "gaps",
+      },
+      displayOrder: 13,
+      isActive: true,
+    },
+    {
+      id: "deception",
+      name: "Deception detection",
+      description:
+        "Capability to detect deception and manipulation in model outputs.",
+      axesWatched: ["social_cognition", "alignment_safety"],
+      thresholds: { green: "robust", yellow: "partial", red: "weak" },
+      displayOrder: 14,
+      isActive: true,
+    },
+    {
+      id: "tool_creation",
+      name: "Tool creation capability",
+      description:
+        "Ability to create new tools, code, and extensions autonomously.",
+      axesWatched: ["tool_use", "reasoning"],
+      thresholds: {
+        green: "controlled",
+        yellow: "emerging",
+        red: "autonomous",
+      },
+      displayOrder: 15,
+      isActive: true,
+    },
   ];
 
   for (const c of canaries) {

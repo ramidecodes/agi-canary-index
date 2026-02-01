@@ -14,7 +14,7 @@ interface TimeScrubberProps {
 }
 
 function formatDateLabel(d: string): string {
-  const date = new Date(d + "T12:00:00");
+  const date = new Date(`${d}T12:00:00`);
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -24,8 +24,8 @@ function formatDateLabel(d: string): string {
 
 function daysAgo(d: string): number {
   const today = new Date().toISOString().slice(0, 10);
-  const a = new Date(d + "T12:00:00").getTime();
-  const b = new Date(today + "T12:00:00").getTime();
+  const a = new Date(`${d}T12:00:00`).getTime();
+  const b = new Date(`${today}T12:00:00`).getTime();
   return Math.round((b - a) / (24 * 60 * 60 * 1000));
 }
 
@@ -50,8 +50,8 @@ export function TimeScrubber({
       ? daysAgo(displayDate) === 0
         ? "Today"
         : daysAgo(displayDate) === 1
-        ? "1 day ago"
-        : `${daysAgo(displayDate)} days ago`
+          ? "1 day ago"
+          : `${daysAgo(displayDate)} days ago`
       : "";
 
   const handleSliderChange = useCallback(
@@ -61,7 +61,7 @@ export function TimeScrubber({
         i >= 0 && i < availableDates.length ? availableDates[i] : null;
       if (date) onDateChange(date);
     },
-    [availableDates, onDateChange]
+    [availableDates, onDateChange],
   );
 
   const handlePreset = useCallback(
@@ -85,11 +85,11 @@ export function TimeScrubber({
         Math.abs(new Date(curr).getTime() - target.getTime()) <
         Math.abs(new Date(prev).getTime() - target.getTime())
           ? curr
-          : prev
+          : prev,
       );
       onDateChange(closest);
     },
-    [availableDates, onDateChange]
+    [availableDates, onDateChange],
   );
 
   if (availableDates.length === 0) {

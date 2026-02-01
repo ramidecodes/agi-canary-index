@@ -46,7 +46,7 @@ export function AxisDetailModal({
   history,
   description,
 }: AxisDetailModalProps) {
-  const label = axis ? AXIS_LABELS[axis] ?? axis : "";
+  const label = axis ? (AXIS_LABELS[axis] ?? axis) : "";
 
   const chartData = history.map((p) => {
     const low = Math.round(((p.low + 1) / 2) * 100);
@@ -94,7 +94,7 @@ export function AxisDetailModal({
                       dataKey="date"
                       tick={{ fontSize: 11 }}
                       tickFormatter={(v) => {
-                        const d = new Date(v + "T12:00:00");
+                        const d = new Date(`${v}T12:00:00`);
                         return d.toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -116,7 +116,7 @@ export function AxisDetailModal({
                           <div className="rounded-lg border bg-background p-2 text-sm shadow">
                             <p className="font-medium">
                               {new Date(
-                                p.date + "T12:00:00"
+                                `${p.date}T12:00:00`,
                               ).toLocaleDateString()}
                             </p>
                             <p>Score: {p.scorePct}%</p>

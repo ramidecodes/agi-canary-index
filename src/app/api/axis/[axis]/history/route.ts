@@ -18,21 +18,21 @@ function isValidAxis(axis: string): boolean {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ axis: string }> }
+  { params }: { params: Promise<{ axis: string }> },
 ) {
   try {
     const { axis } = await params;
     if (!isValidAxis(axis)) {
       return NextResponse.json(
         { error: `Invalid axis. Must be one of: ${AXES.join(", ")}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { searchParams } = new URL(request.url);
     const days = Math.min(
       Number.parseInt(searchParams.get("days") ?? "90", 10),
-      365
+      365,
     );
 
     const cutoff = new Date();
@@ -74,7 +74,7 @@ export async function GET(
     console.error("[api/axis/[axis]/history]", err);
     return NextResponse.json(
       { error: "Failed to fetch axis history" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

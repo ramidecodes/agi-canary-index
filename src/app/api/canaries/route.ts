@@ -55,9 +55,21 @@ function deriveCanaryStatus(
   return { status: "gray" };
 }
 
+/** Risk-related canary IDs for autonomy page filter. */
+const RISK_CANARY_IDS = new Set([
+  "long_horizon",
+  "self_improvement",
+  "economic_impact",
+  "alignment_coverage",
+  "deception",
+  "tool_creation",
+]);
+
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const typeFilter = searchParams.get("type");
   try {
     const db = getDb();
 
@@ -67,11 +79,15 @@ export async function GET() {
       .orderBy(desc(dailySnapshots.date))
       .limit(1);
 
-    const definitions = await db
+    let definitions = await db
       .select()
       .from(canaryDefinitions)
       .where(eq(canaryDefinitions.isActive, true))
       .orderBy(asc(canaryDefinitions.displayOrder));
+
+    if (typeFilter === "risk") {
+      definitions = definitions.filter((d) => RISK_CANARY_IDS.has(d.id));
+    }
 
     const axisScores = latest?.axisScores ?? null;
     const canaryStatuses = latest?.canaryStatuses ?? null;

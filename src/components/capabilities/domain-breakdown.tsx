@@ -108,15 +108,15 @@ export function DomainBreakdown({
             row.delta > 0
               ? `+${row.delta.toFixed(2)} ↑`
               : row.delta < 0
-              ? `${row.delta.toFixed(2)} ↓`
-              : "→";
+                ? `${row.delta.toFixed(2)} ↓`
+                : "→";
           return (
             <div
               key={row.axis}
               id={`axis-${row.axis}`}
               className={cn(
                 "rounded-lg border p-3 transition-colors",
-                isActive ? "border-primary bg-muted/50" : "border-border"
+                isActive ? "border-primary bg-muted/50" : "border-border",
               )}
             >
               <div className="flex items-center justify-between gap-2 mb-1">
@@ -131,7 +131,7 @@ export function DomainBreakdown({
                     className={cn(
                       "text-xs font-medium",
                       row.delta > 0 && "text-green-600",
-                      row.delta < 0 && "text-red-600"
+                      row.delta < 0 && "text-red-600",
                     )}
                   >
                     {deltaLabel}

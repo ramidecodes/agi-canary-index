@@ -9,6 +9,18 @@ export function HomeFooter() {
         className="flex flex-wrap gap-4 justify-center text-sm text-muted-foreground"
         aria-label="Footer navigation"
       >
+        <Link
+          href="/capabilities"
+          className="hover:text-foreground transition-colors"
+        >
+          Capabilities
+        </Link>
+        <Link
+          href="/autonomy"
+          className="hover:text-foreground transition-colors"
+        >
+          Autonomy & Risk
+        </Link>
         <Link href="/about" className="hover:text-foreground transition-colors">
           About
         </Link>

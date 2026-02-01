@@ -15,14 +15,14 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ date: string }> }
+  { params }: { params: Promise<{ date: string }> },
 ) {
   try {
     const { date: dateParam } = await params;
     if (!DATE_REGEX.test(dateParam)) {
       return NextResponse.json(
         { error: "Invalid date format. Use YYYY-MM-DD." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,13 +107,13 @@ export async function GET(
 
     return NextResponse.json(
       { snapshot: null, message: "No snapshots available", resolvedDate: null },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     console.error("[api/snapshot/[date]]", err);
     return NextResponse.json(
       { error: "Failed to fetch snapshot" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

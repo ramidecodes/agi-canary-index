@@ -33,6 +33,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - `layout.tsx` — Root layout (ClerkProvider, ThemeProvider, Toaster)
 - `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
 - **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
+- **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -64,7 +65,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `history/route.ts` — GET axis history (query: days)
   - `sources/route.ts` — GET sources contributing to axis
 - **`api/signals/route.ts`** — GET signals (query: axis, date, limit)
-- **`api/canaries/route.ts`** — GET canary definitions with status
+- **`api/signals/recent/route.ts`** — GET recent signals for autonomy axes (query: axes, limit)
+- **`api/canaries/route.ts`** — GET canary definitions with status (query: type=risk for risk canaries only)
+- **`api/autonomy/`** — Autonomy & Risk APIs
+  - `current/route.ts` — GET current autonomy level and uncertainty
+  - `history/route.ts` — GET historical autonomy levels (query: days)
+  - `coverage/route.ts` — GET evaluation coverage metrics
 - **`api/timeline/recent/route.ts`** — GET recent timeline events
 - **`api/movement/today/route.ts`** — GET today's significant changes
 - **`api/stats/route.ts`** — GET public stats (source count)
@@ -87,7 +93,15 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `source-map-panel.tsx` — Sources for axis
   - `axis-detail-modal.tsx` — Dialog with Recharts line/area chart
   - `filter-toggles.tsx` — Benchmarks / claims / speculative (shadcn Checkbox)
-- **`ui/`** — shadcn components (button, card, dialog, slider, popover, tooltip, etc.)
+- **`autonomy/`** — Autonomy & Risk page components
+  - `autonomy-page-client.tsx` — Client wrapper with SWR data fetching
+  - `autonomy-gauge.tsx` — Vertical autonomy scale (custom SVG)
+  - `risk-canaries-panel.tsx` — Risk canaries with expandable details
+  - `trigger-log.tsx` — Recent signals affecting autonomy
+  - `evaluation-coverage-meter.tsx` — Eval coverage breakdown
+  - `historical-autonomy-chart.tsx` — Recharts line/area chart
+  - `interpretation-guide.tsx` — Collapsible guide
+- **`ui/`** — shadcn components (button, card, dialog, slider, popover, tooltip, collapsible, etc.)
 
 ### `src/lib/`
 
@@ -147,6 +161,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **SIGNAL-PROCESSING.md** — Signal processing pipeline (AI extraction, snapshot)
 - **MODELS.md** — AI model IDs
 - **CAPABILITY-PROFILE.md** — Capability Profile page, APIs, Recharts usage
+- **AUTONOMY-RISK.md** — Autonomy & Risk page, APIs, Recharts vs D3 evaluation
 - **STRUCTURE.md** — This file
 
 ## Scripts (from `package.json`)

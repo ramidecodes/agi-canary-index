@@ -31,7 +31,7 @@ export function CapabilityProfileClient() {
   const [sourceMapAxis, setSourceMapAxis] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const { data: rangeData } = useSWR<{
+  const { data: _rangeData } = useSWR<{
     minDate: string | null;
     maxDate: string | null;
   }>("/api/snapshot/range", fetcher, { revalidateOnFocus: false });
@@ -39,7 +39,7 @@ export function CapabilityProfileClient() {
   const { data: historyData } = useSWR<{ history: SnapshotHistoryEntry[] }>(
     "/api/snapshot/history?days=365",
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const availableDates = useMemo(() => {
@@ -83,7 +83,7 @@ export function CapabilityProfileClient() {
       ? `/api/axis/${sourceMapAxis}/sources?limit=20`
       : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function CapabilityProfileClient() {
       url.searchParams.set("date", date);
       window.history.replaceState({}, "", url.pathname + url.search);
     },
-    [setSelectedDate]
+    [setSelectedDate],
   );
 
   const handleAxisClick = useCallback(
@@ -116,7 +116,7 @@ export function CapabilityProfileClient() {
         .getElementById(`axis-${axis}`)
         ?.scrollIntoView({ behavior: "smooth" });
     },
-    [setActiveAxis]
+    [setActiveAxis],
   );
 
   const snapshot = snapshotData?.snapshot ?? null;
@@ -135,7 +135,7 @@ export function CapabilityProfileClient() {
       setActiveAxis(axis);
       setShowSourceMap(true);
     },
-    [setActiveAxis]
+    [setActiveAxis],
   );
 
   const handleViewDetails = useCallback(
@@ -143,7 +143,7 @@ export function CapabilityProfileClient() {
       setActiveAxis(axis);
       setModalOpen(true);
     },
-    [setActiveAxis]
+    [setActiveAxis],
   );
 
   const axisSourcesForPanel = sourceMapSourcesData?.sources ?? [];

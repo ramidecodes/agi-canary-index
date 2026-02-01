@@ -239,8 +239,14 @@ As a safety researcher or policymaker, I want to monitor autonomy and risk-relat
 **Technical:**
 
 - Next.js 16 App Router, React 19. App deployed to Vercel only.
-- **Gauge:** Custom SVG or D3 (vertical autonomy scale).
-- **Historical autonomy chart:** **Recharts** (LineChart, Area for confidence bands).
+- **Gauge:** Custom SVG (vertical autonomy scale). See evaluation below for Recharts vs D3.
+- **Historical autonomy chart:** **Recharts** (AreaChart with Area for confidence bands).
 - SWR for data fetching.
-- Zustand for expansion state.
+- Collapsible for canary expansion and interpretation guide.
 - URL params for shareable state.
+
+**Recharts vs D3 for the Gauge (Evaluation):**
+
+- **Recharts RadialBarChart** creates arc/semi-circular gauges (speedometer-style), not vertical linear scales with 5 discrete levels. Forcing a vertical gauge from RadialBarChart would require hacks and non-idiomatic usage.
+- **D3** excels at bespoke visualizations but requires refs + useEffect (imperative) when used with React. The capability-radar already uses pure SVG without D3, proving complex visualizations work declaratively.
+- **Recommendation:** Use **custom SVG for the gauge** (like capability-radar). Use **Recharts for all charts** (historical autonomy, axis detail). D3 is not needed for this project; remove it if unused elsewhere.

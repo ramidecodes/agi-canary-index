@@ -11,7 +11,7 @@ import { dailySnapshots } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const db = getDb();
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     console.error("[api/snapshot/range]", err);
     return NextResponse.json(
       { error: "Failed to fetch snapshot range" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

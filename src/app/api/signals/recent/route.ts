@@ -1,11 +1,11 @@
 /**
- * GET /api/signals?axis=X&date=Y&limit=50
- * Returns signals for a specific axis and optional date (snapshot date).
- * @see docs/features/07-capability-profile.md
+ * GET /api/signals/recent?axes=tool_use,planning,alignment_safety&limit=20
+ * Returns recent signals affecting autonomy-related axes (for trigger log).
+ * @see docs/features/08-autonomy-risk.md
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import {
   dailySnapshots,
@@ -14,44 +14,46 @@ import {
   signals,
   sources,
 } from "@/lib/db/schema";
-import { AXES } from "@/lib/signal/schemas";
+
+const AUTONOMY_AXES = ["tool_use", "planning", "alignment_safety"] as const;
 
 export const dynamic = "force-dynamic";
-
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-
-function isValidAxis(axis: string): boolean {
-  return AXES.includes(axis as (typeof AXES)[number]);
-}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const axisParam = searchParams.get("axis");
-    const dateParam = searchParams.get("date");
+    const axesParam = searchParams.get("axes");
     const limit = Math.min(
-      Number.parseInt(searchParams.get("limit") ?? "50", 10),
-      100,
+      Number.parseInt(searchParams.get("limit") ?? "20", 10),
+      50,
     );
 
-    if (!axisParam || !isValidAxis(axisParam)) {
+    const axes = axesParam
+      ? axesParam
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => (AUTONOMY_AXES as readonly string[]).includes(a))
+      : [...AUTONOMY_AXES];
+
+    if (axes.length === 0) {
       return NextResponse.json(
-        { error: `axis is required and must be one of: ${AXES.join(", ")}` },
+        {
+          error: `axes must include at least one of: ${AUTONOMY_AXES.join(
+            ", ",
+          )}`,
+        },
         { status: 400 },
       );
     }
 
     const db = getDb();
 
-    let signalIds: string[] | null = null;
-    if (dateParam && DATE_REGEX.test(dateParam)) {
-      const [snap] = await db
-        .select({ signalIds: dailySnapshots.signalIds })
-        .from(dailySnapshots)
-        .where(eq(dailySnapshots.date, dateParam))
-        .limit(1);
-      signalIds = snap?.signalIds ?? null;
-    }
+    const [latest] = await db
+      .select({ signalIds: dailySnapshots.signalIds })
+      .from(dailySnapshots)
+      .orderBy(desc(dailySnapshots.date))
+      .limit(1);
+    const signalIds = latest?.signalIds ?? null;
 
     const allSignals = await db
       .select({
@@ -64,11 +66,11 @@ export async function GET(request: NextRequest) {
       })
       .from(signals)
       .orderBy(desc(signals.createdAt))
-      .limit(signalIds ? signalIds.length + 100 : 500);
+      .limit(signalIds ? signalIds.length + 100 : 300);
 
     const filtered = allSignals.filter((s) => {
       const impacted = s.axesImpacted as Array<{ axis: string }> | null;
-      const matchesAxis = impacted?.some((a) => a.axis === axisParam) ?? false;
+      const matchesAxis = impacted?.some((a) => axes.includes(a.axis)) ?? false;
       if (signalIds && signalIds.length > 0) {
         return matchesAxis && signalIds.includes(s.id);
       }
@@ -80,27 +82,22 @@ export async function GET(request: NextRequest) {
 
     if (docIds.length === 0) {
       return NextResponse.json({
-        signals: slice.map((sig) => {
+        triggers: slice.map((sig) => {
           const impact = (
-            sig.axesImpacted as Array<{
-              axis: string;
-              magnitude: number;
-              uncertainty?: number;
-            }>
-          )?.find((a) => a.axis === axisParam);
+            sig.axesImpacted as Array<{ axis: string; magnitude?: number }>
+          )?.filter((a) => axes.includes(a.axis));
           return {
             signalId: sig.id,
             claimSummary: sig.claimSummary,
             confidence: Number(sig.confidence),
-            magnitude: impact?.magnitude,
-            uncertainty: impact?.uncertainty,
+            axesAffected: impact?.map((i) => i.axis) ?? [],
             createdAt:
               sig.createdAt instanceof Date
                 ? sig.createdAt.toISOString()
                 : String(sig.createdAt ?? null),
-            title: null,
-            url: null,
             sourceName: null,
+            sourceUrl: null,
+            documentUrl: null,
           };
         }),
       });
@@ -128,6 +125,7 @@ export async function GET(request: NextRequest) {
     const sourceIds = [
       ...new Set(itemRows.map((i) => i.sourceId).filter(Boolean)),
     ] as string[];
+
     const sourceRows =
       sourceIds.length > 0
         ? await db
@@ -137,38 +135,33 @@ export async function GET(request: NextRequest) {
         : [];
     const sourceMap = new Map(sourceRows.map((s) => [s.id, s]));
 
-    const signalsOut = slice.map((sig) => {
+    const triggers = slice.map((sig) => {
       const doc = docMap.get(sig.documentId);
       const item = doc ? itemMap.get(doc.itemId) : undefined;
       const src = item ? sourceMap.get(item.sourceId) : undefined;
       const impact = (
-        sig.axesImpacted as Array<{
-          axis: string;
-          magnitude: number;
-          uncertainty?: number;
-        }>
-      )?.find((a) => a.axis === axisParam);
+        sig.axesImpacted as Array<{ axis: string; magnitude?: number }>
+      )?.filter((a) => axes.includes(a.axis));
       return {
         signalId: sig.id,
         claimSummary: sig.claimSummary,
         confidence: Number(sig.confidence),
-        magnitude: impact?.magnitude,
-        uncertainty: impact?.uncertainty,
+        axesAffected: impact?.map((i) => i.axis) ?? [],
         createdAt:
           sig.createdAt instanceof Date
             ? sig.createdAt.toISOString()
             : String(sig.createdAt ?? null),
-        title: item?.title ?? null,
-        url: item?.url ?? null,
         sourceName: src?.name ?? null,
+        sourceUrl: src?.url ?? null,
+        documentUrl: item?.url ?? null,
       };
     });
 
-    return NextResponse.json({ signals: signalsOut });
+    return NextResponse.json({ triggers });
   } catch (err) {
-    console.error("[api/signals]", err);
+    console.error("[api/signals/recent]", err);
     return NextResponse.json(
-      { error: "Failed to fetch signals" },
+      { error: "Failed to fetch recent signals" },
       { status: 500 },
     );
   }

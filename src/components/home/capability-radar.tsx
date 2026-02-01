@@ -72,7 +72,7 @@ export function CapabilityRadar({
     });
 
     const scoresToPolygon = (
-      scores: Record<string, { score?: number }>
+      scores: Record<string, { score?: number }>,
     ): string => {
       const pts = AXES.map((axis, i) => {
         const entry = scores[axis];
@@ -266,6 +266,7 @@ export function CapabilityRadar({
 
             if (onAxisClick) {
               return (
+                // biome-ignore lint/a11y/useSemanticElements: SVG group cannot use <button>; role="button" is correct for interactive SVG regions
                 <g
                   key={axis}
                   role="button"

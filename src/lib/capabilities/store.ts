@@ -37,5 +37,5 @@ export const useCapabilityProfileStore = create<CapabilityProfileState>(
     setFilters: (updates) =>
       set((s) => ({ filters: { ...s.filters, ...updates } })),
     setSortBy: (sortBy) => set({ sortBy }),
-  })
+  }),
 );

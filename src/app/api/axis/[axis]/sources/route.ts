@@ -5,7 +5,7 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { documents, items, signals, sources } from "@/lib/db/schema";
 import { AXES } from "@/lib/signal/schemas";
@@ -18,21 +18,21 @@ function isValidAxis(axis: string): boolean {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ axis: string }> }
+  { params }: { params: Promise<{ axis: string }> },
 ) {
   try {
     const { axis } = await params;
     if (!isValidAxis(axis)) {
       return NextResponse.json(
         { error: `Invalid axis. Must be one of: ${AXES.join(", ")}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(
       Number.parseInt(searchParams.get("limit") ?? "50", 10),
-      100
+      100,
     );
 
     const db = getDb();
@@ -167,7 +167,7 @@ export async function GET(
     console.error("[api/axis/[axis]/sources]", err);
     return NextResponse.json(
       { error: "Failed to fetch axis sources" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
