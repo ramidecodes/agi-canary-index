@@ -1,5 +1,7 @@
 # Discovery Pipeline
 
+**Implemented:** Cloudflare Worker at `workers/pipeline/`; cron daily 6 AM UTC; manual trigger at `POST /api/admin/pipeline/discover`; discovery lib at `src/lib/discovery/` (AI SDK v6 + OpenRouter provider for web search). Run `pnpm worker:deploy` to deploy; set secrets via `pnpm infra:secrets`.
+
 ## Goal
 
 Build the first stage of the data pipeline that discovers new candidate URLs from configured sources. The discovery pipeline must:
@@ -133,6 +135,23 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 3. Executes same logic as scheduled run
 4. Returns detailed results including per-source breakdown
 5. Allows "dry run" mode that doesn't persist
+
+**Manual Trigger (how-to):**
+
+- Endpoint: `POST /api/admin/pipeline/discover`
+- Auth: Clerk session (admin-protected route)
+- Body (optional):
+  - `{ "dryRun": true }` — run without writing to DB
+
+Example (authenticated in browser):
+
+```bash
+fetch("/api/admin/pipeline/discover", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ dryRun: true }),
+});
+```
 
 ## Acceptance Criteria
 

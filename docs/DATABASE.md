@@ -11,18 +11,19 @@ Database schema, migrations, and usage. Schema is defined in code (Drizzle ORM) 
 
 ## Schema Overview
 
-| Table                | Purpose                                            |
-| -------------------- | -------------------------------------------------- |
-| `sources`            | Trusted data sources (tier, cadence, health)       |
-| `pipeline_runs`      | Each pipeline execution (status, counts)           |
-| `items`              | Discovered URLs (dedup by `url_hash`)              |
-| `documents`          | Acquired content (R2 blob keys)                    |
-| `signals`            | Extracted claims → capability axes                 |
-| `daily_snapshots`    | Daily aggregated axis scores & canary status       |
-| `canary_definitions` | Canary config (id, thresholds, display_order)      |
-| `timeline_events`    | Timeline entries (reality / fiction / speculative) |
+| Table                | Purpose                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `sources`            | Trusted data sources (tier, cadence, health)                                                                        |
+| `pipeline_runs`      | Each pipeline execution (status, counts)                                                                            |
+| `source_fetch_logs`  | Per-source fetch attempt logs (run_id, source_id)                                                                   |
+| `items`              | Discovered URLs (dedup by `url_hash`); includes `acquisition_attempt_count`, `acquisition_error` for retry tracking |
+| `documents`          | Acquired content (R2 blob keys)                                                                                     |
+| `signals`            | Extracted claims → capability axes                                                                                  |
+| `daily_snapshots`    | Daily aggregated axis scores & canary status                                                                        |
+| `canary_definitions` | Canary config (id, thresholds, display_order)                                                                       |
+| `timeline_events`    | Timeline entries (reality / fiction / speculative)                                                                  |
 
-Relations: `sources` → `items`, `pipeline_runs` → `items`, `items` → `documents`, `documents` → `signals`. `daily_snapshots` references `signals` via `signal_ids` (uuid[]).
+Relations: `sources` → `items`, `sources` → `source_fetch_logs`, `pipeline_runs` → `items`, `pipeline_runs` → `source_fetch_logs`, `items` → `documents`, `documents` → `signals`. `daily_snapshots` references `signals` via `signal_ids` (uuid[]).
 
 ## Enums
 
@@ -36,6 +37,7 @@ Relations: `sources` → `items`, `pipeline_runs` → `items`, `items` → `docu
 
 ## JSONB Shapes (documented)
 
+- **documents.extracted_metadata:** `{ title?, description?, author?, publishedTime?, siteName?, contentType?, language?, sourceURL? }` — from Firecrawl (OG, article tags)
 - **signals.axes_impacted:** `Array<{ axis, direction, magnitude, uncertainty? }>`
 - **signals.metric:** `{ name, value, unit? }`
 - **signals.citations:** `Array<{ url, quoted_span? }>`
@@ -83,7 +85,7 @@ With `DATABASE_URL` set and migrations applied:
 pnpm run db:seed
 ```
 
-Seeds: canary definitions (e.g. arc_agi, long_horizon, safety_canary), one sample source, and sample timeline events.
+Seeds: canary definitions (e.g. arc_agi, long_horizon, safety_canary), 15 Tier-0/Tier-1/DISCOVERY sources (including Perplexity AGI Search), and sample timeline events.
 
 ## RLS (Row-Level Security)
 

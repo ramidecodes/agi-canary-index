@@ -36,7 +36,7 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 4. **R2 Bucket Binding**
 
    - Binding: `DOCUMENTS` for document storage
-   - Bucket name: configurable per environment (e.g. `canary-documents-dev`, `canary-documents-prod`)
+   - Bucket name: configurable per environment (e.g. `agi-canary-documents-dev`, `agi-canary-documents-prod`)
    - Workers use `env.DOCUMENTS.put()` / `env.DOCUMENTS.get()` — no S3 API credentials
 
 5. **Pipeline Orchestration (MVP)**
@@ -69,7 +69,9 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "triggers": { "crons": ["0 6 * * *"] },
-  "r2_buckets": [{ "binding": "DOCUMENTS", "bucket_name": "canary-documents" }],
+  "r2_buckets": [
+    { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents" }
+  ],
   "vars": { "SCORING_VERSION": "1.0.0" }
 }
 ```

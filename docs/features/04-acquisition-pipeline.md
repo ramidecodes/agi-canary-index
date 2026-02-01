@@ -1,5 +1,24 @@
 # Content Acquisition Pipeline
 
+**Implemented:** Cloudflare Worker at `workers/pipeline/` (`POST /acquire`); acquisition lib at `src/lib/acquisition/`; document content at `GET /api/admin/documents/:id/content`; manual trigger at `POST /api/admin/pipeline/acquire` (proxies to Worker). Requires `FIRECRAWL_API_KEY` and R2 `DOCUMENTS` binding. See [docs/ACQUISITION.md](../ACQUISITION.md) for implementation guide.
+
+## Implementation Details
+
+| Component           | Location                                            |
+| ------------------- | --------------------------------------------------- |
+| Worker route        | `workers/pipeline/index.ts` — `POST /acquire`       |
+| Orchestration       | `src/lib/acquisition/run.ts`                        |
+| Firecrawl client    | `src/lib/acquisition/firecrawl.ts`                  |
+| Validation          | `src/lib/acquisition/validate.ts`                   |
+| Metadata extraction | `src/lib/acquisition/metadata.ts`                   |
+| Manual trigger API  | `src/app/api/admin/pipeline/acquire/route.ts`       |
+| Document content    | `src/app/api/admin/documents/[id]/content/route.ts` |
+| R2 client (app)     | `src/lib/r2.ts`                                     |
+
+**Database:** `items` has `acquisition_attempt_count`, `acquisition_error`. Migration `0002_big_roxanne_simpson.sql`.
+
+**Wrangler:** `r2_buckets` binding `DOCUMENTS` for `agi-canary-documents-{env}`.
+
 ## Goal
 
 Build the second stage of the data pipeline that fetches and cleans content from discovered URLs. The acquisition pipeline must:
@@ -78,7 +97,7 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 **Cloudflare Bindings:**
 
 - **Neon:** Use [Neon serverless driver](https://neon.tech/docs/guides/cloudflare-workers) with `DATABASE_URL` secret for reading items, updating status, writing documents. Use `drizzle-orm/neon-http` with `neon(env.DATABASE_URL)`.
-- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "canary-documents" }]`. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
+- **R2:** Use Worker R2 binding (`env.DOCUMENTS.put()`, `env.DOCUMENTS.get()`), not S3 API with credentials. Add to wrangler.jsonc: `r2_buckets: [{ binding: "DOCUMENTS", bucket_name: "agi-canary-documents" }]`. See [R2 Bindings](https://developers.cloudflare.com/r2/api/workers/workers-api/).
 
 **External Services:**
 
@@ -127,17 +146,17 @@ As the AGI Canary Watcher system, I want to fetch and clean content from discove
 
 ## Acceptance Criteria
 
-- [ ] Firecrawl API integration working for standard web pages
-- [ ] Clean markdown extracted from articles, blog posts, papers
-- [ ] R2 storage working with proper key structure
-- [ ] Document records created with all metadata fields
-- [ ] Item status correctly transitions through pipeline
-- [ ] Failed items retry up to 3 times
-- [ ] Paywall detection flags protected content
-- [ ] Content truncation works for very long documents
-- [ ] Batch processing completes without timeout
-- [ ] Average acquisition time: < 10 seconds per item
-- [ ] R2 content retrievable for display
+- [x] Firecrawl API integration working for standard web pages
+- [x] Clean markdown extracted from articles, blog posts, papers
+- [x] R2 storage working with proper key structure
+- [x] Document records created with all metadata fields
+- [x] Item status correctly transitions through pipeline
+- [x] Failed items retry up to 3 times
+- [x] Paywall detection flags protected content
+- [x] Content truncation works for very long documents
+- [x] Batch processing completes without timeout
+- [ ] Average acquisition time: < 10 seconds per item (to validate)
+- [x] R2 content retrievable for display
 
 ## Edge Cases
 

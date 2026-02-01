@@ -20,7 +20,7 @@ As a developer setting up or deploying the AGI Canary pipeline, I want to run in
 2. **Environment Handling**
 
    - Support `dev`, `staging`, `prod` via `--env` flag or `ENV` variable
-   - Separate R2 bucket names per env: `canary-documents-dev`, `canary-documents-staging`, `canary-documents-prod`
+   - Separate R2 bucket names per env: `agi-canary-documents-dev`, `agi-canary-documents-staging`, `agi-canary-documents-prod`
    - Secrets scoped per wrangler environment
 
 3. **Resource Provisioning**

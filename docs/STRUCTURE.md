@@ -9,6 +9,9 @@ agi-canary-index/
 ├── drizzle/                 # Drizzle migrations and meta
 ├── docs/                     # Project documentation
 ├── public/                   # Static assets
+├── scripts/                  # Infra scripts (provision, deploy, secrets)
+├── workers/pipeline/         # Cloudflare Worker (Discovery + Acquisition)
+├── wrangler.jsonc            # Cloudflare Worker config (cron, env overrides)
 ├── src/
 │   ├── app/                  # Next.js App Router
 │   ├── lib/                  # Shared libraries and services
@@ -44,6 +47,11 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `[id]/route.ts` — PATCH update
   - `test-fetch/route.ts` — POST test fetch (validate URL)
   - `bulk/route.ts` — POST bulk enable/disable/change tier
+- **`api/admin/pipeline/`** — Pipeline triggers
+  - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`)
+  - `acquire/route.ts` — POST manual acquisition (proxies to Worker)
+- **`api/admin/documents/[id]/content/`** — Document content
+  - `route.ts` — GET markdown from R2
 
 ### `src/components/`
 
@@ -65,6 +73,16 @@ Shared code: DB, AI models, and future services.
   - `AUTO_DISABLE_FAILURE_THRESHOLD`, `getSourceHealthStatus()`, `SEED_SOURCES`
 - **`auth.ts`** — Server-side auth for admin API routes (`requireAuth()`)
 - **`ai-models.ts`** — AI model IDs and config (see [MODELS.md](MODELS.md))
+- **`discovery/`** — Discovery pipeline (RSS, search, curated, X)
+  - `run.ts` — Orchestration (sources → fetch → dedup → persist)
+  - `url.ts` — URL canonicalization and hashing
+  - `fetch-rss.ts`, `fetch-search.ts`, `fetch-curated.ts`, `fetch-x.ts`
+- **`acquisition/`** — Content acquisition pipeline (Firecrawl, R2)
+  - `run.ts` — Orchestration (scrape → validate → store → document)
+  - `firecrawl.ts` — Firecrawl scrape API client
+  - `validate.ts` — Content quality validation (length, paywall)
+  - `metadata.ts` — Metadata extraction (OG, article tags)
+- **`r2.ts`** — R2 S3 client for document fetch (Next.js app)
 
 ### `src/middleware.ts`
 
@@ -80,21 +98,28 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **`features/`** — FREDs (feature requirements)
 - **`base-descriptions/`** — Base context for AI and product
 - **AUTH.md** — Authentication (Clerk)
+- **DATABASE.md** — Schema, migrations, seed, JSONB shapes
 - **INFRASTRUCTURE.md** — Neon, Vercel, Cloudflare, R2
+- **DISCOVERY.md** — Discovery pipeline implementation guide
+- **ACQUISITION.md** — Acquisition pipeline implementation guide
 - **MODELS.md** — AI model IDs
 - **STRUCTURE.md** — This file
-- **DATABASE.md** — Schema, migrations, seed, JSONB shapes
 
 ## Scripts (from `package.json`)
 
-| Script             | Description                    |
-| ------------------ | ------------------------------ |
-| `pnpm dev`         | Next.js dev server             |
-| `pnpm build`       | Next.js build                  |
-| `pnpm lint`        | Biome check                    |
-| `pnpm format`      | Biome format                   |
-| `pnpm db:generate` | Generate migration from schema |
-| `pnpm db:migrate`  | Apply migrations               |
-| `pnpm db:push`     | Push schema (dev)              |
-| `pnpm db:studio`   | Drizzle Studio                 |
-| `pnpm db:seed`     | Run seed script                |
+| Script                 | Description                    |
+| ---------------------- | ------------------------------ |
+| `pnpm dev`             | Next.js dev server             |
+| `pnpm build`           | Next.js build                  |
+| `pnpm lint`            | Biome check                    |
+| `pnpm format`          | Biome format                   |
+| `pnpm db:generate`     | Generate migration from schema |
+| `pnpm db:migrate`      | Apply migrations               |
+| `pnpm db:push`         | Push schema (dev)              |
+| `pnpm db:studio`       | Drizzle Studio                 |
+| `pnpm db:seed`         | Run seed script                |
+| `pnpm worker:dev`      | Run pipeline Worker locally    |
+| `pnpm worker:deploy`   | Deploy pipeline to Cloudflare  |
+| `pnpm infra:provision` | Create R2 bucket               |
+| `pnpm infra:deploy`    | Deploy Workers                 |
+| `pnpm infra:secrets`   | Set wrangler secrets           |

@@ -4,6 +4,10 @@
 
 Admin features are protected with [Clerk](https://clerk.com/). The app uses `@clerk/nextjs`: `ClerkProvider` in the root layout, `clerkMiddleware` in `src/middleware.ts`, and in-app sign-in/sign-up pages.
 
+## Admin users
+
+Clerk is configured in **Restricted** mode (Dashboard → Restrictions). New users are created only manually via the Clerk Dashboard (Users → Create user or Invite). All authenticated users have full admin access to `/admin` and `/api/admin`. There is no separate role or allowlist in the app—any signed-in user is treated as an admin.
+
 ## Protected routes
 
 - **`/admin(.*)`** — All admin UI (Source Registry, etc.). Unauthenticated users are redirected to sign-in.
@@ -12,7 +16,7 @@ Admin features are protected with [Clerk](https://clerk.com/). The app uses `@cl
 ## Public routes
 
 - **`/`** — Home
-- **`/sign-in`**, **`/sign-up`** — Clerk sign-in/sign-up pages (anyone can access to authenticate)
+- **`/sign-in`**, **`/sign-up`** — Clerk sign-in/sign-up pages (sign-up is invite-only; see Restricted mode)
 - Future public pages (Capabilities, Autonomy, Timeline, Signal Explorer, News) remain public.
 
 ## Sign-in and sign-up
