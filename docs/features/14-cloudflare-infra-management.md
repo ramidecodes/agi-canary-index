@@ -30,7 +30,7 @@ As a developer setting up the AGI Canary pipeline, I want to run infrastructure 
 
 5. **Vercel Configuration**
 
-   - All pipeline env vars (DATABASE_URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY, R2_*, CRON_SECRET) set in Vercel project settings
+   - All pipeline env vars (DATABASE*URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY, R2*\*, CRON_SECRET) set in Vercel project settings
 
 ## Config Files
 
@@ -50,7 +50,7 @@ As a developer setting up the AGI Canary pipeline, I want to run infrastructure 
 
 1. Developer runs `pnpm run infra:provision -- --env=dev` to create R2 bucket
 2. Developer creates R2 API token in Cloudflare dashboard (Object Read & Write)
-3. Developer sets env vars in Vercel (DATABASE_URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY, R2_*, CRON_SECRET)
+3. Developer sets env vars in Vercel (DATABASE*URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY, R2*\*, CRON_SECRET)
 4. Deploy to Vercel — pipeline runs via cron
 
 ### Teardown

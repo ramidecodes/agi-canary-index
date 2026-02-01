@@ -55,7 +55,6 @@ const db = getDb();
 const runs = await db.select().from(pipelineRuns).limit(10);
 ```
 
-
 ## Migrations
 
 1. **Generate** (after schema changes):  

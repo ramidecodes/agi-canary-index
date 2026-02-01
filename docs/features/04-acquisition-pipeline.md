@@ -4,16 +4,16 @@
 
 ## Implementation Details
 
-| Component           | Location                                      |
-| ------------------- | --------------------------------------------- |
+| Component           | Location                                                   |
+| ------------------- | ---------------------------------------------------------- |
 | Cron + manual       | `src/app/api/pipeline/cron/`, `api/admin/pipeline/acquire` |
-| Orchestration       | `src/lib/acquisition/run.ts`                  |
-| Firecrawl client    | `src/lib/acquisition/firecrawl.ts`                  |
-| Validation          | `src/lib/acquisition/validate.ts`                   |
-| Metadata extraction | `src/lib/acquisition/metadata.ts`                   |
-| Manual trigger API  | `src/app/api/admin/pipeline/acquire/route.ts`       |
-| Document content    | `src/app/api/admin/documents/[id]/content/route.ts` |
-| R2 client (app)     | `src/lib/r2.ts` (S3 API for R2)               |
+| Orchestration       | `src/lib/acquisition/run.ts`                               |
+| Firecrawl client    | `src/lib/acquisition/firecrawl.ts`                         |
+| Validation          | `src/lib/acquisition/validate.ts`                          |
+| Metadata extraction | `src/lib/acquisition/metadata.ts`                          |
+| Manual trigger API  | `src/app/api/admin/pipeline/acquire/route.ts`              |
+| Document content    | `src/app/api/admin/documents/[id]/content/route.ts`        |
+| R2 client (app)     | `src/lib/r2.ts` (S3 API for R2)                            |
 
 **Database:** `items` has `acquisition_attempt_count`, `acquisition_error`. Migration `0002_big_roxanne_simpson.sql`.
 

@@ -131,12 +131,12 @@ Run Next.js dev server and trigger from Admin UI (Pipeline → Run Acquisition).
 
 ## Troubleshooting
 
-| Issue                        | Solution                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| "FIRECRAWL_API_KEY required" | Set in Vercel project settings                                             |
-| R2 put fails                 | Verify bucket exists; check R2_* env vars; run `pnpm infra:provision`      |
-| Document content 503         | Set R2\_\* env vars in Vercel for S3 API access                            |
-| Paywall false positives      | Review patterns in `src/lib/acquisition/validate.ts`                       |
+| Issue                        | Solution                                                                |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| "FIRECRAWL_API_KEY required" | Set in Vercel project settings                                          |
+| R2 put fails                 | Verify bucket exists; check R2\_\* env vars; run `pnpm infra:provision` |
+| Document content 503         | Set R2\_\* env vars in Vercel for S3 API access                         |
+| Paywall false positives      | Review patterns in `src/lib/acquisition/validate.ts`                    |
 
 ## Next Steps
 
