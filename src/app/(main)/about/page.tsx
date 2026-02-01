@@ -80,56 +80,6 @@ export default function AboutPage() {
             </CardDescription>
           </CardHeader>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Architecture</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="py-2 pr-4 text-left font-medium">
-                      Component
-                    </th>
-                    <th className="py-2 text-left font-medium">Stack</th>
-                  </tr>
-                </thead>
-                <tbody className="text-muted-foreground">
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">App</td>
-                    <td className="py-2">Next.js 16, Vercel</td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">Pipeline</td>
-                    <td className="py-2">
-                      Vercel Cron (Discovery + Acquisition)
-                    </td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">Database</td>
-                    <td className="py-2">Neon Postgres, Drizzle ORM</td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">Storage</td>
-                    <td className="py-2">Cloudflare R2 (documents)</td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">Auth</td>
-                    <td className="py-2">Clerk</td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="py-2 pr-4">AI</td>
-                    <td className="py-2">
-                      Vercel AI SDK + OpenRouter (signal extraction)
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
       </section>
 
       <nav

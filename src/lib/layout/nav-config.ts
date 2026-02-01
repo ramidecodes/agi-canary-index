@@ -35,14 +35,20 @@ export const SECONDARY_NAV: NavItem[] = [
 
 /** External links (e.g. GitHub). */
 export const EXTERNAL_NAV: NavItem[] = [
-  { href: "https://github.com", label: "GitHub" },
+  { href: "https://ramilabs.com", label: "Rami Labs" },
 ];
 
-/** All footer links in order: primary + secondary + external. */
+/** Footer-only links (e.g. Admin; not in header More or mobile sheet). */
+export const FOOTER_NAV: NavItem[] = [
+  { href: "/admin/sources", label: "Admin" },
+];
+
+/** All footer links in order: primary + secondary + footer-only + external. */
 export function getFooterNavItems(): NavItem[] {
   return [
     ...PRIMARY_NAV.map(({ href, label }) => ({ href, label })),
     ...SECONDARY_NAV,
+    ...FOOTER_NAV,
     ...EXTERNAL_NAV,
   ];
 }
