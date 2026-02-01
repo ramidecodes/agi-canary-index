@@ -1,0 +1,45 @@
+{
+  "name": "agi-canary-pipeline",
+  "main": "workers/pipeline/index.ts",
+  "compatibility_date": "2025-03-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "triggers": {
+    "crons": ["0 6 * * *"]
+  },
+  "vars": {
+    "SCORING_VERSION": "1.0.0"
+  },
+  "limits": {
+    "cpu_ms": 300000
+  },
+  "r2_buckets": [
+    { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
+  ],
+  "env": {
+    "dev": {
+      "name": "agi-canary-pipeline-dev",
+      "r2_buckets": [
+        { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
+      ]
+    },
+    "staging": {
+      "name": "agi-canary-pipeline-staging",
+      "r2_buckets": [
+        {
+          "binding": "DOCUMENTS",
+          "bucket_name": "agi-canary-documents-staging"
+        }
+      ]
+    },
+    "prod": {
+      "name": "agi-canary-pipeline-prod",
+      "r2_buckets": [
+        { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-prod" }
+      ]
+    }
+  }
+}
