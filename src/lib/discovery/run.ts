@@ -4,7 +4,7 @@
  * @see docs/features/03-discovery-pipeline.md
  */
 
-import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import { items, pipelineRuns, sourceFetchLogs, sources } from "../db/schema";
 import { fetchCurated } from "./fetch-curated";
 import { fetchRss } from "./fetch-rss";
@@ -80,11 +80,25 @@ export async function runDiscovery(
           ),
         );
 
-      const running = await db
-        .select({ id: pipelineRuns.id })
-        .from(pipelineRuns)
-        .where(eq(pipelineRuns.status, "running"))
-        .limit(1);
+      // Only block if ANOTHER run is in progress (not our own runId when provided)
+      const runningQuery =
+        options.runId != null
+          ? db
+              .select({ id: pipelineRuns.id })
+              .from(pipelineRuns)
+              .where(
+                and(
+                  eq(pipelineRuns.status, "running"),
+                  ne(pipelineRuns.id, options.runId),
+                ),
+              )
+              .limit(1)
+          : db
+              .select({ id: pipelineRuns.id })
+              .from(pipelineRuns)
+              .where(eq(pipelineRuns.status, "running"))
+              .limit(1);
+      const running = await runningQuery;
       if (running.length > 0) {
         stats.durationMs = Date.now() - startMs;
         stats.skipped = true;

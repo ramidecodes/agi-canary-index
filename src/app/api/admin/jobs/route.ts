@@ -120,6 +120,6 @@ export async function GET(request: Request) {
       typeCounts: typeCounts.rows,
       recentJobs: recentJobs.slice(0, 50), // Limit to 50 for response size
       activeRuns,
-    })
+    }),
   );
 }
