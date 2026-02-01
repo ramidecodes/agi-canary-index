@@ -19,7 +19,7 @@ const DEFAULT_SCORING_VERSION = "v1";
 
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
-  return s.slice(0, max) + "...";
+  return `${s.slice(0, max)}...`;
 }
 
 function formatSignalError(err: unknown): string {
@@ -30,8 +30,8 @@ function formatSignalError(err: unknown): string {
       typeof err.responseBody === "string"
         ? err.responseBody
         : typeof err.responseBody === "object" && err.responseBody != null
-        ? JSON.stringify(err.responseBody)
-        : "";
+          ? JSON.stringify(err.responseBody)
+          : "";
     if (body) {
       const parsed = safeParseJson(body) as {
         error?: { message?: string; error?: { message?: string } };
@@ -110,7 +110,7 @@ const ACQUIRED_DOC_SELECT = {
 async function getAcquiredDocuments(
   db: ReturnType<typeof createDb>,
   limit: number,
-  documentIds?: string[]
+  documentIds?: string[],
 ): Promise<AcquiredDocRow[]> {
   const baseConditions = [
     isNull(documents.processedAt),
@@ -142,7 +142,7 @@ function clamp01(n: number): number {
 
 function adjustedConfidence(
   claimConfidence: number,
-  trustWeight: string
+  trustWeight: string,
 ): number {
   const weight = Number(trustWeight) || 1;
   return clamp01(claimConfidence * weight);
@@ -152,7 +152,7 @@ function mapClaimToSignalRow(
   documentId: string,
   claim: ExtractedClaim,
   trustWeight: string,
-  scoringVersion: string
+  scoringVersion: string,
 ): {
   documentId: string;
   claimSummary: string;
@@ -201,7 +201,7 @@ function mapClaimToSignalRow(
 async function processOneDocument(
   ctx: SignalProcessingContext,
   row: AcquiredDocRow,
-  scoringVersion: string
+  scoringVersion: string,
 ): Promise<ProcessedDocumentResult> {
   const { db, r2BucketName, openRouterApiKey } = ctx;
   const result: ProcessedDocumentResult = {
@@ -232,7 +232,7 @@ async function processOneDocument(
           ? new Date(row.publishedAt).toISOString().slice(0, 10)
           : null,
       },
-      openRouterApiKey
+      openRouterApiKey,
     );
 
     let created = 0;
@@ -241,7 +241,7 @@ async function processOneDocument(
         row.documentId,
         claim,
         row.trustWeight,
-        scoringVersion
+        scoringVersion,
       );
       if (!signalRow) continue;
       await db.insert(signals).values({
@@ -288,7 +288,7 @@ async function processOneDocument(
  */
 export async function runSignalProcessing(
   ctx: SignalProcessingContext,
-  options: SignalProcessingOptions = {}
+  options: SignalProcessingOptions = {},
 ): Promise<SignalProcessingStats> {
   const { db } = ctx;
   const startMs = Date.now();
@@ -312,7 +312,7 @@ export async function runSignalProcessing(
     JSON.stringify({
       event: "signal_processing_start",
       documentCount: batch.length,
-    })
+    }),
   );
 
   for (let i = 0; i < batch.length; i += CONCURRENCY) {
@@ -320,7 +320,7 @@ export async function runSignalProcessing(
     const chunkIndex = Math.floor(i / CONCURRENCY) + 1;
 
     const chunkResults = await Promise.all(
-      chunk.map((row) => processOneDocument(ctx, row, scoringVersion))
+      chunk.map((row) => processOneDocument(ctx, row, scoringVersion)),
     );
 
     for (const result of chunkResults) {
@@ -343,7 +343,7 @@ export async function runSignalProcessing(
         documentsFailed: stats.documentsFailed,
         signalsCreated: stats.signalsCreated,
         elapsedMs,
-      })
+      }),
     );
   }
 
@@ -355,7 +355,7 @@ export async function runSignalProcessing(
       documentsFailed: stats.documentsFailed,
       signalsCreated: stats.signalsCreated,
       durationMs: stats.durationMs,
-    })
+    }),
   );
   return stats;
 }
