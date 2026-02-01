@@ -1,27 +1,46 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "agi-canary-etl",
-  "main": "workers/pipeline/index.ts",
-  "compatibility_date": "2025-03-07",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true, "head_sampling_rate": 1 },
-  "triggers": { "crons": ["0 3 * * *"] },
-  "workers_dev": true,
-  "r2_buckets": [
-    { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
-  ],
-  "vars": {
-    "ENV": "dev",
-    "BATCH_SIZE": "15",
-    "TIME_BUDGET_MS": "20000"
-  },
-  "env": {
-    "prod": {
-      "name": "agi-canary-etl-prod",
-      "r2_buckets": [
-        { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-prod" }
-      ],
-      "vars": { "ENV": "prod", "BATCH_SIZE": "15", "TIME_BUDGET_MS": "20000" }
-    }
-  }
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "agi-canary-etl",
+	"main": "workers/pipeline/index.ts",
+	"compatibility_date": "2025-03-07",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
+	"triggers": {
+		"crons": [
+			"0 3 * * *"
+		]
+	},
+	"workers_dev": true,
+	"r2_buckets": [
+		{
+			"binding": "DOCUMENTS",
+			"bucket_name": "agi-canary-documents-dev"
+		}
+	],
+	"vars": {
+		"ENV": "dev",
+		"BATCH_SIZE": "15",
+		"TIME_BUDGET_MS": "20000"
+	},
+	"env": {
+		"prod": {
+			"name": "agi-canary-etl-prod",
+			"r2_buckets": [
+				{
+					"binding": "DOCUMENTS",
+					"bucket_name": "agi-canary-documents-prod"
+				}
+			],
+			"vars": {
+				"ENV": "prod",
+				"BATCH_SIZE": "15",
+				"TIME_BUDGET_MS": "20000"
+			}
+		}
+	}
 }
