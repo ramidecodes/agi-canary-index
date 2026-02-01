@@ -11,17 +11,28 @@ import {
   items,
   pipelineRuns,
   signals,
+  sourceFetchLogs,
   sources,
   timelineEvents,
 } from "./schema";
 
 export const sourcesRelations = relations(sources, ({ many }) => ({
   items: many(items),
+  fetchLogs: many(sourceFetchLogs),
 }));
 
 export const pipelineRunsRelations = relations(pipelineRuns, ({ many }) => ({
   items: many(items),
+  fetchLogs: many(sourceFetchLogs),
 }));
+
+export const sourceFetchLogsRelations = relations(
+  sourceFetchLogs,
+  ({ one }) => ({
+    run: one(pipelineRuns),
+    source: one(sources),
+  }),
+);
 
 export const itemsRelations = relations(items, ({ one }) => ({
   run: one(pipelineRuns),

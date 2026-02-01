@@ -36,7 +36,7 @@ export function getSourceHealthStatus(
 export const SEED_SOURCES: Array<{
   name: string;
   url: string;
-  tier: "TIER_0" | "TIER_1";
+  tier: "TIER_0" | "TIER_1" | "DISCOVERY";
   trustWeight: string;
   cadence: "daily" | "weekly" | "monthly";
   domainType: "evaluation" | "policy" | "research" | "commentary";
@@ -174,5 +174,26 @@ export const SEED_SOURCES: Array<{
     cadence: "weekly",
     domainType: "commentary",
     sourceType: "rss",
+  },
+  // Discovery tier - Perplexity web search
+  {
+    name: "Perplexity AGI Search",
+    url: "https://openrouter.ai/perplexity/sonar",
+    tier: "DISCOVERY",
+    trustWeight: "0.4",
+    cadence: "daily",
+    domainType: "research",
+    sourceType: "search",
+    queryConfig: {
+      keywords: [
+        "AGI evaluation",
+        "AI benchmark",
+        "ARC-AGI",
+        "frontier model",
+        "AI capability",
+        "METR evaluation",
+        "OECD AI",
+      ],
+    },
   },
 ];

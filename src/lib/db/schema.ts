@@ -99,7 +99,7 @@ export const sources = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Each execution of the data pipeline. */
@@ -126,7 +126,38 @@ export const pipelineRuns = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
+);
+
+/** Per-source fetch attempt logs for observability. */
+export const sourceFetchLogs = pgTable(
+  "source_fetch_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => pipelineRuns.id, { onDelete: "cascade" }),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => sources.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 16 }).notNull(), // success | failure
+    itemsFound: integer("items_found").notNull().default(0),
+    errorMessage: text("error_message"),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("source_fetch_logs_run_id_idx").on(t.runId),
+    index("source_fetch_logs_source_id_idx").on(t.sourceId),
+    pgPolicy("source_fetch_logs_public_all", {
+      as: "permissive",
+      for: "all",
+      to: "public",
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+  ]
 );
 
 /** Discovered URLs awaiting or completed processing. */
@@ -148,6 +179,10 @@ export const items = pgTable(
       .defaultNow(),
     status: itemStatusEnum("status").notNull().default("pending"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    acquisitionAttemptCount: integer("acquisition_attempt_count")
+      .notNull()
+      .default(0),
+    acquisitionError: text("acquisition_error"),
   },
   (t) => [
     uniqueIndex("items_url_unique").on(t.url),
@@ -162,7 +197,7 @@ export const items = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Acquired and processed content (links to R2 blobs). */
@@ -192,7 +227,7 @@ export const documents = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Structured claims extracted from documents. */
@@ -204,15 +239,14 @@ export const signals = pgTable(
       .notNull()
       .references(() => documents.id, { onDelete: "cascade" }),
     claimSummary: text("claim_summary").notNull(),
-    axesImpacted:
-      jsonb("axes_impacted").$type<
-        Array<{
-          axis: string;
-          direction: string;
-          magnitude: number;
-          uncertainty?: number;
-        }>
-      >(),
+    axesImpacted: jsonb("axes_impacted").$type<
+      Array<{
+        axis: string;
+        direction: string;
+        magnitude: number;
+        uncertainty?: number;
+      }>
+    >(),
     metric: jsonb("metric").$type<{
       name: string;
       value: number;
@@ -235,7 +269,7 @@ export const signals = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Aggregated daily state for display. */
@@ -248,15 +282,14 @@ export const dailySnapshots = pgTable(
       jsonb("axis_scores").$type<
         Record<string, { score: number; uncertainty?: number; delta?: number }>
       >(),
-    canaryStatuses:
-      jsonb("canary_statuses").$type<
-        Array<{
-          canary_id: string;
-          status: string;
-          last_change?: string;
-          confidence?: number;
-        }>
-      >(),
+    canaryStatuses: jsonb("canary_statuses").$type<
+      Array<{
+        canary_id: string;
+        status: string;
+        last_change?: string;
+        confidence?: number;
+      }>
+    >(),
     coverageScore: decimal("coverage_score", { precision: 4, scale: 2 }),
     signalIds: uuid("signal_ids").array(),
     notes: jsonb("notes").$type<string[]>(),
@@ -274,7 +307,7 @@ export const dailySnapshots = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Configuration for canary indicators. */
@@ -301,7 +334,7 @@ export const canaryDefinitions = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
 
 /** Events for the timeline visualization. */
@@ -329,5 +362,5 @@ export const timelineEvents = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ],
+  ]
 );
