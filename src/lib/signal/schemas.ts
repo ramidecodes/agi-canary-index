@@ -27,23 +27,17 @@ export const directionSchema = z.enum(["up", "down", "neutral"]);
 /** Single axis impact. */
 export const axisImpactSchema = z.object({
   axis: axisSchema.describe(
-    "One of: reasoning, learning_efficiency, long_term_memory, planning, tool_use, social_cognition, multimodal_perception, robustness, alignment_safety",
+    "One of: reasoning, learning_efficiency, long_term_memory, planning, tool_use, social_cognition, multimodal_perception, robustness, alignment_safety"
   ),
   direction: directionSchema.describe(
-    "up = improvement, down = regression, neutral = no change",
+    "up = improvement, down = regression, neutral = no change"
   ),
-  magnitude: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe("How significant is this change (0-1)"),
+  magnitude: z.number().describe("How significant is this change, 0.0-1.0"),
   uncertainty: z
     .number()
-    .min(0)
-    .max(1)
     .optional()
     .default(0.5)
-    .describe("How confident in this assessment (0-1)"),
+    .describe("How confident in this assessment, 0.0-1.0"),
 });
 
 /** Classification of the claim. */
@@ -80,7 +74,7 @@ export const extractedClaimSchema = z.object({
     .string()
     .describe("1-2 sentence summary of the capability-related claim"),
   classification: classificationSchema.describe(
-    "Type: benchmark_result, policy_update, research_finding, opinion, announcement, other",
+    "Type: benchmark_result, policy_update, research_finding, opinion, announcement, other"
   ),
   axes_impacted: z
     .array(axisImpactSchema)
@@ -89,13 +83,11 @@ export const extractedClaimSchema = z.object({
   benchmark: benchmarkSchema
     .optional()
     .describe(
-      "If a known benchmark is mentioned (ARC-AGI, SWE-bench, GPQA, MMMU, HELM, etc.), else null",
+      "If a known benchmark is mentioned (ARC-AGI, SWE-bench, GPQA, MMMU, HELM, etc.), else null"
     ),
   confidence: z
     .number()
-    .min(0)
-    .max(1)
-    .describe("Overall confidence in this extraction (0-1)"),
+    .describe("Overall confidence in this extraction, 0.0-1.0"),
   citations: z
     .array(citationSchema)
     .default([])
@@ -107,7 +99,7 @@ export const signalExtractionSchema = z.object({
   claims: z
     .array(extractedClaimSchema)
     .describe(
-      "Array of capability claims. Empty if no capability-relevant information found.",
+      "Array of capability claims. Empty if no capability-relevant information found."
     ),
 });
 

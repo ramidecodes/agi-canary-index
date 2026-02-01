@@ -47,6 +47,7 @@ Create or update the daily snapshot for a date. Requires Clerk auth.
 ### Extraction schema (`src/lib/signal/schemas.ts`)
 
 - **Claims:** Array of `{ claim_summary, classification, axes_impacted, benchmark?, confidence, citations }`.
+- **Anthropic/OpenRouter:** Number fields must not use `.min()`/`.max()` in Zod; Anthropic's structured output API rejects `minimum`/`maximum` in JSON Schema. Use `.describe()` for 0-1 hints; clamp at runtime in `mapClaimToSignalRow`.
 - **Axes (9):** `reasoning`, `learning_efficiency`, `long_term_memory`, `planning`, `tool_use`, `social_cognition`, `multimodal_perception`, `robustness`, `alignment_safety`.
 - **Direction:** `up` | `down` | `neutral`.
 - **Classification:** `benchmark_result`, `policy_update`, `research_finding`, `opinion`, `announcement`, `other`.

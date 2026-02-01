@@ -4,6 +4,7 @@
  * @see docs/features/05-signal-processing.md
  */
 
+import { APICallError } from "ai";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { documents, items, signals, sources } from "@/lib/db/schema";
 import type { createDb } from "@/lib/db";
@@ -15,6 +16,42 @@ const BATCH_SIZE = 10;
 const CONCURRENCY = 4;
 const CONFIDENCE_THRESHOLD = 0.3;
 const DEFAULT_SCORING_VERSION = "v1";
+
+function truncate(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return s.slice(0, max) + "...";
+}
+
+function formatSignalError(err: unknown): string {
+  if (APICallError.isInstance(err)) {
+    const parts = [err.message];
+    if (err.statusCode != null) parts.push(`status=${err.statusCode}`);
+    const body =
+      typeof err.responseBody === "string"
+        ? err.responseBody
+        : typeof err.responseBody === "object" && err.responseBody != null
+        ? JSON.stringify(err.responseBody)
+        : "";
+    if (body) {
+      const parsed = safeParseJson(body) as {
+        error?: { message?: string; error?: { message?: string } };
+      } | null;
+      const msg =
+        parsed?.error?.message ?? parsed?.error?.error?.message ?? body;
+      parts.push(truncate(String(msg), 200));
+    }
+    return parts.join(" | ");
+  }
+  return err instanceof Error ? err.message : "Signal processing failed";
+}
+
+function safeParseJson(s: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(s) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 export interface SignalProcessingContext {
   db: ReturnType<typeof createDb>;
@@ -73,7 +110,7 @@ const ACQUIRED_DOC_SELECT = {
 async function getAcquiredDocuments(
   db: ReturnType<typeof createDb>,
   limit: number,
-  documentIds?: string[],
+  documentIds?: string[]
 ): Promise<AcquiredDocRow[]> {
   const baseConditions = [
     isNull(documents.processedAt),
@@ -99,19 +136,23 @@ async function getAcquiredDocuments(
   return rows as AcquiredDocRow[];
 }
 
+function clamp01(n: number): number {
+  return Math.min(1, Math.max(0, Number(n) || 0));
+}
+
 function adjustedConfidence(
   claimConfidence: number,
-  trustWeight: string,
+  trustWeight: string
 ): number {
   const weight = Number(trustWeight) || 1;
-  return Math.min(1, Math.max(0, claimConfidence * weight));
+  return clamp01(claimConfidence * weight);
 }
 
 function mapClaimToSignalRow(
   documentId: string,
   claim: ExtractedClaim,
   trustWeight: string,
-  scoringVersion: string,
+  scoringVersion: string
 ): {
   documentId: string;
   claimSummary: string;
@@ -141,8 +182,8 @@ function mapClaimToSignalRow(
     axesImpacted: claim.axes_impacted.map((a) => ({
       axis: a.axis,
       direction: a.direction,
-      magnitude: a.magnitude,
-      uncertainty: a.uncertainty,
+      magnitude: clamp01(a.magnitude),
+      uncertainty: clamp01(a.uncertainty ?? 0.5),
     })),
     metric: claim.benchmark
       ? {
@@ -160,7 +201,7 @@ function mapClaimToSignalRow(
 async function processOneDocument(
   ctx: SignalProcessingContext,
   row: AcquiredDocRow,
-  scoringVersion: string,
+  scoringVersion: string
 ): Promise<ProcessedDocumentResult> {
   const { db, r2BucketName, openRouterApiKey } = ctx;
   const result: ProcessedDocumentResult = {
@@ -191,7 +232,7 @@ async function processOneDocument(
           ? new Date(row.publishedAt).toISOString().slice(0, 10)
           : null,
       },
-      openRouterApiKey,
+      openRouterApiKey
     );
 
     let created = 0;
@@ -200,7 +241,7 @@ async function processOneDocument(
         row.documentId,
         claim,
         row.trustWeight,
-        scoringVersion,
+        scoringVersion
       );
       if (!signalRow) continue;
       await db.insert(signals).values({
@@ -227,8 +268,15 @@ async function processOneDocument(
     result.success = true;
     result.signalsCreated = created;
   } catch (err) {
-    result.error =
-      err instanceof Error ? err.message : "Signal processing failed";
+    result.error = formatSignalError(err);
+    if (APICallError.isInstance(err)) {
+      console.error("[signal/run] APICallError:", {
+        documentId: row.documentId,
+        statusCode: err.statusCode,
+        responseBody: truncate(String(err.responseBody ?? ""), 800),
+        cause: err.cause,
+      });
+    }
   }
 
   return result;
@@ -240,7 +288,7 @@ async function processOneDocument(
  */
 export async function runSignalProcessing(
   ctx: SignalProcessingContext,
-  options: SignalProcessingOptions = {},
+  options: SignalProcessingOptions = {}
 ): Promise<SignalProcessingStats> {
   const { db } = ctx;
   const startMs = Date.now();
@@ -264,7 +312,7 @@ export async function runSignalProcessing(
     JSON.stringify({
       event: "signal_processing_start",
       documentCount: batch.length,
-    }),
+    })
   );
 
   for (let i = 0; i < batch.length; i += CONCURRENCY) {
@@ -272,7 +320,7 @@ export async function runSignalProcessing(
     const chunkIndex = Math.floor(i / CONCURRENCY) + 1;
 
     const chunkResults = await Promise.all(
-      chunk.map((row) => processOneDocument(ctx, row, scoringVersion)),
+      chunk.map((row) => processOneDocument(ctx, row, scoringVersion))
     );
 
     for (const result of chunkResults) {
@@ -295,7 +343,7 @@ export async function runSignalProcessing(
         documentsFailed: stats.documentsFailed,
         signalsCreated: stats.signalsCreated,
         elapsedMs,
-      }),
+      })
     );
   }
 
@@ -307,7 +355,7 @@ export async function runSignalProcessing(
       documentsFailed: stats.documentsFailed,
       signalsCreated: stats.signalsCreated,
       durationMs: stats.durationMs,
-    }),
+    })
   );
   return stats;
 }
