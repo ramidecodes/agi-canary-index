@@ -25,7 +25,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<void> {
     const db = createDb(env.DATABASE_URL);
     const runId = await createPipelineRun(db);
@@ -49,7 +49,7 @@ export default {
         body: JSON.stringify({ runId }),
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      }),
+      })
     );
   },
 
@@ -57,7 +57,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<Response> {
     const url = new URL(request.url);
 
@@ -127,7 +127,7 @@ async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
         headers: { Authorization: `Bearer ${env.INTERNAL_TOKEN}` },
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      }),
+      })
     );
   }
 

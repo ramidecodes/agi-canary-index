@@ -21,10 +21,10 @@ function question(prompt: string): Promise<string> {
 async function setSecret(
   name: string,
   env: string,
-  description: string,
+  description: string
 ): Promise<void> {
   const value = await question(
-    `Enter ${description} (or press Enter to skip): `,
+    `Enter ${description} (or press Enter to skip): `
   );
   if (!value.trim()) {
     console.log(`Skipping ${name}`);
@@ -53,28 +53,28 @@ async function main() {
   await setSecret(
     "DATABASE_URL",
     env,
-    "Neon Postgres pooled connection string",
+    "Neon Postgres pooled connection string"
   );
   await setSecret(
     "OPENROUTER_API_KEY",
     env,
-    "OpenRouter API key (for AI calls)",
+    "OpenRouter API key (for AI calls)"
   );
   await setSecret(
     "FIRECRAWL_API_KEY",
     env,
-    "Firecrawl API key (for content scraping)",
+    "Firecrawl API key (for content scraping)"
   );
   await setSecret(
     "INTERNAL_TOKEN",
     env,
-    "Internal auth token for /run and /jobs endpoints",
+    "Internal auth token for /run and /jobs endpoints"
   );
 
   console.log("");
   console.log("Done! Secrets are set.");
   console.log(
-    `To verify: pnpm wrangler secret list ${env === "prod" ? "--env prod" : ""}`,
+    `To verify: pnpm wrangler secret list ${env === "prod" ? "--env prod" : ""}`
   );
 
   rl.close();
