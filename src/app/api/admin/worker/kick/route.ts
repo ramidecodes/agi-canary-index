@@ -18,14 +18,14 @@ export async function POST() {
   if (!workerUrl) {
     return NextResponse.json(
       { ok: false, error: "WORKER_URL not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
   if (!internalToken) {
     return NextResponse.json(
       { ok: false, error: "INTERNAL_TOKEN not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -40,7 +40,7 @@ export async function POST() {
     if (!res.ok) {
       return NextResponse.json(
         { ok: false, error: data.error || "Worker request failed" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 

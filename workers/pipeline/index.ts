@@ -15,9 +15,19 @@ export interface Env {
   FIRECRAWL_API_KEY: string;
   INTERNAL_TOKEN: string;
   DOCUMENTS: R2Bucket;
-  RUNNER_URL?: string; // Self-URL for /run endpoint
+  /** Base Worker URL (e.g. https://agi-canary-etl-prod.ramidecodes.workers.dev). Used to build /run URL for self-kick. */
+  WORKER_URL?: string;
+  /** Full URL to /run endpoint for self-kick. Overrides WORKER_URL if set. */
+  RUNNER_URL?: string;
   BATCH_SIZE: string;
   TIME_BUDGET_MS: string;
+}
+
+function getRunnerUrl(env: Env): string {
+  if (env.RUNNER_URL) return env.RUNNER_URL;
+  const base = env.WORKER_URL?.replace(/\/$/, "");
+  if (base) return `${base}/run`;
+  return "https://agi-canary-etl.workers.dev/run";
 }
 
 export default {
@@ -25,7 +35,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
   ): Promise<void> {
     const db = createDb(env.DATABASE_URL);
     const runId = await createPipelineRun(db);
@@ -40,8 +50,7 @@ export default {
     });
 
     // Self-kick the runner
-    const runnerUrl =
-      env.RUNNER_URL || "https://agi-canary-etl.workers.dev/run";
+    const runnerUrl = getRunnerUrl(env);
     ctx.waitUntil(
       fetch(runnerUrl, {
         method: "POST",
@@ -49,7 +58,7 @@ export default {
         body: JSON.stringify({ runId }),
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      })
+      }),
     );
   },
 
@@ -57,7 +66,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
   ): Promise<Response> {
     const url = new URL(request.url);
 
@@ -96,7 +105,7 @@ function isAuthorized(request: Request, env: Env): boolean {
 async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
   const db = createDb(env.DATABASE_URL);
   const started = Date.now();
-  const timeBudget = parseInt(env.TIME_BUDGET_MS, 10) || 20000;
+  const timeBudget = parseInt(env.TIME_BUDGET_MS, 10) || 180000; // 3 min default for discovery
   const batchSize = parseInt(env.BATCH_SIZE, 10) || 15;
   const instanceId = crypto.randomUUID();
 
@@ -116,18 +125,28 @@ async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
     }
   }
 
-  // Self-kick if more jobs remain
   const remaining = await countReadyJobs(db);
+  console.log(
+    JSON.stringify({
+      event: "run_batch",
+      instanceId,
+      processed,
+      remaining,
+      timeBudgetMs: timeBudget,
+      durationMs: Date.now() - started,
+    }),
+  );
+
+  // Self-kick if more jobs remain
   if (remaining > 0) {
-    const runnerUrl =
-      env.RUNNER_URL || "https://agi-canary-etl.workers.dev/run";
+    const runnerUrl = getRunnerUrl(env);
     ctx.waitUntil(
       fetch(runnerUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${env.INTERNAL_TOKEN}` },
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      })
+      }),
     );
   }
 

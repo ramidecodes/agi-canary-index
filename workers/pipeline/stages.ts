@@ -4,7 +4,12 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import { items, documents, signals } from "../../src/lib/db/schema";
+import {
+  items,
+  documents,
+  pipelineRuns,
+  signals,
+} from "../../src/lib/db/schema";
 import type { Job, NeonDatabase } from "./db";
 import { enqueueJob } from "./db";
 import type { Env } from "./index";
@@ -50,36 +55,52 @@ async function processDiscover(
 ): Promise<void> {
   const dryRun = job.payload.dryRun === true;
 
-  // Run discovery (use job.runId when from Worker to avoid orphaned runs)
-  const stats = await runDiscovery({
-    db,
-    options: {
-      openRouterApiKey: env.OPENROUTER_API_KEY,
-      dryRun,
-      forceNewRun: false,
-      runId: job.runId,
-    },
-  });
+  try {
+    // Run discovery (use job.runId when from Worker to avoid orphaned runs)
+    const stats = await runDiscovery({
+      db,
+      options: {
+        openRouterApiKey: env.OPENROUTER_API_KEY,
+        dryRun,
+        forceNewRun: false,
+        runId: job.runId,
+      },
+    });
 
-  // Enqueue FETCH jobs for discovered items
-  if (stats.insertedItemIds && stats.insertedItemIds.length > 0) {
-    for (const itemId of stats.insertedItemIds) {
-      const item = await db
-        .select({ url: items.url, urlHash: items.urlHash })
-        .from(items)
-        .where(eq(items.id, itemId))
-        .limit(1);
+    // Enqueue FETCH jobs for discovered items
+    if (stats.insertedItemIds && stats.insertedItemIds.length > 0) {
+      for (const itemId of stats.insertedItemIds) {
+        const item = await db
+          .select({ url: items.url, urlHash: items.urlHash })
+          .from(items)
+          .where(eq(items.id, itemId))
+          .limit(1);
 
-      if (item.length > 0) {
-        await enqueueJob(db, {
-          runId: job.runId,
-          type: "fetch",
-          payload: { itemId },
-          dedupeKey: `FETCH:${item[0].urlHash}`,
-          priority: 50,
-        });
+        if (item.length > 0) {
+          await enqueueJob(db, {
+            runId: job.runId,
+            type: "fetch",
+            payload: { itemId },
+            dedupeKey: `FETCH:${item[0].urlHash}`,
+            priority: 50,
+          });
+        }
       }
     }
+  } catch (err) {
+    // Ensure pipeline_run is marked failed when discovery job fails (e.g. timeout before runDiscovery catches)
+    if (job.runId) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "failed",
+          completedAt: new Date(),
+          errorLog: errMsg.slice(0, 4096),
+        })
+        .where(eq(pipelineRuns.id, job.runId));
+    }
+    throw err;
   }
 }
 

@@ -9,12 +9,10 @@ import { items, pipelineRuns, sourceFetchLogs, sources } from "../db/schema";
 import { fetchCurated } from "./fetch-curated";
 import { fetchRss } from "./fetch-rss";
 import { fetchSearch } from "./fetch-search";
-import { fetchX } from "./fetch-x";
 import type { DiscoveredItem, DiscoveryRunStats } from "./types";
 
 const CONCURRENCY = 2; // Lower = more event-loop yields, keeps app responsive
 const DEDUP_DAYS = 30;
-const X_SOURCE_ENABLED = true;
 /** Mark runs stuck in "running" longer than this as failed before starting. */
 const STALE_RUN_MINUTES = 3;
 /** Max time per source fetch so one hung source does not block the whole run. */
@@ -23,7 +21,6 @@ const SOURCE_FETCH_TIMEOUT_MS = 60_000;
 export interface DiscoveryOptions {
   dryRun?: boolean;
   openRouterApiKey: string;
-  xSearchEnabled?: boolean;
   /** When true (e.g. manual admin trigger), supersede any running run and start a new one. */
   forceNewRun?: boolean;
   /** When provided (e.g. from Worker job), use this run instead of creating a new one. */
@@ -103,6 +100,13 @@ export async function runDiscovery(
         stats.durationMs = Date.now() - startMs;
         stats.skipped = true;
         stats.skipReason = "run_already_in_progress";
+        console.log(
+          JSON.stringify({
+            event: "discovery_skipped",
+            reason: stats.skipReason,
+            durationMs: stats.durationMs,
+          }),
+        );
         return stats;
       }
     }
@@ -117,6 +121,12 @@ export async function runDiscovery(
     runId = run?.id ?? null;
     if (!runId) {
       stats.durationMs = Date.now() - startMs;
+      console.log(
+        JSON.stringify({
+          event: "discovery_no_run_id",
+          durationMs: stats.durationMs,
+        }),
+      );
       return stats;
     }
   }
@@ -143,15 +153,23 @@ export async function runDiscovery(
       (s) => !s.url.includes("example.com"),
     );
 
+    console.log(
+      JSON.stringify({
+        event: "discovery_start",
+        runId,
+        dryRun: options.dryRun ?? false,
+        activeSourceCount: activeSources.length,
+      }),
+    );
+
     const allItems: DiscoveredItem[] = [];
-    const xEnabled = options.xSearchEnabled ?? X_SOURCE_ENABLED;
 
     for (let i = 0; i < activeSources.length; i += CONCURRENCY) {
       const batch = activeSources.slice(i, i + CONCURRENCY);
       await Promise.all(
         batch.map(async (src) => {
           const result = await Promise.race([
-            fetchFromSource(src, options.openRouterApiKey, xEnabled),
+            fetchFromSource(src, options.openRouterApiKey),
             new Promise<{ items: DiscoveredItem[]; error?: string }>(
               (_, reject) =>
                 setTimeout(
@@ -275,23 +293,32 @@ export async function runDiscovery(
         })
         .where(eq(pipelineRuns.id, runId));
     }
+
+    stats.durationMs = Date.now() - startMs;
+    console.log(
+      JSON.stringify({
+        event: "discovery_completed",
+        runId,
+        itemsDiscovered: stats.itemsDiscovered,
+        itemsInserted: stats.itemsInserted,
+        sourcesSucceeded: stats.sourcesSucceeded,
+        sourcesFailed: stats.sourcesFailed,
+        durationMs: stats.durationMs,
+      }),
+    );
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "Discovery failed";
     await markRunFailed(errMsg);
+    stats.durationMs = Date.now() - startMs;
+    console.log(
+      JSON.stringify({
+        event: "discovery_failed",
+        runId: runId ?? undefined,
+        error: errMsg,
+        durationMs: stats.durationMs,
+      }),
+    );
     throw err;
-  } finally {
-    if (runId) {
-      await db
-        .update(pipelineRuns)
-        .set({
-          status: "failed",
-          completedAt: new Date(),
-          errorLog: "Run did not complete (timeout or crash)",
-        })
-        .where(
-          and(eq(pipelineRuns.id, runId), eq(pipelineRuns.status, "running")),
-        );
-    }
   }
 
   stats.durationMs = Date.now() - startMs;
@@ -307,7 +334,6 @@ async function fetchFromSource(
     queryConfig?: Record<string, unknown> | null;
   },
   apiKey: string,
-  xEnabled: boolean,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   switch (src.sourceType) {
     case "rss":
@@ -317,8 +343,7 @@ async function fetchFromSource(
     case "curated":
       return fetchCurated(src.url, src.id);
     case "x":
-      if (!xEnabled) return { items: [] };
-      return fetchX(src.id, apiKey, src.queryConfig ?? undefined);
+      return { items: [], error: "X source type disabled" };
     case "api":
       return { items: [], error: "API source type not implemented" };
     default:

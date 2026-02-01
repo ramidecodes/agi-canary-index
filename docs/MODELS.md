@@ -46,23 +46,7 @@ This document describes the AI models used in the AGI Canary Watcher and the rat
 - [Perplexity on OpenRouter](https://openrouter.ai/provider/perplexity)
 - [Sonar model](https://openrouter.ai/perplexity/sonar)
 
-## X Search (X/Twitter Discovery)
-
-**Model:** `x-ai/grok-4.1-fast` (hardcoded in `src/lib/ai-models.ts`)
-
-**Use case:** Discover URLs and signals from X (Twitter). Grok has real-time X data access. Used as an optional, feature-flagged discovery source alongside Perplexity (web) and RSS.
-
-**Why Grok 4.1 Fast:**
-
-1. **X data access** — Native access to X/Twitter for real-time social signals on AI progress, benchmark announcements, lab updates.
-2. **Large context** — 2M token context; web search support ($5/K queries) for grounded results.
-3. **OpenRouter** — Available as `x-ai/grok-4.1-fast`; same `OPENROUTER_API_KEY` as signal extraction.
-
-**Implementation:** Optional discovery source. Build pipeline so X can be disabled without breaking ingestion (regulatory considerations in EU/US). See source_type `x` in Source Registry.
-
-**References:**
-
-- [Grok 4.1 Fast on OpenRouter](https://openrouter.ai/x-ai/grok-4.1-fast)
+**Note:** X/Twitter discovery (Grok) has been removed. Discovery uses Perplexity (web search) and Firecrawl for content acquisition.
 
 ## References
 

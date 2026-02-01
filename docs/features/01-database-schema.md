@@ -67,7 +67,7 @@ Trusted data sources for the pipeline.
 - `trust_weight` (decimal 0-1): Confidence multiplier
 - `cadence` (enum: daily, weekly, monthly): Expected update frequency
 - `domain_type` (enum: evaluation, policy, research, commentary): Content type
-- `source_type` (enum: rss, search, curated, api, x): How to fetch (`x` = X/Twitter via Grok, optional)
+- `source_type` (enum: rss, search, curated, api, x): How to fetch (`x` retained for backward compatibility but disabled; use rss, search, curated)
 - `query_config` (jsonb): Source-specific configuration
 - `is_active` (boolean): Whether to include in pipeline runs
 - `last_success_at` (timestamp): Last successful fetch

@@ -29,7 +29,7 @@ const DOMAIN_OPTIONS = [
   "research",
   "commentary",
 ] as const;
-const SOURCE_TYPE_OPTIONS = ["rss", "search", "curated", "api", "x"] as const;
+const SOURCE_TYPE_OPTIONS = ["rss", "search", "curated", "api"] as const;
 
 export type SourceFormValues = {
   name: string;

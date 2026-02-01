@@ -179,10 +179,10 @@ Shared code: DB, AI models, and future services.
   - `AUTO_DISABLE_FAILURE_THRESHOLD`, `getSourceHealthStatus()`, `SEED_SOURCES`
 - **`auth.ts`** — Server-side auth for admin API routes (`requireAuth()`)
 - **`ai-models.ts`** — AI model IDs and config (see [MODELS.md](MODELS.md))
-- **`discovery/`** — Discovery pipeline (RSS, search, curated, X)
+- **`discovery/`** — Discovery pipeline (RSS, search, curated; Perplexity via OpenRouter, Firecrawl for acquisition)
   - `run.ts` — Orchestration (sources → fetch → dedup → persist)
   - `url.ts` — URL canonicalization and hashing
-  - `fetch-rss.ts`, `fetch-search.ts`, `fetch-curated.ts`, `fetch-x.ts`
+  - `fetch-rss.ts`, `fetch-search.ts`, `fetch-curated.ts`
 - **`acquisition/`** — Content acquisition pipeline (Firecrawl, R2)
   - `run.ts` — Orchestration (scrape → validate → store → document)
   - `firecrawl.ts` — Firecrawl scrape API client

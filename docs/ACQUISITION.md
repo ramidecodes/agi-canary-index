@@ -1,6 +1,6 @@
 # Acquisition Pipeline - Implementation Guide
 
-The Acquisition Pipeline fetches full page content from discovered URLs via Firecrawl, validates it, stores clean markdown in R2, and creates document records for downstream AI signal extraction.
+The Acquisition Pipeline fetches full page content from discovered URLs via **Firecrawl**, validates it, stores clean markdown in R2, and creates document records for downstream AI signal extraction. Discovery (RSS, Perplexity search, curated) produces candidate URLs; this pipeline acquires their content. Requires `FIRECRAWL_API_KEY` (see [INFRASTRUCTURE.md](INFRASTRUCTURE.md)).
 
 ## Architecture
 

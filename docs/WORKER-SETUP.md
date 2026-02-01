@@ -99,7 +99,8 @@ Worker configuration is in `wrangler.jsonc`:
 - **Environment Variables:**
   - `BATCH_SIZE`: Jobs per `/run` invocation (default: 15)
   - `TIME_BUDGET_MS`: Time budget per run (default: 20000)
-  - `RUNNER_URL`: Self-URL for `/run` endpoint (optional, auto-detected)
+  - `WORKER_URL`: Base Worker URL for self-kick (same as Vercel; Worker builds `/run` from it). Optional; set if using custom domain.
+- `RUNNER_URL`: Full URL to `/run` (optional override)
 
 ## Vercel Environment Variables
 

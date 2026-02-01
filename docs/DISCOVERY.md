@@ -5,18 +5,24 @@ The Discovery Pipeline automatically finds relevant AI content from configured s
 ## Architecture
 
 - **Vercel Cron** — Daily 6 AM UTC triggers `/api/pipeline/cron` (Bearer `CRON_SECRET`)
-- **Discovery Library** (`src/lib/discovery/`) — Fetch strategies (RSS, search, curated, X)
+- **Discovery Library** (`src/lib/discovery/`) — Fetch strategies (RSS, search, curated)
 - **Next.js API** (`/api/admin/pipeline/discover`) — Manual trigger (Clerk auth)
-- **AI SDK v6** — Web search via OpenRouter provider (`@openrouter/ai-sdk-provider`)
+- **OpenRouter** — Perplexity for web search; Firecrawl used downstream for content acquisition
 
 ## Discovery Sources
 
-The pipeline fetches from 4 source types:
+The pipeline fetches from 3 active source types:
 
 1. **RSS** — Parse RSS/Atom feeds. Validated feeds include: METR blog, OpenAI News (`openai.com/news/rss.xml`), Anthropic News (`anthropic.com/news/feed_anthropic.xml`), DeepMind (`deepmind.com/blog/rss.xml`), arXiv cs.AI (`rss.arxiv.org/rss/cs.AI`), Google AI Blog (`research.google/blog/rss/`), LessWrong, Alignment Forum, Center for AI Safety.
-2. **Search** — Perplexity Sonar via OpenRouter (web search with AI SDK)
+2. **Search** — Perplexity via OpenRouter (web search for AI-related content)
 3. **Curated** — HTML link extraction from lab pages (e.g., Stanford HAI, OECD AI, UK AISI, AI2 blog, Import AI). Note: Some curated pages may return 403 (e.g. OECD); use RSS where available.
-4. **X** — Grok via OpenRouter for Twitter/X posts (feature-flagged)
+
+### Data flow (Perplexity + Firecrawl)
+
+- **Discovery** (this pipeline): RSS feeds, **Perplexity** (via OpenRouter) for web search, and curated page scraping produce candidate URLs. New items are inserted with `status: pending`.
+- **Acquisition** (downstream): Worker FETCH jobs call **Firecrawl** to scrape full page content, validate it, and store markdown in R2. See [ACQUISITION.md](ACQUISITION.md).
+
+Required env: `OPENROUTER_API_KEY` (discovery search + signal extraction), `FIRECRAWL_API_KEY` (acquisition). See [INFRASTRUCTURE.md](INFRASTRUCTURE.md).
 
 ### Search Scope
 
@@ -38,15 +44,15 @@ The AI categorizes results (`capability`, `agent_autonomy`, `infrastructure`, `p
 2. **Stale-run guard**: Mark any run stuck in `running` for more than 15 minutes as `failed` before starting.
 3. **Check for in-progress runs**: Skip if a run is already executing.
 4. **Create pipeline_run**: Insert with `status: running`.
-5. **Fetch from sources** (parallel batches of 5, 60s timeout per source):
+5. **Fetch from sources** (parallel batches of 2, 60s timeout per source):
    - Call appropriate fetcher based on `source_type`; hung sources are logged as failure and do not block the run.
    - Log to `source_fetch_logs` (success/failure, items_found)
    - Update `sources.last_success_at` and `error_count`
 6. **Deduplicate**: Check `items.url_hash` for URLs seen in last 30 days
 7. **Insert new items**: Write to `items` with `status: pending`
 8. **Update pipeline_run**: Set `status: completed`, write counts
-9. **Finally**: If the run is still `running` (e.g. timeout or crash), mark it `failed` so it does not stay stuck.
-10. **Trigger Acquisition**: Same request runs acquisition for first 50 inserted items (when not dry run)
+9. **On error**: Only in `catch` is the run marked `failed` (no unconditional finally), so successful runs stay completed.
+10. **Trigger Acquisition**: Worker enqueues FETCH jobs for inserted items; Firecrawl acquisition runs in pipeline.
 
 ### Manual Trigger (Admin)
 
@@ -111,11 +117,11 @@ Hash: SHA-256 of canonical URL → `items.url_hash` for fast lookup.
 
 - **Source failures**: Don't block other sources; log error, increment `sources.error_count`
 - **Per-source timeout**: Each source fetch has a 60s timeout; hung fetches are logged as failure so the run can complete.
-- **Stale-run guard**: Runs stuck in `running` for more than 15 minutes are marked `failed` before a new run starts.
-- **Finally block**: When the handler exits, any run still `running` is marked `failed` (avoids stuck runs on timeout/crash).
+- **Stale-run guard**: Runs stuck in `running` for more than 3 minutes are marked `failed` before a new run starts.
+- **Error handling**: Only in `catch` is the run marked `failed`; successful completion is not overwritten.
 - **Auto-disable**: Sources with `error_count >= 5` are flagged (manual re-enable via admin)
 - **Partial success**: Pipeline completes if any source succeeds
-- **Timeouts**: RSS/curated (30s per fetch), search (60s), X (45s) with retries; orchestration timeout 60s per source
+- **Timeouts**: RSS/curated (30s per fetch), search (60s); orchestration timeout 60s per source
 - **Run failures**: If discovery throws, pipeline run is marked `failed` with `error_log`
 - **RSS parse errors**: Malformed XML (e.g. "Attribute without value") is sanitized before parsing where possible
 
@@ -145,16 +151,16 @@ In Vercel dashboard → Project → Cron Jobs: `0 6 * * *` (daily 6 AM UTC)
 
 ## Troubleshooting
 
-| Issue                               | Solution                                                                                                                                                                                                                                         |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Run stuck in "running"              | Stale-run guard (15 min) and `finally` block auto-mark stuck runs as failed. To fix an existing stuck run: `UPDATE pipeline_runs SET status = 'failed', completed_at = now(), error_log = 'Marked failed (stuck run)' WHERE status = 'running';` |
-| Function times out                  | Check source fetch times; each source has 60s timeout; reduce concurrency or disable slow sources                                                                                                                                                |
-| "DATABASE_URL not set"              | Set env vars in Vercel project settings                                                                                                                                                                                                          |
-| Perplexity returns no results       | Check OPENROUTER_API_KEY; verify quota on [openrouter.ai/credits](https://openrouter.ai/credits)                                                                                                                                                 |
-| Duplicate URLs inserted             | Check `items.url` unique constraint; canonicalization may differ                                                                                                                                                                                 |
-| Source stuck in "red" health        | Reset `error_count` via admin or re-test fetch                                                                                                                                                                                                   |
-| 403 on curated sources              | Switch to RSS where available (see SEED_SOURCES in `src/lib/sources.ts`); OECD and some lab pages may 403                                                                                                                                        |
-| RSS parse "Attribute without value" | Pipeline sanitizes malformed XML attributes before parsing                                                                                                                                                                                       |
+| Issue                               | Solution                                                                                                                                                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Run stuck in "running"              | Stale-run guard (3 min) marks stale runs failed before starting. To fix an existing stuck run: `UPDATE pipeline_runs SET status = 'failed', completed_at = now(), error_log = 'Marked failed (stuck run)' WHERE status = 'running';` |
+| Function times out                  | Check source fetch times; each source has 60s timeout; reduce concurrency or disable slow sources                                                                                                                                    |
+| "DATABASE_URL not set"              | Set env vars in Vercel project settings                                                                                                                                                                                              |
+| Perplexity returns no results       | Check OPENROUTER_API_KEY; verify quota on [openrouter.ai/credits](https://openrouter.ai/credits)                                                                                                                                     |
+| Duplicate URLs inserted             | Check `items.url` unique constraint; canonicalization may differ                                                                                                                                                                     |
+| Source stuck in "red" health        | Reset `error_count` via admin or re-test fetch                                                                                                                                                                                       |
+| 403 on curated sources              | Switch to RSS where available (see SEED_SOURCES in `src/lib/sources.ts`); OECD and some lab pages may 403                                                                                                                            |
+| RSS parse "Attribute without value" | Pipeline sanitizes malformed XML attributes before parsing                                                                                                                                                                           |
 
 ## Next Steps
 

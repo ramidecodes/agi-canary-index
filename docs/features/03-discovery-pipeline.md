@@ -41,40 +41,33 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
    - Filter by recency (last 7 days)
    - Extract: URL, title, snippet, source domain from citations
 
-4. **X Search Discovery (Optional, Feature-Flagged)**
-
-   - Use `x-ai/grok-4.1-fast` via OpenRouter to query X (Twitter) for AI-related posts and links
-   - Grok has real-time X data access; model constant in `src/lib/ai-models.ts` (`X_SEARCH_MODEL`)
-   - Source type: `x`; can be disabled without breaking pipeline (regulatory considerations)
-   - Extract: URL, title/snippet, author, engagement signals
-
-5. **Curated Source Discovery**
+4. **Curated Source Discovery**
 
    - Check specific pages for new content (lab research pages, report indexes)
    - Compare against last known state
    - Detect new publications or updates
 
-6. **URL Canonicalization**
+5. **URL Canonicalization**
 
    - Strip tracking parameters (utm\_\*, fbclid, etc.)
    - Remove fragments unless semantically meaningful
    - Normalize protocol (prefer https)
    - Generate consistent URL hash for deduplication
 
-7. **Deduplication**
+6. **Deduplication**
 
    - Check URL hash against items table
    - Skip URLs seen in past 30 days
    - Track "refresh" candidates (old URLs with new content signals)
 
-8. **Batch Output**
+7. **Batch Output**
 
    - Create pipeline_run record
    - Insert new items with status "pending"
    - Log discovery statistics per source
    - Return batch summary for monitoring
 
-9. **Error Handling**
+8. **Error Handling**
    - Continue on individual source failures
    - Log errors to source record (error_count, pipeline_run.error_log)
    - Increment source error_count on failure
@@ -96,9 +89,9 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 
 **External Services:**
 
-- Perplexity Sonar via OpenRouter (web discovery; `perplexity/sonar`)
-- xAI Grok via OpenRouter (X/Twitter discovery, optional)
+- Perplexity via OpenRouter (web discovery; `perplexity/sonar`)
 - HTTP/RSS fetch (native)
+- Firecrawl used downstream for content acquisition
 
 **Pipeline Orchestration:**
 
@@ -111,7 +104,7 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 1. Vercel Cron triggers `GET /api/pipeline/cron` at scheduled time
 2. Route checks for in-progress runs, skips if found
 3. Creates new `pipeline_runs` record (status: running)
-4. For each active source (in parallel batches of 5):
+4. For each active source (in parallel batches of 2):
    - Based on source_type, execute appropriate fetch strategy
    - Update sources.last_success_at and error_count on success/failure
    - On success: extract URLs, canonicalize, collect batch

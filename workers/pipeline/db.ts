@@ -24,7 +24,7 @@ const BACKOFF_DELAYS = [
 export async function claimJobs(
   db: NeonDatabase,
   limit: number,
-  lockedBy: string
+  lockedBy: string,
 ): Promise<Job[]> {
   // Use raw SQL for SKIP LOCKED (Drizzle doesn't support it directly)
   const result = await db.execute(sql`
@@ -54,7 +54,7 @@ export async function claimJobs(
  */
 export async function markJobDone(
   db: NeonDatabase,
-  jobId: bigint
+  jobId: bigint,
 ): Promise<void> {
   await db
     .update(jobs)
@@ -73,7 +73,7 @@ export async function markJobDone(
 export async function markJobFailed(
   db: NeonDatabase,
   jobId: bigint,
-  error: string
+  error: string,
 ): Promise<void> {
   const jobRows = await db
     .select()
@@ -147,7 +147,7 @@ export async function enqueueJob(
     dedupeKey?: string;
     priority?: number;
     maxAttempts?: number;
-  }
+  },
 ): Promise<void> {
   // If dedupeKey is provided, check for existing job
   if (job.dedupeKey) {

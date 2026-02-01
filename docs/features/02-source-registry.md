@@ -8,7 +8,7 @@ Provide a curated, tiered registry of trusted data sources that feed the AGI Can
 
 - Distinguish between authoritative sources (Tier-0) and commentary (Tier-1)
 - Enable source health monitoring (last success, error count, auto-disable)
-- Support different fetch mechanisms (RSS, search API, curated pages, X/Twitter via Grok)
+- Support different fetch mechanisms (RSS, search API, curated pages)
 - Provide an admin interface for source management
 
 This feature ensures the pipeline ingests high-quality, traceable information that maintains the application's epistemic credibility.
@@ -55,7 +55,7 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 3. **Source Configuration**
 
    - Each source has: name, URL, tier, trust weight (0-1), cadence, domain type
-   - Source type determines fetch strategy: RSS, search API, curated scrape, X (Grok, feature-flagged)
+   - Source type determines fetch strategy: RSS, search API, curated scrape
    - Query configuration for search-based sources (keywords, domains)
    - Active/inactive toggle without deletion
 

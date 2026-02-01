@@ -20,12 +20,3 @@ export const SIGNAL_EXTRACTION_MODEL = "anthropic/claude-sonnet-4.5" as const;
  * @see https://openrouter.ai/perplexity/sonar
  */
 export const WEB_SEARCH_MODEL = "perplexity/sonar" as const;
-
-/**
- * X (Twitter) search: discover URLs and signals from X/Twitter.
- * Grok has real-time X data access. Feature-flagged; can be disabled.
- * 2M context, web search support. Use via OpenRouter with same API key.
- *
- * @see https://openrouter.ai/x-ai/grok-4.1-fast
- */
-export const X_SEARCH_MODEL = "x-ai/grok-4.1-fast" as const;
