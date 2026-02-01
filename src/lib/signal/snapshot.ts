@@ -4,9 +4,16 @@
  * @see docs/features/05-signal-processing.md
  */
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { dailySnapshots, signals } from "@/lib/db/schema";
 import type { createDb } from "@/lib/db";
+
+/** Get previous day as YYYY-MM-DD. */
+function previousDay(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
 
 const AXES = [
   "reasoning",
@@ -82,6 +89,17 @@ export async function createDailySnapshot(
     }
   }
 
+  const prevDate = previousDay(dateStr);
+  const [prevSnapshot] = await db
+    .select({ axisScores: dailySnapshots.axisScores })
+    .from(dailySnapshots)
+    .where(eq(dailySnapshots.date, prevDate))
+    .limit(1);
+  const prevScores = (prevSnapshot?.axisScores ?? {}) as Record<
+    string,
+    { score?: number }
+  >;
+
   const axisScores: Record<
     string,
     { score: number; uncertainty?: number; delta?: number }
@@ -90,7 +108,9 @@ export async function createDailySnapshot(
     const e = axisSums[axis];
     const score = e.weightSum > 0 ? e.weightedSum / e.weightSum : 0;
     const uncertainty = e.count > 0 ? e.uncertaintySum / e.count : undefined;
-    axisScores[axis] = { score, uncertainty };
+    const prevScore = prevScores[axis]?.score ?? 0;
+    const delta = Math.round((score - prevScore) * 1000) / 1000;
+    axisScores[axis] = { score, uncertainty, delta };
   }
 
   const signalIds = rows.map((r) => r.id);

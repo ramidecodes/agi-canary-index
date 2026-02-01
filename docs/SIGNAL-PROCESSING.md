@@ -61,12 +61,14 @@ Create or update the daily snapshot for a date. Requires Clerk auth.
 
 - **Query:** Documents with `processedAt` null, `cleanBlobKey` not null, joined with items (status `acquired`) and sources. Ordered by `sources.tier` then `documents.acquiredAt`; limit 10.
 - **Per document:** Fetch content from R2 → `extractSignals()` → for each claim, `adjustedConfidence = confidence * Number(trustWeight)`; skip if `adjustedConfidence < 0.3` or no axes; insert into `signals`; then update `documents.processedAt` and `items.status = 'processed'`.
+- **Parallelization:** Documents processed in parallel batches (CONCURRENCY=4) to improve throughput.
 - **Scoring version:** Fixed `v1` (could later be read from `pipeline_runs.scoringVersion`).
 
 ### Snapshot (`src/lib/signal/snapshot.ts`)
 
 - Selects signals where `createdAt::date = date`.
 - For each of the 9 axes: score = confidence-weighted average of (direction × magnitude); uncertainty = average uncertainty.
+- **Delta**: Day-over-day change; `delta = score - previousDayScore` for each axis.
 - Upserts `daily_snapshots` by date (unique on `date`).
 
 ## Flow (manual or triggered)

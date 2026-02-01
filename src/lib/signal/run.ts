@@ -12,6 +12,7 @@ import { extractSignals } from "./extract";
 import type { ExtractedClaim } from "./schemas";
 
 const BATCH_SIZE = 10;
+const CONCURRENCY = 4;
 const CONFIDENCE_THRESHOLD = 0.3;
 const DEFAULT_SCORING_VERSION = "v1";
 
@@ -174,14 +175,92 @@ function mapClaimToSignalRow(
   };
 }
 
+async function processOneDocument(
+  ctx: SignalProcessingContext,
+  row: AcquiredDocRow,
+  scoringVersion: string,
+): Promise<ProcessedDocumentResult> {
+  const { db, r2BucketName, openRouterApiKey } = ctx;
+  const result: ProcessedDocumentResult = {
+    documentId: row.documentId,
+    itemId: row.itemId,
+    runId: row.runId,
+    success: false,
+    signalsCreated: 0,
+  };
+
+  try {
+    const content = await fetchDocumentFromR2({
+      bucketName: r2BucketName,
+      key: row.cleanBlobKey,
+    });
+
+    if (!content) {
+      result.error = "Content not found in R2";
+      return result;
+    }
+
+    const extraction = await extractSignals(
+      content,
+      {
+        sourceName: row.sourceName,
+        tier: row.tier,
+        publishedDate: row.publishedAt
+          ? new Date(row.publishedAt).toISOString().slice(0, 10)
+          : null,
+      },
+      openRouterApiKey,
+    );
+
+    let created = 0;
+    for (const claim of extraction.claims ?? []) {
+      const signalRow = mapClaimToSignalRow(
+        row.documentId,
+        claim,
+        row.trustWeight,
+        scoringVersion,
+      );
+      if (!signalRow) continue;
+      await db.insert(signals).values({
+        documentId: signalRow.documentId,
+        claimSummary: signalRow.claimSummary,
+        axesImpacted: signalRow.axesImpacted,
+        metric: signalRow.metric,
+        confidence: signalRow.confidence,
+        citations: signalRow.citations,
+        scoringVersion: signalRow.scoringVersion,
+      });
+      created++;
+    }
+
+    await db
+      .update(documents)
+      .set({ processedAt: new Date() })
+      .where(eq(documents.id, row.documentId));
+    await db
+      .update(items)
+      .set({ status: "processed" })
+      .where(eq(items.id, row.itemId));
+
+    result.success = true;
+    result.signalsCreated = created;
+  } catch (err) {
+    result.error =
+      err instanceof Error ? err.message : "Signal processing failed";
+  }
+
+  return result;
+}
+
 /**
  * Run signal processing: fetch acquired documents, extract signals via AI, persist, mark processed.
+ * Processes documents in parallel (CONCURRENCY=4) to improve throughput.
  */
 export async function runSignalProcessing(
   ctx: SignalProcessingContext,
   options: SignalProcessingOptions = {},
 ): Promise<SignalProcessingStats> {
-  const { db, r2BucketName, openRouterApiKey } = ctx;
+  const { db } = ctx;
   const startMs = Date.now();
   const stats: SignalProcessingStats = {
     documentsProcessed: 0,
@@ -199,81 +278,20 @@ export async function runSignalProcessing(
     return stats;
   }
 
-  for (const row of batch) {
-    const result: ProcessedDocumentResult = {
-      documentId: row.documentId,
-      itemId: row.itemId,
-      runId: row.runId,
-      success: false,
-      signalsCreated: 0,
-    };
-
-    try {
-      const content = await fetchDocumentFromR2({
-        bucketName: r2BucketName,
-        key: row.cleanBlobKey,
-      });
-
-      if (!content) {
-        result.error = "Content not found in R2";
-        stats.perDocument.push(result);
+  for (let i = 0; i < batch.length; i += CONCURRENCY) {
+    const chunk = batch.slice(i, i + CONCURRENCY);
+    const chunkResults = await Promise.all(
+      chunk.map((row) => processOneDocument(ctx, row, scoringVersion)),
+    );
+    for (const result of chunkResults) {
+      stats.perDocument.push(result);
+      if (result.success) {
+        stats.documentsProcessed++;
+        stats.signalsCreated += result.signalsCreated;
+      } else {
         stats.documentsFailed++;
-        continue;
       }
-
-      const extraction = await extractSignals(
-        content,
-        {
-          sourceName: row.sourceName,
-          tier: row.tier,
-          publishedDate: row.publishedAt
-            ? new Date(row.publishedAt).toISOString().slice(0, 10)
-            : null,
-        },
-        openRouterApiKey,
-      );
-
-      let created = 0;
-      for (const claim of extraction.claims ?? []) {
-        const signalRow = mapClaimToSignalRow(
-          row.documentId,
-          claim,
-          row.trustWeight,
-          scoringVersion,
-        );
-        if (!signalRow) continue;
-        await db.insert(signals).values({
-          documentId: signalRow.documentId,
-          claimSummary: signalRow.claimSummary,
-          axesImpacted: signalRow.axesImpacted,
-          metric: signalRow.metric,
-          confidence: signalRow.confidence,
-          citations: signalRow.citations,
-          scoringVersion: signalRow.scoringVersion,
-        });
-        created++;
-      }
-
-      await db
-        .update(documents)
-        .set({ processedAt: new Date() })
-        .where(eq(documents.id, row.documentId));
-      await db
-        .update(items)
-        .set({ status: "processed" })
-        .where(eq(items.id, row.itemId));
-
-      result.success = true;
-      result.signalsCreated = created;
-      stats.documentsProcessed++;
-      stats.signalsCreated += created;
-    } catch (err) {
-      result.error =
-        err instanceof Error ? err.message : "Signal processing failed";
-      stats.documentsFailed++;
     }
-
-    stats.perDocument.push(result);
   }
 
   stats.durationMs = Date.now() - startMs;

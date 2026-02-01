@@ -165,30 +165,23 @@ export async function runDiscovery(
     const toInsert = uniqueItems.filter((i) => !seenHashes.has(i.urlHash));
 
     if (toInsert.length > 0) {
-      for (const item of toInsert) {
-        try {
-          const [inserted] = await db
-            .insert(items)
-            .values({
-              runId,
-              sourceId: item.sourceId,
-              url: item.url,
-              urlHash: item.urlHash,
-              title: item.title,
-              status: "pending" as const,
-              publishedAt: item.publishedAt,
-            })
-            .returning({ id: items.id });
-          if (inserted) {
-            stats.itemsInserted++;
-            stats.insertedItemIds?.push(inserted.id);
-          }
-        } catch (err) {
-          const insertErr = err as { code?: string };
-          if (insertErr?.code !== "23505") {
-            throw err;
-          }
-        }
+      const values = toInsert.map((item) => ({
+        runId,
+        sourceId: item.sourceId,
+        url: item.url,
+        urlHash: item.urlHash,
+        title: item.title,
+        status: "pending" as const,
+        publishedAt: item.publishedAt,
+      }));
+      const inserted = await db
+        .insert(items)
+        .values(values)
+        .onConflictDoNothing({ target: items.url })
+        .returning({ id: items.id });
+      stats.itemsInserted = inserted.length;
+      for (const row of inserted) {
+        stats.insertedItemIds?.push(row.id);
       }
     }
   } else if (options.dryRun) {

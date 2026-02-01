@@ -86,7 +86,23 @@ Scripts are tested on **macOS and Linux**. On Windows use WSL or run the TypeScr
 
 1. **Discovery** runs daily (Cron) or via manual trigger. Inserts new items with status `pending`.
 2. **Acquisition** is triggered by Discovery (HTTP) or manually. Fetches content via Firecrawl, stores in R2, creates document records.
-3. Set `ACQUISITION_WORKER_URL` in both Worker (for Discovery→Acquisition chain) and Vercel (for manual trigger from admin UI).
+3. **Signal processing** runs on Vercel (AI extraction, OpenRouter). Not triggered by the Worker; run manually or via external scheduler.
+4. **Daily snapshot** aggregates signals for a date. Run manually after processing.
+
+Set `ACQUISITION_WORKER_URL` in both Worker (for Discovery→Acquisition chain) and Vercel (for manual trigger from admin UI).
+
+### Signal Processing (Manual or Optional Callback)
+
+Signal processing runs on **Vercel** (uses AI SDK + OpenRouter) because Cloudflare Workers cannot run the AI extraction step. After Acquisition completes:
+
+**Manual workflow (recommended for MVP):**
+
+1. Run `POST /api/admin/pipeline/process` repeatedly until no more acquired docs (batch of 10 per call)
+2. Run `POST /api/admin/pipeline/snapshot` with `{ date: "YYYY-MM-DD" }` for the date
+
+**Optional: HTTP callback from Acquisition Worker**
+
+To automate, add `SIGNAL_PROCESS_URL` to Worker secrets (e.g. `https://your-app.vercel.app/api/admin/pipeline/process`) and have the Worker call it with `Authorization: Bearer <token>` after acquisition. The Vercel API requires Clerk auth; use a service token or dedicated webhook route for Worker callbacks. See [SIGNAL-PROCESSING.md](SIGNAL-PROCESSING.md) for details.
 
 ## Manual Pipeline Triggers
 
@@ -150,6 +166,24 @@ curl -X POST https://agi-canary-pipeline.your-account.workers.dev/acquire \
 ```
 
 If no token is set, the endpoints are open (not recommended for production).
+
+**Signal processing — via Admin UI (Next.js API):**
+
+```bash
+# Process next batch of acquired documents (batch of 10)
+fetch("/api/admin/pipeline/process", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({}),
+}).then(r => r.json()).then(console.log);
+
+# Create daily snapshot
+fetch("/api/admin/pipeline/snapshot", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ date: "2025-02-01" }),
+}).then(r => r.json()).then(console.log);
+```
 
 ## Troubleshooting
 

@@ -32,7 +32,7 @@ async function prompt(question: string): Promise<string> {
 
 function run(
   cmd: string,
-  args: string[] = []
+  args: string[] = [],
 ): { ok: boolean; stderr?: string } {
   try {
     execSync([cmd, ...args].join(" "), {
@@ -48,11 +48,11 @@ function run(
 async function main() {
   console.log(`Teardown for env: ${env}`);
   console.log(
-    `This will remove R2 bucket: ${bucketName} and the pipeline Worker for this env.`
+    `This will remove R2 bucket: ${bucketName} and the pipeline Worker for this env.`,
   );
   console.log("Neon database and wrangler secrets are not modified.");
   const confirm = await prompt(
-    `Remove R2 bucket and Worker for ${env}? (y/N): `
+    `Remove R2 bucket and Worker for ${env}? (y/N): `,
   );
   if (confirm !== "y" && confirm !== "yes") {
     console.log("Aborted.");
@@ -72,7 +72,7 @@ async function main() {
   } else {
     console.warn(
       `Worker deletion reported an error (may already be gone):`,
-      workerResult.stderr
+      workerResult.stderr,
     );
   }
 
@@ -91,7 +91,7 @@ async function main() {
   }
 
   console.log(
-    "Teardown complete. Secrets and Neon database were not modified."
+    "Teardown complete. Secrets and Neon database were not modified.",
   );
 }
 

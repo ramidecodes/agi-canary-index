@@ -81,14 +81,14 @@ As a developer setting up or deploying the AGI Canary pipeline, I want to run in
 
 ## Acceptance Criteria
 
-- [ ] `infra:provision` creates R2 bucket; idempotent on re-run
-- [ ] `infra:deploy` deploys Workers to specified env (dev/staging/prod)
-- [ ] Multiple environments supported with separate resources
-- [ ] docs/INFRASTRUCTURE.md documents full setup, prerequisites, troubleshooting
-- [ ] `.env.infra.example` exists; `.env.infra` in .gitignore
-- [ ] CI (e.g. GitHub Actions) can run `infra:deploy` with secrets from repo variables
-- [ ] `infra:teardown` requires confirmation before destructive actions
-- [ ] Scripts work on macOS and Linux (or document Windows limitations)
+- [x] `infra:provision` creates R2 bucket; idempotent on re-run
+- [x] `infra:deploy` deploys Workers to specified env (dev/staging/prod)
+- [x] Multiple environments supported with separate resources
+- [x] docs/INFRASTRUCTURE.md documents full setup, prerequisites, troubleshooting
+- [x] `.env.infra.example` exists; `.env.infra` in .gitignore
+- [x] CI (e.g. GitHub Actions) can run `infra:deploy` with secrets from repo variables
+- [x] `infra:teardown` requires confirmation before destructive actions
+- [x] Scripts work on macOS and Linux (or document Windows limitations)
 
 ## Edge Cases
 

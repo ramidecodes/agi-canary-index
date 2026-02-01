@@ -113,7 +113,7 @@ Hash: SHA-256 of canonical URL → `items.url_hash` for fast lookup.
 
 - Check `items.url_hash` for matches with `discovered_at > now() - 30 days`
 - Skip recent duplicates
-- Insert new URLs with `ON CONFLICT DO NOTHING` for `items.url` unique constraint
+- Batch insert new URLs with `ON CONFLICT DO NOTHING` on `items.url`; returns IDs of inserted rows for acquisition trigger
 - URLs older than 30 days can be rediscovered (future: "refresh candidates")
 
 ## Error Handling
