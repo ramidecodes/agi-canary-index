@@ -25,7 +25,7 @@ interface R2Bucket {
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | string,
-    options?: { httpMetadata?: { contentType?: string } }
+    options?: { httpMetadata?: { contentType?: string } },
   ): Promise<void>;
   get(key: string): Promise<{ body: ReadableStream } | null>;
 }
@@ -34,7 +34,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    _ctx: ExecutionContext
+    _ctx: ExecutionContext,
   ): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/__scheduled" || url.pathname === "/health") {
@@ -71,7 +71,7 @@ export default {
   async scheduled(
     _controller: ScheduledController,
     env: Env,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
   ): Promise<void> {
     ctx.waitUntil(executeDiscovery(env));
   },
@@ -114,7 +114,7 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
     if (!env.FIRECRAWL_API_KEY || !env.DOCUMENTS) {
       return new Response(
         JSON.stringify({ error: "FIRECRAWL_API_KEY and DOCUMENTS required" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
     const stats = await runAcquisition(
@@ -123,7 +123,7 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
         firecrawlApiKey: env.FIRECRAWL_API_KEY,
         r2Bucket: env.DOCUMENTS,
       },
-      { itemIds: body.itemIds }
+      { itemIds: body.itemIds },
     );
     if (
       (body.continue || stats.itemsProcessed >= 50) &&
@@ -152,7 +152,7 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
 }
 
 async function executeDiscovery(
-  env: Env
+  env: Env,
 ): Promise<
   ReturnType<typeof runDiscovery> extends Promise<infer R> ? R : never
 > {

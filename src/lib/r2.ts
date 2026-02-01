@@ -38,7 +38,7 @@ export interface FetchDocumentOptions {
  * Returns markdown string or null if not found.
  */
 export async function fetchDocumentFromR2(
-  options: FetchDocumentOptions
+  options: FetchDocumentOptions,
 ): Promise<string | null> {
   const client = getR2Client();
   if (!client) {
@@ -48,7 +48,7 @@ export async function fetchDocumentFromR2(
   const { bucketName, key } = options;
 
   const result = await client.send(
-    new GetObjectCommand({ Bucket: bucketName, Key: key })
+    new GetObjectCommand({ Bucket: bucketName, Key: key }),
   );
 
   if (!result.Body) {

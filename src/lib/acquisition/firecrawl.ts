@@ -21,7 +21,7 @@ export interface ScrapeOptions {
  * Returns markdown content and metadata.
  */
 export async function scrapeUrl(
-  options: ScrapeOptions
+  options: ScrapeOptions,
 ): Promise<FirecrawlScrapeResult> {
   const { url, apiKey, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
 

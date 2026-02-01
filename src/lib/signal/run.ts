@@ -60,7 +60,7 @@ interface AcquiredDocRow {
 async function getAcquiredDocuments(
   db: ReturnType<typeof createDb>,
   limit: number,
-  documentIds?: string[]
+  documentIds?: string[],
 ): Promise<AcquiredDocRow[]> {
   if (documentIds?.length) {
     const rows = await db
@@ -82,8 +82,8 @@ async function getAcquiredDocuments(
           isNull(documents.processedAt),
           isNotNull(documents.cleanBlobKey),
           eq(items.status, "acquired"),
-          inArray(documents.id, documentIds)
-        )
+          inArray(documents.id, documentIds),
+        ),
       )
       .limit(limit);
     return rows as AcquiredDocRow[];
@@ -107,8 +107,8 @@ async function getAcquiredDocuments(
       and(
         isNull(documents.processedAt),
         isNotNull(documents.cleanBlobKey),
-        eq(items.status, "acquired")
-      )
+        eq(items.status, "acquired"),
+      ),
     )
     .orderBy(sources.tier, documents.acquiredAt)
     .limit(limit);
@@ -118,7 +118,7 @@ async function getAcquiredDocuments(
 
 function adjustedConfidence(
   claimConfidence: number,
-  trustWeight: string
+  trustWeight: string,
 ): number {
   const weight = Number(trustWeight) || 1;
   return Math.min(1, Math.max(0, claimConfidence * weight));
@@ -128,7 +128,7 @@ function mapClaimToSignalRow(
   documentId: string,
   claim: ExtractedClaim,
   trustWeight: string,
-  scoringVersion: string
+  scoringVersion: string,
 ): {
   documentId: string;
   claimSummary: string;
@@ -179,7 +179,7 @@ function mapClaimToSignalRow(
  */
 export async function runSignalProcessing(
   ctx: SignalProcessingContext,
-  options: SignalProcessingOptions = {}
+  options: SignalProcessingOptions = {},
 ): Promise<SignalProcessingStats> {
   const { db, r2BucketName, openRouterApiKey } = ctx;
   const startMs = Date.now();
@@ -230,7 +230,7 @@ export async function runSignalProcessing(
             ? new Date(row.publishedAt).toISOString().slice(0, 10)
             : null,
         },
-        openRouterApiKey
+        openRouterApiKey,
       );
 
       let created = 0;
@@ -239,7 +239,7 @@ export async function runSignalProcessing(
           row.documentId,
           claim,
           row.trustWeight,
-          scoringVersion
+          scoringVersion,
         );
         if (!signalRow) continue;
         await db.insert(signals).values({

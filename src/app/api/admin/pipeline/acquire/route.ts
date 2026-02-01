@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         error: "ACQUISITION_WORKER_URL not configured",
         hint: "Set ACQUISITION_WORKER_URL in Vercel env (e.g. https://agi-canary-pipeline-dev.xxx.workers.dev)",
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       return NextResponse.json(
         { error: data.error ?? "Acquisition failed", ok: false },
-        { status: res.status }
+        { status: res.status },
       );
     }
     return NextResponse.json({ ok: true, ...data });

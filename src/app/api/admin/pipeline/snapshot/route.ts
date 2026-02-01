@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     return NextResponse.json(
       { error: "Invalid date; use YYYY-MM-DD" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

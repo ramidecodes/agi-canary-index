@@ -99,7 +99,7 @@ export const sources = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Each execution of the data pipeline. */
@@ -126,7 +126,7 @@ export const pipelineRuns = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Per-source fetch attempt logs for observability. */
@@ -157,7 +157,7 @@ export const sourceFetchLogs = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Discovered URLs awaiting or completed processing. */
@@ -197,7 +197,7 @@ export const items = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Acquired and processed content (links to R2 blobs). */
@@ -227,7 +227,7 @@ export const documents = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Structured claims extracted from documents. */
@@ -239,14 +239,15 @@ export const signals = pgTable(
       .notNull()
       .references(() => documents.id, { onDelete: "cascade" }),
     claimSummary: text("claim_summary").notNull(),
-    axesImpacted: jsonb("axes_impacted").$type<
-      Array<{
-        axis: string;
-        direction: string;
-        magnitude: number;
-        uncertainty?: number;
-      }>
-    >(),
+    axesImpacted:
+      jsonb("axes_impacted").$type<
+        Array<{
+          axis: string;
+          direction: string;
+          magnitude: number;
+          uncertainty?: number;
+        }>
+      >(),
     metric: jsonb("metric").$type<{
       name: string;
       value: number;
@@ -269,7 +270,7 @@ export const signals = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Aggregated daily state for display. */
@@ -282,14 +283,15 @@ export const dailySnapshots = pgTable(
       jsonb("axis_scores").$type<
         Record<string, { score: number; uncertainty?: number; delta?: number }>
       >(),
-    canaryStatuses: jsonb("canary_statuses").$type<
-      Array<{
-        canary_id: string;
-        status: string;
-        last_change?: string;
-        confidence?: number;
-      }>
-    >(),
+    canaryStatuses:
+      jsonb("canary_statuses").$type<
+        Array<{
+          canary_id: string;
+          status: string;
+          last_change?: string;
+          confidence?: number;
+        }>
+      >(),
     coverageScore: decimal("coverage_score", { precision: 4, scale: 2 }),
     signalIds: uuid("signal_ids").array(),
     notes: jsonb("notes").$type<string[]>(),
@@ -307,7 +309,7 @@ export const dailySnapshots = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Configuration for canary indicators. */
@@ -334,7 +336,7 @@ export const canaryDefinitions = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );
 
 /** Events for the timeline visualization. */
@@ -362,5 +364,5 @@ export const timelineEvents = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );

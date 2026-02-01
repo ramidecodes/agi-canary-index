@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         error: "OPENROUTER_API_KEY not configured",
         hint: "Set OPENROUTER_API_KEY in Vercel env for AI signal extraction.",
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         error: "R2_BUCKET_NAME not configured",
         hint: "Set R2_BUCKET_NAME in Vercel env to fetch document content.",
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         r2BucketName: bucketName,
         openRouterApiKey,
       },
-      { documentIds: body.documentIds }
+      { documentIds: body.documentIds },
     );
 
     return NextResponse.json({

@@ -22,7 +22,7 @@ const MAX_CONTENT_CHARS = 120_000;
  */
 export function buildExtractionPrompt(
   markdownContent: string,
-  ctx: ExtractContext
+  ctx: ExtractContext,
 ): string {
   const truncated =
     markdownContent.length > MAX_CONTENT_CHARS
@@ -60,7 +60,7 @@ Return a single object with a "claims" array. If the document contains multiple 
 export async function extractSignals(
   markdownContent: string,
   ctx: ExtractContext,
-  apiKey: string
+  apiKey: string,
 ): Promise<SignalExtraction> {
   const openrouter = createOpenRouter({ apiKey });
   const model = openrouter(SIGNAL_EXTRACTION_MODEL);

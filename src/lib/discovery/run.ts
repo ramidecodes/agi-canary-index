@@ -32,7 +32,7 @@ export interface DiscoveryContext {
  * deduplicates, and inserts new items.
  */
 export async function runDiscovery(
-  ctx: DiscoveryContext
+  ctx: DiscoveryContext,
 ): Promise<DiscoveryRunStats> {
   const { db, options } = ctx;
   const startMs = Date.now();
@@ -86,7 +86,7 @@ export async function runDiscovery(
         const result = await fetchFromSource(
           src,
           options.openRouterApiKey,
-          xEnabled
+          xEnabled,
         );
         if (runId && result.items) {
           await logFetch(
@@ -96,7 +96,7 @@ export async function runDiscovery(
             src.name,
             result.items.length,
             !!result.error,
-            result.error
+            result.error,
           );
         }
         if (result.error) {
@@ -138,7 +138,7 @@ export async function runDiscovery(
           allItems.push(...result.items);
         }
         return result;
-      })
+      }),
     );
   }
 
@@ -159,7 +159,7 @@ export async function runDiscovery(
       .select({ urlHash: items.urlHash })
       .from(items)
       .where(
-        and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff))
+        and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff)),
       );
     const seenHashes = new Set(existing.map((r) => r.urlHash));
     const toInsert = uniqueItems.filter((i) => !seenHashes.has(i.urlHash));
@@ -220,7 +220,7 @@ async function fetchFromSource(
     queryConfig?: Record<string, unknown> | null;
   },
   apiKey: string,
-  xEnabled: boolean
+  xEnabled: boolean,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   switch (src.sourceType) {
     case "rss":
@@ -246,13 +246,13 @@ async function logFetch(
   _sourceName: string,
   itemsFound: number,
   failed: boolean,
-  errorMessage?: string
+  errorMessage?: string,
 ): Promise<void> {
   await db.insert(sourceFetchLogs).values({
     runId,
     sourceId,
     status: failed ? "failure" : "success",
     itemsFound,
-    errorMessage: failed ? errorMessage ?? "Unknown error" : null,
+    errorMessage: failed ? (errorMessage ?? "Unknown error") : null,
   });
 }

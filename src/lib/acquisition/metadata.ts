@@ -8,10 +8,10 @@ import type { FirecrawlScrapeResult } from "./types";
 
 function detectContentType(
   metadata: Record<string, unknown>,
-  url: string
+  url: string,
 ): ExtractedMetadata["contentType"] {
   const title = String(
-    metadata.title ?? metadata["og:title"] ?? ""
+    metadata.title ?? metadata["og:title"] ?? "",
   ).toLowerCase();
   const desc = String(metadata.description ?? "").toLowerCase();
   const combined = `${title} ${desc}`;
@@ -47,7 +47,7 @@ function detectContentType(
  */
 export function extractMetadata(
   result: FirecrawlScrapeResult,
-  url: string
+  url: string,
 ): ExtractedMetadata {
   const meta = result.data?.metadata ?? result.metadata ?? {};
   const m = meta as Record<string, unknown>;

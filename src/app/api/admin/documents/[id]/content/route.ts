@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const authRes = await requireAuth();
   if (authRes) return authRes;
@@ -26,7 +26,7 @@ export async function GET(
   if (!bucketName) {
     return NextResponse.json(
       { error: "R2_BUCKET_NAME not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -41,7 +41,7 @@ export async function GET(
     if (!doc?.cleanBlobKey) {
       return NextResponse.json(
         { error: "Document not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -53,7 +53,7 @@ export async function GET(
     if (!content) {
       return NextResponse.json(
         { error: "Content not found in storage" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 

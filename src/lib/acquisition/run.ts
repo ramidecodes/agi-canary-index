@@ -19,7 +19,7 @@ export interface R2Bucket {
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | string,
-    options?: { httpMetadata?: { contentType?: string } }
+    options?: { httpMetadata?: { contentType?: string } },
   ): Promise<void>;
   get(key: string): Promise<{
     body: ReadableStream;
@@ -51,7 +51,7 @@ function blobKey(itemId: string): string {
  */
 export async function runAcquisition(
   ctx: AcquisitionContext,
-  options: AcquisitionOptions = {}
+  options: AcquisitionOptions = {},
 ): Promise<AcquisitionRunStats> {
   const { db, firecrawlApiKey, r2Bucket } = ctx;
   const startMs = Date.now();
@@ -72,8 +72,8 @@ export async function runAcquisition(
       .where(
         and(
           inArray(items.id, options.itemIds),
-          lt(items.acquisitionAttemptCount, MAX_ACQUISITION_ATTEMPTS)
-        )
+          lt(items.acquisitionAttemptCount, MAX_ACQUISITION_ATTEMPTS),
+        ),
       );
     toProcess = rows;
   } else {
@@ -83,8 +83,8 @@ export async function runAcquisition(
       .where(
         and(
           eq(items.status, "pending"),
-          lt(items.acquisitionAttemptCount, MAX_ACQUISITION_ATTEMPTS)
-        )
+          lt(items.acquisitionAttemptCount, MAX_ACQUISITION_ATTEMPTS),
+        ),
       )
       .limit(BATCH_SIZE);
     toProcess = rows;
@@ -137,7 +137,7 @@ async function acquireOne(
   db: AcquisitionContext["db"],
   r2Bucket: R2Bucket,
   apiKey: string,
-  item: { id: string; url: string }
+  item: { id: string; url: string },
 ): Promise<AcquireItemResult> {
   const scrapeResult = await scrapeUrl({
     url: item.url,
@@ -147,7 +147,7 @@ async function acquireOne(
 
   if (!scrapeResult.success) {
     const errMsg = String(
-      scrapeResult.metadata?.error ?? "Scrape failed"
+      scrapeResult.metadata?.error ?? "Scrape failed",
     ).slice(0, 1024);
     const statusCode = scrapeResult.metadata?.statusCode as number | undefined;
     const permanentFail =
