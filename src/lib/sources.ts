@@ -60,7 +60,7 @@ export const SEED_SOURCES: Array<{
     trustWeight: "0.95",
     cadence: "weekly",
     domainType: "evaluation",
-    sourceType: "rss",
+    sourceType: "curated", // No RSS feed available, use HTML scraping
   },
   {
     name: "ARC Prize",
@@ -69,7 +69,7 @@ export const SEED_SOURCES: Array<{
     trustWeight: "0.9",
     cadence: "monthly",
     domainType: "evaluation",
-    sourceType: "rss",
+    sourceType: "curated", // No RSS feed available, use HTML scraping
   },
   {
     name: "OECD AI",
@@ -114,7 +114,7 @@ export const SEED_SOURCES: Array<{
     trustWeight: "0.85",
     cadence: "weekly",
     domainType: "research",
-    sourceType: "rss",
+    sourceType: "curated", // No RSS feed available, use HTML scraping
   },
   {
     name: "UK AISI",
@@ -187,7 +187,7 @@ export const SEED_SOURCES: Array<{
     trustWeight: "0.65",
     cadence: "weekly",
     domainType: "commentary",
-    sourceType: "rss",
+    sourceType: "curated", // No RSS feed available, use HTML scraping
   },
   // Tier-0 — additional research and institutional sources
   {

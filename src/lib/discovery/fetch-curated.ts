@@ -23,7 +23,7 @@ const ARTICLE_PATH_PATTERNS = [
 
 export async function fetchCurated(
   pageUrl: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -32,8 +32,10 @@ export async function fetchCurated(
     const res = await fetch(pageUrl, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "AGI-Canary-Watcher/1.0 (Discovery Pipeline)",
-        Accept: "text/html,application/xhtml+xml",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; AGI-Canary-Watcher/1.0; +https://github.com/agi-canary)",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
     clearTimeout(timeoutId);
@@ -44,12 +46,18 @@ export async function fetchCurated(
 
     const html = await res.text();
     const baseUrl = new URL(pageUrl);
+    await new Promise((r) => setImmediate(r)); // Yield before sync regex parse so event loop can serve other requests
     const links = extractArticleLinks(html, baseUrl);
     const limited = links.slice(0, MAX_LINKS);
 
     const items: DiscoveredItem[] = [];
     const seen = new Set<string>();
+    let iter = 0;
     for (const { href, text } of limited) {
+      if (iter > 0 && iter % 25 === 0) {
+        await new Promise((r) => setImmediate(r)); // Yield every 25 items to keep app responsive
+      }
+      iter++;
       const canonical = canonicalizeUrl(href);
       if (!canonical.startsWith("http")) continue;
       if (seen.has(canonical)) continue;
@@ -78,7 +86,7 @@ export async function fetchCurated(
 
 function extractArticleLinks(
   html: string,
-  baseUrl: URL,
+  baseUrl: URL
 ): Array<{ href: string; text?: string }> {
   const results: Array<{ href: string; text?: string }> = [];
   const hrefRe = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;

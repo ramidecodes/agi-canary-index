@@ -17,19 +17,19 @@ function sanitizeRssXml(xml: string): string {
   // Unescaped ampersands in attributes
   out = out.replace(
     /&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g,
-    "&amp;",
+    "&amp;"
   );
   // Attributes without value (e.g. "<tag attr>" or "<tag attr />") break parsers
   out = out.replace(
     /\s+([a-zA-Z:_][a-zA-Z0-9._:-]*)\s*(?!=)([/>])/g,
-    (_, name, bracket) => ` ${name}=""${bracket}`,
+    (_, name, bracket) => ` ${name}=""${bracket}`
   );
   return out;
 }
 
 export async function fetchRss(
   feedUrl: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -38,8 +38,10 @@ export async function fetchRss(
     const res = await fetch(feedUrl, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "AGI-Canary-Watcher/1.0 (Discovery Pipeline)",
-        Accept: "application/rss+xml, application/xml, application/atom+xml",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; AGI-Canary-Watcher/1.0; +https://github.com/agi-canary)",
+        Accept:
+          "application/rss+xml, application/xml, application/atom+xml, text/xml, */*",
       },
     });
     clearTimeout(timeoutId);
@@ -52,6 +54,20 @@ export async function fetchRss(
     }
 
     const text = await res.text();
+
+    // Early HTML detection - fail fast if server returned HTML instead of RSS
+    const isLikelyHtml =
+      text.trim().toLowerCase().startsWith("<!doctype") ||
+      text.trim().toLowerCase().startsWith("<html");
+
+    if (isLikelyHtml) {
+      return {
+        items: [],
+        error:
+          "Received HTML instead of RSS/XML - URL may be an HTML page, not an RSS feed",
+      };
+    }
+
     const parser = new Parser({
       customFields: {
         item: [
@@ -72,6 +88,8 @@ export async function fetchRss(
         dcDate?: string;
       }>;
     };
+
+    await new Promise((r) => setImmediate(r)); // Yield before sync parse so event loop can serve other requests
     try {
       feed = (await parser.parseString(sanitizeRssXml(text))) as typeof feed;
     } catch (parseErr) {
@@ -85,6 +103,7 @@ export async function fetchRss(
             : msg,
       };
     }
+
     const rawItems = feed.items ?? [];
     const sorted = [...rawItems].sort((a, b) => {
       const aDate = parseDate(a.pubDate ?? a.isoDate ?? a.dcDate);
@@ -94,7 +113,12 @@ export async function fetchRss(
     const limited = sorted.slice(0, MAX_ITEMS);
 
     const items: DiscoveredItem[] = [];
+    let iter = 0;
     for (const entry of limited) {
+      if (iter > 0 && iter % 50 === 0) {
+        await new Promise((r) => setImmediate(r)); // Yield every 50 items to keep app responsive
+      }
+      iter++;
       const link = entry.link ?? entry.guid;
       if (!link || typeof link !== "string") continue;
       const canonical = canonicalizeUrl(link);

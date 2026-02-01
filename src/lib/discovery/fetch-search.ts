@@ -13,6 +13,7 @@ import { getOpenRouterModel } from "./openrouter";
 
 const RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
+const SEARCH_TIMEOUT_MS = 55_000; // Under 60s to allow outer race timeout to work
 
 const SEARCH_KEYWORDS = [
   "AI news",
@@ -60,14 +61,14 @@ const SearchResultSchema = z.object({
         ])
         .optional(),
       rationale: z.string().optional(),
-    }),
+    })
   ),
 });
 
 export async function fetchSearch(
   sourceId: string,
   apiKey: string,
-  queryConfig?: Record<string, unknown>,
+  queryConfig?: Record<string, unknown>
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const keywords = (queryConfig?.keywords as string[]) ?? SEARCH_KEYWORDS;
   const query = `Find recent (last 7 days) AI-related news, research updates, policy announcements, and agent project releases. 
@@ -77,12 +78,15 @@ Example: trends around more autonomous local agents and agent-focused communitie
 Return only URLs with titles and brief snippets. Add a category and a short rationale for why it matters.`;
 
   let lastError: string | undefined;
+
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
+    await new Promise((r) => setImmediate(r)); // Yield before AI call so event loop can serve other requests
     try {
       const result = await generateObject({
         model: getOpenRouterModel(apiKey, WEB_SEARCH_MODEL),
         schema: SearchResultSchema,
         prompt: query,
+        abortSignal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
       });
 
       const results = result.object.results ?? [];
@@ -94,7 +98,7 @@ Return only URLs with titles and brief snippets. Add a category and a short rati
         const hash = await urlHash(canonical);
         const taggedSnippet = r.category
           ? `${r.category}: ${r.snippet ?? ""}`.trim()
-          : (r.snippet ?? undefined);
+          : r.snippet ?? undefined;
         items.push({
           url: canonical,
           urlHash: hash,
