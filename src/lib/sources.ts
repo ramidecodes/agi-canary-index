@@ -20,7 +20,7 @@ export type SourceHealthStatus = "green" | "yellow" | "red";
  * - red: many errors (>= threshold) or never succeeded
  */
 export function getSourceHealthStatus(
-  source: Pick<SourceRow, "lastSuccessAt" | "errorCount">
+  source: Pick<SourceRow, "lastSuccessAt" | "errorCount">,
 ): SourceHealthStatus {
   if (source.errorCount >= AUTO_DISABLE_FAILURE_THRESHOLD) return "red";
   if (source.lastSuccessAt == null && source.errorCount > 0) return "yellow";

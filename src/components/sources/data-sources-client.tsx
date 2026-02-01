@@ -57,8 +57,8 @@ function StatusBadge({
     status === "green"
       ? "default"
       : status === "yellow"
-      ? "secondary"
-      : "destructive";
+        ? "secondary"
+        : "destructive";
 
   return (
     <Badge
@@ -67,8 +67,8 @@ function StatusBadge({
         status === "green"
           ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
           : status === "yellow"
-          ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
-          : undefined
+            ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+            : undefined
       }
       title={
         lastSuccessAt

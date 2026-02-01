@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if (!firecrawlKey) {
     return NextResponse.json(
       { error: "FIRECRAWL_API_KEY not configured", ok: false },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         firecrawlApiKey: firecrawlKey,
         r2Bucket,
       },
-      { itemIds: body.itemIds }
+      { itemIds: body.itemIds },
     );
     return NextResponse.json({ ok: true, ...stats });
   } catch (err) {

@@ -15,7 +15,7 @@ export interface R2Bucket {
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | string,
-    options?: { httpMetadata?: { contentType?: string } }
+    options?: { httpMetadata?: { contentType?: string } },
   ): Promise<void>;
   get(key: string): Promise<{
     body: ReadableStream;
@@ -55,7 +55,7 @@ export interface FetchDocumentOptions {
  * Returns markdown string or null if not found.
  */
 export async function fetchDocumentFromR2(
-  options: FetchDocumentOptions
+  options: FetchDocumentOptions,
 ): Promise<string | null> {
   const client = getR2Client();
   if (!client) {
@@ -65,7 +65,7 @@ export async function fetchDocumentFromR2(
   const { bucketName, key } = options;
 
   const result = await client.send(
-    new GetObjectCommand({ Bucket: bucketName, Key: key })
+    new GetObjectCommand({ Bucket: bucketName, Key: key }),
   );
 
   if (!result.Body) {
@@ -85,7 +85,7 @@ export function createR2Bucket(): R2Bucket {
   const bucketName = process.env.R2_BUCKET_NAME;
   if (!client || !bucketName) {
     throw new Error(
-      "R2 credentials and R2_BUCKET_NAME must be configured for acquisition"
+      "R2 credentials and R2_BUCKET_NAME must be configured for acquisition",
     );
   }
 
@@ -93,21 +93,21 @@ export function createR2Bucket(): R2Bucket {
     async put(
       key: string,
       value: ReadableStream | ArrayBuffer | string,
-      options?: { httpMetadata?: { contentType?: string } }
+      options?: { httpMetadata?: { contentType?: string } },
     ): Promise<void> {
       const body =
         typeof value === "string"
           ? new TextEncoder().encode(value)
           : value instanceof ArrayBuffer
-          ? new Uint8Array(value)
-          : value;
+            ? new Uint8Array(value)
+            : value;
       await client.send(
         new PutObjectCommand({
           Bucket: bucketName,
           Key: key,
           Body: body,
           ContentType: options?.httpMetadata?.contentType,
-        })
+        }),
       );
     },
     async get(key: string): Promise<{
@@ -115,7 +115,7 @@ export function createR2Bucket(): R2Bucket {
       metadata?: Record<string, unknown>;
     } | null> {
       const result = await client.send(
-        new GetObjectCommand({ Bucket: bucketName, Key: key })
+        new GetObjectCommand({ Bucket: bucketName, Key: key }),
       );
       if (!result.Body) return null;
       return {

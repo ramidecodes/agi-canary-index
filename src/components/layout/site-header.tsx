@@ -51,7 +51,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
               <Link
                 href="/"
                 className={cn(
-                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded"
+                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded",
                 )}
               >
                 <span className="text-foreground">AGI</span>{" "}
@@ -79,7 +79,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
                     href={item.href}
                     className={cn(
                       navLinkClass,
-                      isActive && "text-foreground font-medium"
+                      isActive && "text-foreground font-medium",
                     )}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -98,7 +98,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "hidden lg:inline-flex text-muted-foreground hover:text-foreground"
+                  "hidden lg:inline-flex text-muted-foreground hover:text-foreground",
                 )}
                 aria-label="More pages"
               >

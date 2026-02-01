@@ -32,7 +32,7 @@ async function prompt(question: string): Promise<string> {
 
 function run(
   cmd: string,
-  args: string[] = []
+  args: string[] = [],
 ): { ok: boolean; stderr?: string } {
   try {
     execSync([cmd, ...args].join(" "), {
@@ -70,7 +70,7 @@ async function main() {
   }
 
   console.log(
-    "Teardown complete. Secrets and Neon database were not modified."
+    "Teardown complete. Secrets and Neon database were not modified.",
   );
 }
 

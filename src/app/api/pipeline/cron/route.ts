@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   if (!dbUrl || !openRouterKey) {
     return NextResponse.json(
       { error: "DATABASE_URL and OPENROUTER_API_KEY required" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
           firecrawlApiKey: firecrawlKey,
           r2Bucket,
         },
-        { itemIds }
+        { itemIds },
       );
     }
 
