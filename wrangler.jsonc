@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   // Pipeline Infrastructure (FRED 13). Secrets: DATABASE_URL, OPENROUTER_API_KEY,
   // FIRECRAWL_API_KEY — set via `wrangler secret put` or `pnpm run infra:secrets`.
   "name": "agi-canary-pipeline",
@@ -12,26 +13,35 @@
   "triggers": {
     "crons": ["0 6 * * *"]
   },
+  "workers_dev": true,
+  "preview_urls": false,
   "vars": {
     "SCORING_VERSION": "1.0.0"
   },
-  "limits": {
-    "cpu_ms": 300000
-  },
   "r2_buckets": [
-    { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "agi-canary-documents-dev"
+    }
   ],
   "env": {
     "dev": {
       "name": "agi-canary-pipeline-dev",
-      "vars": { "SCORING_VERSION": "1.0.0" },
+      "vars": {
+        "SCORING_VERSION": "1.0.0"
+      },
       "r2_buckets": [
-        { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
+        {
+          "binding": "DOCUMENTS",
+          "bucket_name": "agi-canary-documents-dev"
+        }
       ]
     },
     "staging": {
       "name": "agi-canary-pipeline-staging",
-      "vars": { "SCORING_VERSION": "1.0.0" },
+      "vars": {
+        "SCORING_VERSION": "1.0.0"
+      },
       "r2_buckets": [
         {
           "binding": "DOCUMENTS",
@@ -41,9 +51,14 @@
     },
     "prod": {
       "name": "agi-canary-pipeline-prod",
-      "vars": { "SCORING_VERSION": "1.0.0" },
+      "vars": {
+        "SCORING_VERSION": "1.0.0"
+      },
       "r2_buckets": [
-        { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-prod" }
+        {
+          "binding": "DOCUMENTS",
+          "bucket_name": "agi-canary-documents-prod"
+        }
       ]
     }
   }

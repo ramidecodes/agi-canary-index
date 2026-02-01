@@ -25,7 +25,7 @@ interface R2Bucket {
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | string,
-    options?: { httpMetadata?: { contentType?: string } },
+    options?: { httpMetadata?: { contentType?: string } }
   ): Promise<void>;
   get(key: string): Promise<{ body: ReadableStream } | null>;
 }
@@ -34,7 +34,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    _ctx: ExecutionContext,
+    _ctx: ExecutionContext
   ): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/__scheduled" || url.pathname === "/health") {
@@ -71,7 +71,7 @@ export default {
   async scheduled(
     _controller: ScheduledController,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<void> {
     ctx.waitUntil(executeDiscovery(env));
   },
@@ -86,6 +86,17 @@ function isAuthorized(request: Request, env: Env): boolean {
     token === env.DISCOVERY_TRIGGER_TOKEN ||
     headerToken === env.DISCOVERY_TRIGGER_TOKEN
   );
+}
+
+/** Headers for outbound calls to the Worker (e.g. self-call to /acquire). Includes Bearer if DISCOVERY_TRIGGER_TOKEN is set. */
+function acquisitionRequestHeaders(env: Env): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (env.DISCOVERY_TRIGGER_TOKEN) {
+    headers.Authorization = `Bearer ${env.DISCOVERY_TRIGGER_TOKEN}`;
+  }
+  return headers;
 }
 
 async function handleDiscover(env: Env): Promise<Response> {
@@ -114,7 +125,7 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
     if (!env.FIRECRAWL_API_KEY || !env.DOCUMENTS) {
       return new Response(
         JSON.stringify({ error: "FIRECRAWL_API_KEY and DOCUMENTS required" }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
     const stats = await runAcquisition(
@@ -123,18 +134,21 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
         firecrawlApiKey: env.FIRECRAWL_API_KEY,
         r2Bucket: env.DOCUMENTS,
       },
-      { itemIds: body.itemIds },
+      { itemIds: body.itemIds }
     );
     if (
       (body.continue || stats.itemsProcessed >= 50) &&
       env.ACQUISITION_WORKER_URL
     ) {
       try {
-        await fetch(env.ACQUISITION_WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ continue: true }),
-        });
+        await fetch(
+          `${env.ACQUISITION_WORKER_URL.replace(/\/$/, "")}/acquire`,
+          {
+            method: "POST",
+            headers: acquisitionRequestHeaders(env),
+            body: JSON.stringify({ continue: true }),
+          }
+        );
       } catch {
         // Chaining is best-effort
       }
@@ -152,7 +166,7 @@ async function handleAcquire(request: Request, env: Env): Promise<Response> {
 }
 
 async function executeDiscovery(
-  env: Env,
+  env: Env
 ): Promise<
   ReturnType<typeof runDiscovery> extends Promise<infer R> ? R : never
 > {
@@ -169,9 +183,10 @@ async function executeDiscovery(
   if (env.ACQUISITION_WORKER_URL && stats.itemsInserted > 0) {
     try {
       const itemIds = (stats.insertedItemIds ?? []).slice(0, 50);
-      await fetch(env.ACQUISITION_WORKER_URL, {
+      const baseUrl = env.ACQUISITION_WORKER_URL.replace(/\/$/, "");
+      await fetch(`${baseUrl}/acquire`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: acquisitionRequestHeaders(env),
         body: JSON.stringify({
           triggeredBy: "discovery",
           itemIds: itemIds.length ? itemIds : undefined,
