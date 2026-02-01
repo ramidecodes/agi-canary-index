@@ -70,26 +70,39 @@ export function HomePageClient() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
+  const { data: autonomyData } = useSWR<{
+    level: number;
+    levelLabel: string;
+    uncertainty: number;
+    insufficientData: boolean;
+  }>("/api/autonomy/current", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000,
+  });
 
   const snapshot = snapshotData?.snapshot ?? null;
   const history = historyData?.history ?? [];
   const canaries = canariesData?.canaries ?? [];
   const events = timelineData?.events ?? [];
   const sourceCount = statsData?.sourceCount ?? 0;
+  const autonomy =
+    autonomyData != null
+      ? {
+          level: autonomyData.level,
+          levelLabel: autonomyData.levelLabel,
+          uncertainty: autonomyData.uncertainty,
+          insufficientData: autonomyData.insufficientData,
+        }
+      : {
+          level: 0.35,
+          levelLabel: "Scripted agent (Level 1)",
+          uncertainty: 0.3,
+          insufficientData: true,
+        };
 
   useCanaryFilterUrlSync();
 
   const hasNoData = !snapshot && canaries.length === 0 && events.length === 0;
-
-  const autonomyLevel = (() => {
-    if (!snapshot?.axisScores) return 0.35;
-    const planning = snapshot.axisScores.planning?.score;
-    const toolUse = snapshot.axisScores.tool_use?.score;
-    if (planning == null && toolUse == null) return 0.35;
-    const p = planning != null ? (Number(planning) + 1) / 2 : 0.5;
-    const t = toolUse != null ? (Number(toolUse) + 1) / 2 : 0.5;
-    return (p + t) / 2;
-  })();
 
   const isMobile = useIsMobile();
   const heroRadarSize = isMobile ? 320 : 500;
@@ -147,21 +160,20 @@ export function HomePageClient() {
       )}
 
       {!hasNoData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            <TimelinePreview events={events} />
-          </div>
-          <div className="space-y-6 hidden lg:block">
-            <AutonomyThermometer level={autonomyLevel} />
+        <>
+          {/* Primary row: Movement (left) + Autonomy (right); equal weight; both visible on mobile (stacked) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             <DailyBriefCard axesToShow={highlightAxes ?? undefined} />
+            <AutonomyThermometer
+              level={autonomy.level}
+              uncertainty={autonomy.uncertainty}
+              levelLabel={autonomy.levelLabel}
+              insufficientData={autonomy.insufficientData}
+            />
           </div>
-        </div>
-      )}
-
-      {!hasNoData && (
-        <div className="space-y-6 lg:hidden">
-          <DailyBriefCard axesToShow={highlightAxes ?? undefined} />
-        </div>
+          {/* Context row: Timeline full width */}
+          <TimelinePreview events={events} />
+        </>
       )}
 
       <p className="text-center sm:hidden pt-2">

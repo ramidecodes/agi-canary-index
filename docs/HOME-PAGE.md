@@ -1,6 +1,6 @@
 # Home Page (Control Room)
 
-Implementation of the main landing page—"AGI Canary Control Room"—as specified in [docs/features/06-home-page.md](features/06-home-page.md).
+Implementation of the main landing page—"AGI Canary Control Room"—as specified in [docs/features/06-home-page.md](features/06-home-page.md). Layout redesigned per [docs/features/16-home-page-layout-redesign.md](features/16-home-page-layout-redesign.md).
 
 ## Overview
 
@@ -11,30 +11,31 @@ The home page provides at-a-glance answers to:
 - How confident are we in these assessments?
 - Should we be concerned about autonomy/risk?
 
+**Layout (revised):** Hero → Canary strip → **Primary row** (Today's Movement | Autonomy Level, equal columns) → **Context row** (Timeline preview, full width). Movement and Autonomy are visible on all breakpoints (stacked on mobile). See [16-home-page-layout-redesign.md](features/16-home-page-layout-redesign.md).
+
 ## Components
 
-| Component               | Purpose                                                                             |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| **HomeHeader**          | Title, live indicator, status bar (last update, source count, coverage)             |
-| **CapabilityRadar**     | Multi-axis radar chart (9 cognitive domains); click axis → `/capabilities?axis=...` |
-| **AutonomyThermometer** | Vertical gauge (Non-agentic → Self-directed); click → `/autonomy`                   |
-| **CanaryStrip**         | Sticky strip of canary indicators; hover → popover with details                     |
-| **TodaysMovement**      | Editorial summary of changes (↑/↓ per axis)                                         |
-| **TimelinePreview**     | Horizontal scroll of recent milestones; click → `/timeline`                         |
-| **HomeFooter**          | About, Methodology, Data sources, GitHub links                                      |
+| Component               | Purpose                                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **HeroSection**         | Title + CapabilityRadar (9 axes); click axis → `/capabilities?axis=...`                                                                                              |
+| **CanaryStrip**         | Sticky strip of canary indicators; hover → popover with details                                                                                                      |
+| **DailyBriefCard**      | Today's Movement (primary "what moved?"); expandable items, "View all" to /news                                                                                      |
+| **AutonomyThermometer** | Vertical gauge (5 levels from `/api/autonomy/current`); click → `/autonomy`; see [17-home-autonomy-level-component.md](features/17-home-autonomy-level-component.md) |
+| **TimelinePreview**     | Horizontal scroll of recent **reality** milestones; click → `/timeline`; see [18-timeline-events-home-preview.md](features/18-timeline-events-home-preview.md)       |
 
 ## API Endpoints
 
 All public (no auth):
 
-| Endpoint                            | Purpose                                |
-| ----------------------------------- | -------------------------------------- |
-| `GET /api/snapshot/latest`          | Current daily snapshot                 |
-| `GET /api/snapshot/history?days=90` | Snapshot history for radar ghost lines |
-| `GET /api/canaries`                 | Canary definitions with derived status |
-| `GET /api/timeline/recent?limit=10` | Recent timeline events                 |
-| `GET /api/movement/today`           | Today's significant changes            |
-| `GET /api/stats`                    | Source count for header                |
+| Endpoint                            | Purpose                                            |
+| ----------------------------------- | -------------------------------------------------- |
+| `GET /api/snapshot/latest`          | Current daily snapshot                             |
+| `GET /api/snapshot/history?days=90` | Snapshot history for radar ghost lines             |
+| `GET /api/canaries`                 | Canary definitions with derived status             |
+| `GET /api/autonomy/current`         | Current autonomy level, uncertainty, 5-level label |
+| `GET /api/timeline/recent?limit=N`  | Recent **reality** timeline events (home preview)  |
+| `GET /api/movement/today`           | Today's significant changes                        |
+| `GET /api/stats`                    | Source count for header                            |
 
 ## Data Flow
 

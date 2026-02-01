@@ -8,13 +8,13 @@ The Timeline page at `/timeline` displays reality-track events (technical milest
 
 ## APIs
 
-| Endpoint                   | Method | Query params                      | Description                                    |
-| -------------------------- | ------ | --------------------------------- | ---------------------------------------------- |
-| `/api/timeline`            | GET    | `start`, `end` (year), `category` | Events in date range, optional category filter |
-| `/api/timeline/recent`     | GET    | `limit`                           | Recent events for home page preview            |
-| `/api/timeline/event/[id]` | GET    | —                                 | Single event by ID                             |
-| `/api/timeline/categories` | GET    | —                                 | Distinct categories (reality events only)      |
-| `/api/timeline/search`     | GET    | `q`                               | Search title and description (ILIKE)           |
+| Endpoint                   | Method | Query params                      | Description                                                                                                                             |
+| -------------------------- | ------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/timeline`            | GET    | `start`, `end` (year), `category` | Events in date range, optional category filter                                                                                          |
+| `/api/timeline/recent`     | GET    | `limit`                           | Recent **reality** events for home page preview (see [18-timeline-events-home-preview.md](features/18-timeline-events-home-preview.md)) |
+| `/api/timeline/event/[id]` | GET    | —                                 | Single event by ID                                                                                                                      |
+| `/api/timeline/categories` | GET    | —                                 | Distinct categories (reality events only)                                                                                               |
+| `/api/timeline/search`     | GET    | `q`                               | Search title and description (ILIKE)                                                                                                    |
 
 ## Data Model
 
@@ -29,7 +29,7 @@ The Timeline page at `/timeline` displays reality-track events (technical milest
 
 ## Seed Data
 
-`pnpm run db:seed` seeds 40+ historical AI milestones (1956–2025):
+`pnpm run db:seed` seeds 40+ historical AI milestones (1956–2025). To add or update timeline events, extend `timelineSeedData` in `src/lib/db/seed.ts` and re-run `pnpm run db:seed` (reality events are cleared and re-inserted idempotently).
 
 - **benchmark**: Deep Blue, Watson, ImageNet, AlphaGo, SWE-bench, ARC Prize, etc.
 - **model**: BERT, GPT-2/3/4, Claude, Gemini, DALL-E, Codex, o1

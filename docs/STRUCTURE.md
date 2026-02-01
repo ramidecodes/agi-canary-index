@@ -94,7 +94,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `coverage/route.ts` — GET evaluation coverage metrics
 - **`api/timeline/`** — Timeline APIs
   - `route.ts` — GET events in range (query: start, end, category)
-  - `recent/route.ts` — GET recent timeline events (query: limit)
+  - `recent/route.ts` — GET recent **reality** timeline events (query: limit); home preview
   - `event/[id]/route.ts` — GET single event by ID
   - `categories/route.ts` — GET distinct categories (reality events)
   - `search/route.ts` — GET search results (query: q)
@@ -127,7 +127,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `home-page-client.tsx` — Client wrapper with SWR data fetching (no header/footer; layout provides)
   - `home-header.tsx`, `home-footer.tsx` — Deprecated; use layout components
   - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page; simplified on mobile (no ghost lines)
-  - `autonomy-thermometer.tsx`
+  - `autonomy-thermometer.tsx` — 5-level gauge from `/api/autonomy/current`; see docs/features/17-home-autonomy-level-component.md
   - `canary-strip.tsx` — Sticky canary indicators with popover; horizontal scroll + 44px touch on mobile
   - `daily-brief-card.tsx` — Today's Movement card with expandable items, coverage, "View all" to /news
   - `todays-movement.tsx`, `timeline-preview.tsx`
@@ -223,6 +223,9 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 ## `docs/`
 
 - **`features/`** — FREDs (feature requirements)
+  - **`16-home-page-layout-redesign.md`** — Home layout: primary row (Movement | Autonomy), context row (Timeline)
+  - **`17-home-autonomy-level-component.md`** — Home autonomy: API, 5-level scale, visible fill
+  - **`18-timeline-events-home-preview.md`** — Timeline recent: reality-only filter, seed/curation
 - **`base-descriptions/`** — Base context for AI and product
 - **AUTH.md** — Authentication (Clerk)
 - **DATABASE.md** — Schema, migrations, seed, JSONB shapes

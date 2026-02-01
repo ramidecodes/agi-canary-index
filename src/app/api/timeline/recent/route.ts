@@ -1,10 +1,11 @@
 /**
  * GET /api/timeline/recent?limit=10
- * Returns recent timeline events for the home page preview.
+ * Returns recent reality-track timeline events for the home page preview.
+ * @see docs/features/18-timeline-events-home-preview.md
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { timelineEvents } from "@/lib/db/schema";
 
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     const rows = await db
       .select()
       .from(timelineEvents)
+      .where(eq(timelineEvents.eventType, "reality"))
       .orderBy(desc(timelineEvents.date))
       .limit(limit);
 
