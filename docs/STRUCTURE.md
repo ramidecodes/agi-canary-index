@@ -11,8 +11,11 @@ agi-canary-index/
 ├── drizzle/                 # Drizzle migrations and meta
 ├── docs/                     # Project documentation
 ├── public/                   # Static assets
-├── scripts/                  # Infra scripts (provision R2, teardown)
-├── vercel.json               # Vercel Cron (daily pipeline)
+├── scripts/                  # Infra scripts (provision R2, teardown, secrets)
+├── workers/                  # Cloudflare Workers (ETL pipeline)
+│   └── pipeline/            # Worker entry point and stage processors
+├── wrangler.jsonc           # Cloudflare Worker config (cron, R2, env)
+├── vercel.json               # Vercel Cron (deprecated, kept for backward compat)
 ├── src/
 │   ├── app/                  # Next.js App Router
 │   ├── lib/                  # Shared libraries and services
@@ -60,12 +63,16 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `[id]/route.ts` — PATCH update
   - `test-fetch/route.ts` — POST test fetch (validate URL)
   - `bulk/route.ts` — POST bulk enable/disable/change tier
-- **`api/admin/pipeline/`** — Pipeline triggers (Clerk auth)
+- **`api/admin/pipeline/`** — Pipeline triggers (Clerk auth); **DEPRECATED** — use Cloudflare Worker `/run` and `/jobs` endpoints instead
   - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`)
   - `acquire/route.ts` — POST manual acquisition (Firecrawl + R2)
   - `process/route.ts` — POST signal processing (body: `{ documentIds?: string[] }`); AI extraction, signal creation
   - `snapshot/route.ts` — POST daily snapshot (body: `{ date?: string }`); aggregates signals for date
-- **`api/pipeline/cron/`** — Vercel Cron entry (Bearer CRON_SECRET); runs discover → acquire daily
+- **`api/admin/jobs/`** — Job queue status API (Clerk auth)
+  - `route.ts` — GET job counts by status/type, recent jobs, active runs
+- **`api/admin/worker/`** — Worker proxy API (Clerk auth, keeps INTERNAL_TOKEN server-side)
+  - `kick/route.ts` — POST kick the Worker runner
+- **`api/pipeline/cron/`** — Vercel Cron entry (Bearer CRON_SECRET); **DEPRECATED** — use Cloudflare Worker instead
 - **`api/admin/documents/[id]/content/`** — Document content
   - `route.ts` — GET markdown from R2
 - **`api/snapshot/`** — Public snapshot API
@@ -229,20 +236,33 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **TIMELINE.md** — Timeline page, APIs, event categories
 - **SIGNAL-EXPLORER.md** — Signal Explorer page, APIs, filters, export
 - **DAILY-BRIEF.md** — Daily Brief & News page, APIs, copy brief, share
+- **WORKER-SETUP.md** — Cloudflare Worker setup, deployment, and production env vars
 - **STRUCTURE.md** — This file
+
+## `workers/`
+
+Cloudflare Worker for ETL pipeline orchestration:
+
+- **`pipeline/index.ts`** — Worker entry point with `scheduled()` (cron) and `fetch()` (HTTP) handlers
+- **`pipeline/db.ts`** — Job queue operations: claiming (SKIP LOCKED), marking done/failed, backoff logic
+- **`pipeline/stages.ts`** — Stage processors: DISCOVER, FETCH, EXTRACT, MAP, AGGREGATE
 
 ## Scripts (from `package.json`)
 
-| Script                 | Description                    |
-| ---------------------- | ------------------------------ |
-| `pnpm dev`             | Next.js dev server             |
-| `pnpm build`           | Next.js build                  |
-| `pnpm lint`            | Biome check                    |
-| `pnpm format`          | Biome format                   |
-| `pnpm db:generate`     | Generate migration from schema |
-| `pnpm db:migrate`      | Apply migrations               |
-| `pnpm db:push`         | Push schema (dev)              |
-| `pnpm db:studio`       | Drizzle Studio                 |
-| `pnpm db:seed`         | Run seed script                |
-| `pnpm infra:provision` | Create R2 bucket               |
-| `pnpm infra:teardown`  | Remove R2 bucket for env       |
+| Script                    | Description                        |
+| ------------------------- | ---------------------------------- |
+| `pnpm dev`                | Next.js dev server                 |
+| `pnpm build`              | Next.js build                      |
+| `pnpm lint`               | Biome check                        |
+| `pnpm format`             | Biome format                       |
+| `pnpm db:generate`        | Generate migration from schema     |
+| `pnpm db:migrate`         | Apply migrations                   |
+| `pnpm db:push`            | Push schema (dev)                  |
+| `pnpm db:studio`          | Drizzle Studio                     |
+| `pnpm db:seed`            | Run seed script                    |
+| `pnpm infra:provision`    | Create R2 bucket                   |
+| `pnpm infra:teardown`     | Remove R2 bucket for env           |
+| `pnpm infra:secrets`      | Interactive Worker secrets setup   |
+| `pnpm worker:dev`         | Run Worker locally (wrangler dev)  |
+| `pnpm worker:deploy`      | Deploy Worker to Cloudflare (dev)  |
+| `pnpm worker:deploy:prod` | Deploy Worker to Cloudflare (prod) |

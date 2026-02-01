@@ -16,6 +16,7 @@ Database schema, migrations, and usage. Schema is defined in code (Drizzle ORM) 
 | `sources`            | Trusted data sources (tier, cadence, health)                                                                        |
 | `pipeline_runs`      | Each pipeline execution (status, counts)                                                                            |
 | `source_fetch_logs`  | Per-source fetch attempt logs (run_id, source_id)                                                                   |
+| `jobs`               | ETL pipeline job queue (durable queue backed by Postgres with SKIP LOCKED for concurrent claiming)                  |
 | `items`              | Discovered URLs (dedup by `url_hash`); includes `acquisition_attempt_count`, `acquisition_error` for retry tracking |
 | `documents`          | Acquired content (R2 blob keys)                                                                                     |
 | `signals`            | Extracted claims → capability axes                                                                                  |
@@ -23,7 +24,7 @@ Database schema, migrations, and usage. Schema is defined in code (Drizzle ORM) 
 | `canary_definitions` | Canary config (id, thresholds, display_order)                                                                       |
 | `timeline_events`    | Timeline entries (reality / fiction / speculative)                                                                  |
 
-Relations: `sources` → `items`, `sources` → `source_fetch_logs`, `pipeline_runs` → `items`, `pipeline_runs` → `source_fetch_logs`, `items` → `documents`, `documents` → `signals`. `daily_snapshots` references `signals` via `signal_ids` (uuid[]).
+Relations: `sources` → `items`, `sources` → `source_fetch_logs`, `pipeline_runs` → `items`, `pipeline_runs` → `source_fetch_logs`, `pipeline_runs` → `jobs`, `items` → `documents`, `documents` → `signals`. `daily_snapshots` references `signals` via `signal_ids` (uuid[]).
 
 ## Enums
 
@@ -32,6 +33,8 @@ Relations: `sources` → `items`, `sources` → `source_fetch_logs`, `pipeline_r
 - **domain_type:** evaluation, policy, research, commentary
 - **source_type:** rss, search, curated, api, x
 - **pipeline_run_status:** running, completed, failed
+- **job_type:** discover, fetch, extract, map, aggregate
+- **job_status:** pending, running, retry, done, failed, dead
 - **item_status:** pending, acquired, processed, failed
 - **timeline_event_type:** reality, fiction, speculative
 
@@ -44,6 +47,8 @@ Relations: `sources` → `items`, `sources` → `source_fetch_logs`, `pipeline_r
 - **daily_snapshots.axis_scores:** `Record<Axis, { score, uncertainty?, delta? }>`
 - **daily_snapshots.canary_statuses:** `Array<{ canary_id, status, last_change?, confidence? }>`
 - **canary_definitions.thresholds:** `{ green?, yellow?, red? }`
+- **jobs.payload:** `Record<string, unknown>` — Job-specific payload (e.g., `{ itemId }`, `{ documentId }`, `{ date }`)
+- **jobs.result:** `Record<string, unknown>` — Optional result storage for audit/debugging
 
 ## Usage in App
 
