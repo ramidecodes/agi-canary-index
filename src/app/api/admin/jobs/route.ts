@@ -38,6 +38,20 @@ function isValidType(value: string): value is JobType {
   return validTypes.includes(value as JobType);
 }
 
+/** Recursively convert BigInt to string for JSON serialization. */
+function serializeForJson<T>(obj: T): T {
+  if (typeof obj === "bigint") return String(obj) as T;
+  if (Array.isArray(obj)) return obj.map(serializeForJson) as T;
+  if (obj && typeof obj === "object" && !(obj instanceof Date)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      out[k] = serializeForJson(v);
+    }
+    return out as T;
+  }
+  return obj;
+}
+
 export async function GET(request: Request) {
   const authError = await requireAuth();
   if (authError) return authError;
@@ -100,10 +114,12 @@ export async function GET(request: Request) {
     .orderBy(desc(pipelineRuns.startedAt))
     .limit(10);
 
-  return NextResponse.json({
-    statusCounts: statusCounts.rows,
-    typeCounts: typeCounts.rows,
-    recentJobs: recentJobs.slice(0, 50), // Limit to 50 for response size
-    activeRuns,
-  });
+  return NextResponse.json(
+    serializeForJson({
+      statusCounts: statusCounts.rows,
+      typeCounts: typeCounts.rows,
+      recentJobs: recentJobs.slice(0, 50), // Limit to 50 for response size
+      activeRuns,
+    })
+  );
 }
