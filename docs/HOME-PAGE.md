@@ -15,13 +15,13 @@ The home page provides at-a-glance answers to:
 
 ## Components
 
-| Component               | Purpose                                                                                                                                                              |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **HeroSection**         | Title + CapabilityRadar (9 axes); click axis → `/capabilities?axis=...`                                                                                              |
-| **CanaryStrip**         | Sticky strip of canary indicators; hover → popover with details                                                                                                      |
-| **DailyBriefCard**      | Today's Movement (primary "what moved?"); expandable items, "View all" to /news                                                                                      |
-| **AutonomyThermometer** | Vertical gauge (5 levels from `/api/autonomy/current`); click → `/autonomy`; see [17-home-autonomy-level-component.md](features/17-home-autonomy-level-component.md) |
-| **TimelinePreview**     | Horizontal scroll of recent **reality** milestones; click → `/timeline`; see [18-timeline-events-home-preview.md](features/18-timeline-events-home-preview.md)       |
+| Component                            | Purpose                                                                                                                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **HeroSection**                      | Title + CapabilityRadar (9 axes); click axis → `/capabilities?axis=...`                                                                                                                                    |
+| **CanaryStrip**                      | Sticky strip of canary indicators; hover → popover with details                                                                                                                                            |
+| **DailyBriefCard**                   | Today's Movement (primary "what moved?"); expandable items, "View all" to /news                                                                                                                            |
+| **AutonomyThermometer**              | Vertical gauge (5 levels from `/api/autonomy/current`); click → `/autonomy`; see [17-home-autonomy-level-component.md](features/17-home-autonomy-level-component.md)                                       |
+| **Timeline** (TimelineVisualization) | Same component as timeline page; left = older, right = newer; horizontal scroll; click event → `/timeline?event=id`; see [18-timeline-events-home-preview.md](features/18-timeline-events-home-preview.md) |
 
 ## API Endpoints
 

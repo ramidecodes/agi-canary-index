@@ -125,12 +125,11 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`hooks/use-mobile.ts`** — useIsMobile() (viewport &lt; 640px) for conditional UI
 - **`home/`** — Home page (Control Room) components
   - `home-page-client.tsx` — Client wrapper with SWR data fetching (no header/footer; layout provides)
-  - `home-header.tsx`, `home-footer.tsx` — Deprecated; use layout components
   - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page; simplified on mobile (no ghost lines)
   - `autonomy-thermometer.tsx` — 5-level gauge from `/api/autonomy/current`; see docs/features/17-home-autonomy-level-component.md
   - `canary-strip.tsx` — Sticky canary indicators with popover; horizontal scroll + 44px touch on mobile
   - `daily-brief-card.tsx` — Today's Movement card with expandable items, coverage, "View all" to /news
-  - `todays-movement.tsx`, `timeline-preview.tsx`
+  - `hero-section.tsx` — Hero with title and radar; home timeline uses `timeline/timeline-visualization.tsx` (left = older, right = newer)
 - **`news/`** — News & Daily Brief page components
   - `news-page-client.tsx` — Client wrapper with SWR, URL state (date, filters)
   - `copy-brief-button.tsx` — Copy brief as formatted text; fallback modal

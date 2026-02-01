@@ -22,7 +22,7 @@ As a visitor to the AGI Canary Watcher, I want the main content (what moved, aut
 
 4. **Context row** — Full width:
 
-   - Timeline preview (TimelinePreview). Horizontal scroll, "View all" link to `/timeline`. Framed as supporting context, not main focus.
+   - Timeline (TimelineVisualization). Same component as timeline page; horizontal scroll, "View all" link to `/timeline`. Framed as supporting context, not main focus.
 
 5. **Mobile layout** — Order: Hero → Strip → Today's Movement (full width) → Autonomy Level (full width, same component) → Timeline (full width) → "Full instrument" link. Autonomy must not be hidden on mobile.
 

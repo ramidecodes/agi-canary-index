@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CanaryStrip } from "./canary-strip";
 import { AutonomyThermometer } from "./autonomy-thermometer";
 import { DailyBriefCard } from "./daily-brief-card";
-import { TimelinePreview } from "./timeline-preview";
+import { TimelineVisualization } from "@/components/timeline/timeline-visualization";
 import { HeroSection } from "./hero-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHomeStore } from "@/lib/home/store";
 import type {
@@ -19,6 +20,7 @@ import type {
   Canary,
   TimelineEvent,
 } from "@/lib/home/types";
+import type { TimelineEvent as TimelinePageEvent } from "@/lib/timeline/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -45,6 +47,7 @@ function useCanaryFilterUrlSync() {
 }
 
 export function HomePageClient() {
+  const router = useRouter();
   const { data: snapshotData } = useSWR<{ snapshot: Snapshot | null }>(
     "/api/snapshot/latest",
     fetcher,
@@ -61,7 +64,7 @@ export function HomePageClient() {
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
   const { data: timelineData } = useSWR<{ events: TimelineEvent[] }>(
-    "/api/timeline/recent?limit=6",
+    "/api/timeline/recent?limit=50",
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
@@ -113,6 +116,22 @@ export function HomePageClient() {
     activeCanaryFilter && canaries.length > 0
       ? (canaries.find((c) => c.id === activeCanaryFilter)?.axesWatched ?? [])
       : undefined;
+
+  /** Events sorted ascending by date so timeline shows left = older, right = newer (same as timeline page). */
+  const timelineEventsAsc = useMemo(
+    () =>
+      [...events].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      ) as TimelinePageEvent[],
+    [events],
+  );
+
+  const handleTimelineEventClick = useCallback(
+    (event: TimelinePageEvent) => {
+      router.push(`/timeline?event=${event.id}`);
+    },
+    [router, router.push],
+  );
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -171,8 +190,34 @@ export function HomePageClient() {
               insufficientData={autonomy.insufficientData}
             />
           </div>
-          {/* Context row: Timeline full width */}
-          <TimelinePreview events={events} />
+          {/* Context row: Timeline full width — same component as timeline page; left = older, right = newer */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-medium">
+                  Timeline
+                </CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/timeline" className="text-xs">
+                    View all
+                    <ChevronRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {timelineEventsAsc.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No events yet.
+                </p>
+              ) : (
+                <TimelineVisualization
+                  events={timelineEventsAsc}
+                  onEventClick={handleTimelineEventClick}
+                />
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
 

@@ -50,5 +50,5 @@ The Timeline page at `/timeline` displays reality-track events (technical milest
 
 ## Design
 
-- **Home preview** (`TimelinePreview`): Horizontal card strip; recent events from `/api/timeline/recent?limit=6`. Cards use `min-w-60` (240px), `gap-6`, and `line-clamp-2` for titles; full title on hover via `title`. Keeps the strip from feeling crowded.
+- **Home timeline** (`TimelineVisualization`): Same component as the full timeline page; recent reality events from `/api/timeline/recent?limit=50`, sorted ascending by date so **left = older, right = newer**. Horizontal scroll, year axis, event dots and labels; click event → `/timeline?event=id`.
 - **Full timeline** (`TimelineVisualization`): Scale is 36px per year (1950–2030) so recent events spread out. Each event shows a dot plus a staggered label (date + truncated title, 28 chars); labels alternate above/below the track to reduce overlap. Full title and description in the detail sheet on click.

@@ -2,7 +2,7 @@
 
 ## Goal
 
-The timeline preview on the home page must show only **reality-track** events (technical milestones), ordered by date descending, and stay up to date via seed data or a documented curation process. This aligns the preview with the Timeline page and product intent ("reality track" only).
+The timeline on the home page uses the **same component** as the timeline page (`TimelineVisualization`): reality-track events only, with **left = older events, right = newer events**. Events stay up to date via seed data or a documented curation process. This aligns the home timeline with the Timeline page and product intent ("reality track" only).
 
 ## User Story
 
@@ -12,7 +12,7 @@ As a visitor on the home page, I want the timeline preview to show recent real A
 
 1. **API filter** — `GET /api/timeline/recent?limit=N` must filter by `eventType = 'reality'` so that only reality-track events are returned. Other event types (fiction, speculative) are excluded from the home preview.
 
-2. **Ordering** — Events ordered by `date` descending (most recent first). Unchanged.
+2. **Ordering** — API returns events by `date` descending. The home page sorts them **ascending** before passing to `TimelineVisualization`, so the timeline always displays **left = older, right = newer** (same as the timeline page).
 
 3. **Limit** — Query parameter `limit` (default 10, max 50) unchanged. Home page continues to request `limit=6` (or similar) as needed.
 
