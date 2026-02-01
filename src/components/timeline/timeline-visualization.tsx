@@ -5,8 +5,11 @@ import type { TimelineEvent } from "@/lib/timeline/types";
 
 const MIN_YEAR = 1950;
 const MAX_YEAR = 2030;
-const PX_PER_YEAR = 36;
-const TRACK_HEIGHT = 80;
+const PX_PER_YEAR = 48;
+const LABEL_WIDTH = 120;
+const LANE_HEIGHT = 36;
+const MIN_LABEL_GAP = 8;
+const DOT_ROW_HEIGHT = 14;
 const LABEL_MAX_LEN = 28;
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -52,17 +55,30 @@ export function TimelineVisualization({
   const scrollRef = useRef<HTMLElement>(null);
   const contentWidth = (MAX_YEAR - MIN_YEAR) * PX_PER_YEAR;
 
-  const positionedEvents = useMemo(() => {
+  const { positionedEvents, trackHeight } = useMemo(() => {
     const withX = events.map((e) => ({
       ...e,
       x: dateToX(e.date, PX_PER_YEAR),
       color: CATEGORY_COLORS[e.category] ?? "hsl(var(--primary))",
     }));
     withX.sort((a, b) => a.x - b.x);
-    return withX.map((e, i) => ({
-      ...e,
-      labelAbove: i % 2 === 1,
-    }));
+
+    const laneEnds: number[] = [];
+    let numLanes = 0;
+    const withLanes = withX.map((e) => {
+      const start = e.x - LABEL_WIDTH / 2;
+      const end = e.x + LABEL_WIDTH / 2;
+      let lane = 0;
+      while (lane < laneEnds.length && laneEnds[lane] + MIN_LABEL_GAP > start) {
+        lane += 1;
+      }
+      laneEnds[lane] = end;
+      numLanes = Math.max(numLanes, lane + 1);
+      return { ...e, lane };
+    });
+
+    const trackHeight = DOT_ROW_HEIGHT + numLanes * LANE_HEIGHT;
+    return { positionedEvents: withLanes, trackHeight };
   }, [events]);
 
   const handleScrollToYear = useCallback((year: number) => {
@@ -91,12 +107,12 @@ export function TimelineVisualization({
     <div className="w-full overflow-hidden rounded-lg border border-border bg-card">
       <section
         ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden scrollbar-thin"
+        className="overflow-auto scrollbar-thin"
         style={{ scrollbarWidth: "thin" }}
         aria-label="Timeline scroll"
       >
         <div
-          style={{ width: contentWidth, minHeight: 32 + TRACK_HEIGHT }}
+          style={{ width: contentWidth, minHeight: 32 + trackHeight }}
           className="relative"
         >
           {/* Year axis */}
@@ -124,14 +140,14 @@ export function TimelineVisualization({
             />
           ))}
 
-          {/* Event track: labels (staggered) + dots */}
+          {/* Event track: dot row + labels by lane */}
           <div
             className="absolute"
             style={{
               top: 32,
               left: 0,
               width: contentWidth,
-              height: TRACK_HEIGHT,
+              height: trackHeight,
             }}
           >
             {positionedEvents.map((e) => (
@@ -139,10 +155,10 @@ export function TimelineVisualization({
                 key={e.id}
                 type="button"
                 onClick={() => onEventClick(e)}
-                className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background z-10"
                 style={{
                   left: e.x - 6,
-                  top: 26,
+                  top: 1,
                   width: 12,
                   height: 12,
                   backgroundColor: e.color,
@@ -151,46 +167,23 @@ export function TimelineVisualization({
                 aria-label={`${e.title}, ${formatDate(e.date)}`}
               />
             ))}
-            {/* Labels above track */}
-            {positionedEvents
-              .filter((e) => e.labelAbove)
-              .map((e) => (
-                <div
-                  key={`above-${e.id}`}
-                  className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
-                  style={{
-                    left: Math.max(0, e.x - 60),
-                    top: 0,
-                    width: 120,
-                    textAlign: "center",
-                  }}
-                >
-                  <span className="block font-mono">{formatDate(e.date)}</span>
-                  <span className="block font-medium text-foreground truncate">
-                    {shortTitle(e.title)}
-                  </span>
-                </div>
-              ))}
-            {/* Labels below track */}
-            {positionedEvents
-              .filter((e) => !e.labelAbove)
-              .map((e) => (
-                <div
-                  key={`below-${e.id}`}
-                  className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
-                  style={{
-                    left: Math.max(0, e.x - 60),
-                    top: 44,
-                    width: 120,
-                    textAlign: "center",
-                  }}
-                >
-                  <span className="block font-mono">{formatDate(e.date)}</span>
-                  <span className="block font-medium text-foreground truncate">
-                    {shortTitle(e.title)}
-                  </span>
-                </div>
-              ))}
+            {positionedEvents.map((e) => (
+              <div
+                key={`label-${e.id}`}
+                className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none rounded border border-border bg-card px-1.5 py-0.5 shadow-sm"
+                style={{
+                  left: Math.max(0, e.x - LABEL_WIDTH / 2),
+                  top: DOT_ROW_HEIGHT + e.lane * LANE_HEIGHT,
+                  width: LABEL_WIDTH,
+                  textAlign: "center",
+                }}
+              >
+                <span className="block font-mono">{formatDate(e.date)}</span>
+                <span className="block font-medium text-foreground truncate">
+                  {shortTitle(e.title)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
