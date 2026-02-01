@@ -8,6 +8,20 @@
       "when": 1769866329194,
       "tag": "0000_nasty_mysterio",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769868663933,
+      "tag": "0001_steady_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769910693903,
+      "tag": "0002_big_roxanne_simpson",
+      "breakpoints": true
     }
   ]
 }
