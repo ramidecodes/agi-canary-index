@@ -26,6 +26,10 @@ export interface DiscoveryRunStats {
   sourcesSucceeded: number;
   sourcesFailed: number;
   durationMs: number;
+  /** True when discovery was skipped because a run was already in progress. */
+  skipped?: boolean;
+  /** Reason when skipped (e.g. "run_already_in_progress"). */
+  skipReason?: string;
   perSource: Array<{
     sourceId: string;
     sourceName: string;

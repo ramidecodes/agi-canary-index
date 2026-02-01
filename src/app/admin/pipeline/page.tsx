@@ -27,6 +27,8 @@ type DiscoverResult = {
   sourcesSucceeded?: number;
   sourcesFailed?: number;
   durationMs?: number;
+  skipped?: boolean;
+  skipReason?: string;
 };
 
 type AcquireResult = {
@@ -79,23 +81,23 @@ function PipelineStepCard({
 export default function AdminPipelinePage() {
   const [discoverDryRun, setDiscoverDryRun] = useState(false);
   const [snapshotDate, setSnapshotDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
+    new Date().toISOString().slice(0, 10)
   );
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [acquireLoading, setAcquireLoading] = useState(false);
   const [processLoading, setProcessLoading] = useState(false);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [discoverResult, setDiscoverResult] = useState<DiscoverResult | null>(
-    null,
+    null
   );
   const [acquireResult, setAcquireResult] = useState<AcquireResult | null>(
-    null,
+    null
   );
   const [processResult, setProcessResult] = useState<ProcessResult | null>(
-    null,
+    null
   );
   const [snapshotResult, setSnapshotResult] = useState<SnapshotResult | null>(
-    null,
+    null
   );
 
   const handleDiscover = useCallback(async () => {
@@ -110,12 +112,18 @@ export default function AdminPipelinePage() {
       const data = (await res.json()) as DiscoverResult & { error?: string };
       setDiscoverResult(data);
       if (res.ok) {
-        const msg = discoverDryRun
-          ? `Dry run: ${data.itemsDiscovered ?? 0} items discovered`
-          : `${data.itemsInserted ?? 0} items inserted, ${
-              data.sourcesSucceeded ?? 0
-            } sources succeeded`;
-        toast.success(msg);
+        if (data.skipped && data.skipReason === "run_already_in_progress") {
+          toast.warning(
+            "Discovery skipped: a run is already in progress. Click again to force a new run."
+          );
+        } else {
+          const msg = discoverDryRun
+            ? `Dry run: ${data.itemsDiscovered ?? 0} items discovered`
+            : `${data.itemsInserted ?? 0} items inserted, ${
+                data.sourcesSucceeded ?? 0
+              } sources succeeded`;
+          toast.success(msg);
+        }
       } else {
         toast.error(data.error ?? "Discovery failed");
       }
@@ -141,7 +149,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.itemsAcquired ?? 0} documents acquired (${
             data.itemsProcessed ?? 0
-          } processed)`,
+          } processed)`
         );
       } else {
         toast.error(data.error ?? "Acquisition failed");
@@ -168,7 +176,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.documentsProcessed ?? 0} docs processed, ${
             data.signalsCreated ?? 0
-          } signals created`,
+          } signals created`
         );
       } else {
         toast.error(data.error ?? "Signal processing failed");
@@ -199,7 +207,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.signalCount ?? 0} signals aggregated${
             data.created ? ", snapshot created" : ""
-          }`,
+          }`
         );
       } else {
         toast.error(data.error ?? "Snapshot creation failed");
@@ -251,17 +259,20 @@ export default function AdminPipelinePage() {
           {discoverResult && (
             <p className="text-muted-foreground text-sm">
               {discoverResult.ok
-                ? `${discoverResult.itemsInserted ?? 0} items inserted, ${
-                    discoverResult.sourcesSucceeded ?? 0
-                  } sources succeeded${
-                    discoverResult.sourcesFailed
-                      ? `, ${discoverResult.sourcesFailed} failed`
-                      : ""
-                  }${
-                    discoverResult.durationMs
-                      ? ` (${(discoverResult.durationMs / 1000).toFixed(1)}s)`
-                      : ""
-                  }`
+                ? discoverResult.skipped &&
+                  discoverResult.skipReason === "run_already_in_progress"
+                  ? "Discovery skipped: a run is already in progress. Click again to force a new run."
+                  : `${discoverResult.itemsInserted ?? 0} items inserted, ${
+                      discoverResult.sourcesSucceeded ?? 0
+                    } sources succeeded${
+                      discoverResult.sourcesFailed
+                        ? `, ${discoverResult.sourcesFailed} failed`
+                        : ""
+                    }${
+                      discoverResult.durationMs
+                        ? ` (${(discoverResult.durationMs / 1000).toFixed(1)}s)`
+                        : ""
+                    }`
                 : null}
             </p>
           )}

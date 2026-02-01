@@ -16,7 +16,7 @@ const CONCURRENCY = 5;
 const DEDUP_DAYS = 30;
 const X_SOURCE_ENABLED = true;
 /** Mark runs stuck in "running" longer than this as failed before starting. */
-const STALE_RUN_MINUTES = 15;
+const STALE_RUN_MINUTES = 3;
 /** Max time per source fetch so one hung source does not block the whole run. */
 const SOURCE_FETCH_TIMEOUT_MS = 60_000;
 
@@ -24,6 +24,8 @@ export interface DiscoveryOptions {
   dryRun?: boolean;
   openRouterApiKey: string;
   xSearchEnabled?: boolean;
+  /** When true (e.g. manual admin trigger), supersede any running run and start a new one. */
+  forceNewRun?: boolean;
 }
 
 export interface DiscoveryContext {
@@ -36,7 +38,7 @@ export interface DiscoveryContext {
  * deduplicates, and inserts new items.
  */
 export async function runDiscovery(
-  ctx: DiscoveryContext,
+  ctx: DiscoveryContext
 ): Promise<DiscoveryRunStats> {
   const { db, options } = ctx;
   const startMs = Date.now();
@@ -51,29 +53,42 @@ export async function runDiscovery(
   };
 
   if (!options.dryRun) {
-    const staleCutoff = new Date(Date.now() - STALE_RUN_MINUTES * 60 * 1000);
-    await db
-      .update(pipelineRuns)
-      .set({
-        status: "failed",
-        completedAt: new Date(),
-        errorLog: "Marked failed (stale run)",
-      })
-      .where(
-        and(
-          eq(pipelineRuns.status, "running"),
-          lt(pipelineRuns.startedAt, staleCutoff),
-        ),
-      );
+    if (options.forceNewRun) {
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "failed",
+          completedAt: new Date(),
+          errorLog: "Superseded by new run (manual trigger)",
+        })
+        .where(eq(pipelineRuns.status, "running"));
+    } else {
+      const staleCutoff = new Date(Date.now() - STALE_RUN_MINUTES * 60 * 1000);
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "failed",
+          completedAt: new Date(),
+          errorLog: "Marked failed (stale run)",
+        })
+        .where(
+          and(
+            eq(pipelineRuns.status, "running"),
+            lt(pipelineRuns.startedAt, staleCutoff)
+          )
+        );
 
-    const running = await db
-      .select({ id: pipelineRuns.id })
-      .from(pipelineRuns)
-      .where(eq(pipelineRuns.status, "running"))
-      .limit(1);
-    if (running.length > 0) {
-      stats.durationMs = Date.now() - startMs;
-      return stats;
+      const running = await db
+        .select({ id: pipelineRuns.id })
+        .from(pipelineRuns)
+        .where(eq(pipelineRuns.status, "running"))
+        .limit(1);
+      if (running.length > 0) {
+        stats.durationMs = Date.now() - startMs;
+        stats.skipped = true;
+        stats.skipReason = "run_already_in_progress";
+        return stats;
+      }
     }
   }
 
@@ -109,7 +124,7 @@ export async function runDiscovery(
       .from(sources)
       .where(eq(sources.isActive, true));
     const activeSources = activeRows.filter(
-      (s) => !s.url.includes("example.com"),
+      (s) => !s.url.includes("example.com")
     );
 
     const allItems: DiscoveredItem[] = [];
@@ -125,8 +140,8 @@ export async function runDiscovery(
               (_, reject) =>
                 setTimeout(
                   () => reject(new Error("Source fetch timeout (60s)")),
-                  SOURCE_FETCH_TIMEOUT_MS,
-                ),
+                  SOURCE_FETCH_TIMEOUT_MS
+                )
             ),
           ]).catch((err) => ({
             items: [] as DiscoveredItem[],
@@ -140,7 +155,7 @@ export async function runDiscovery(
               src.name,
               result.items.length,
               !!result.error,
-              result.error,
+              result.error
             );
           }
           if (result.error) {
@@ -182,7 +197,7 @@ export async function runDiscovery(
             allItems.push(...result.items);
           }
           return result;
-        }),
+        })
       );
     }
 
@@ -203,7 +218,7 @@ export async function runDiscovery(
         .select({ urlHash: items.urlHash })
         .from(items)
         .where(
-          and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff)),
+          and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff))
         );
       const seenHashes = new Set(existing.map((r) => r.urlHash));
       const toInsert = uniqueItems.filter((i) => !seenHashes.has(i.urlHash));
@@ -258,7 +273,7 @@ export async function runDiscovery(
           errorLog: "Run did not complete (timeout or crash)",
         })
         .where(
-          and(eq(pipelineRuns.id, runId), eq(pipelineRuns.status, "running")),
+          and(eq(pipelineRuns.id, runId), eq(pipelineRuns.status, "running"))
         );
     }
   }
@@ -275,7 +290,7 @@ async function fetchFromSource(
     queryConfig?: Record<string, unknown> | null;
   },
   apiKey: string,
-  xEnabled: boolean,
+  xEnabled: boolean
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   switch (src.sourceType) {
     case "rss":
@@ -301,13 +316,13 @@ async function logFetch(
   _sourceName: string,
   itemsFound: number,
   failed: boolean,
-  errorMessage?: string,
+  errorMessage?: string
 ): Promise<void> {
   await db.insert(sourceFetchLogs).values({
     runId,
     sourceId,
     status: failed ? "failure" : "success",
     itemsFound,
-    errorMessage: failed ? (errorMessage ?? "Unknown error") : null,
+    errorMessage: failed ? errorMessage ?? "Unknown error" : null,
   });
 }

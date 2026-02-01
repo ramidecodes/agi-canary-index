@@ -127,8 +127,8 @@ As the AGI Canary Watcher system, I want to automatically discover new relevant 
 
 1. Admin calls `/api/admin/pipeline/discover` endpoint
 2. Endpoint validates admin authentication
-3. Executes same logic as scheduled run
-4. Returns detailed results including per-source breakdown
+3. Uses `forceNewRun: true`: any existing "running" run is marked failed ("Superseded by new run (manual trigger)") so a new run always starts. Cron does not force; it skips if a run is in progress and returns `skipped: true`, `skipReason: "run_already_in_progress"`.
+4. Returns detailed results including per-source breakdown; when skipped, response includes `skipped` and `skipReason` for the UI.
 5. Allows "dry run" mode that doesn't persist
 
 **Manual Trigger (how-to):**
@@ -232,6 +232,7 @@ fetch("/api/admin/pipeline/discover", {
 - Uses Neon Postgres via Neon serverless driver (`DATABASE_URL`) for state
 - Idempotent operations where possible
 - **Limits:** Discovery runs in single invocation; stay under 5 min (Vercel `maxDuration`). Parallel fetches: max 5 concurrent.
+- **Vercel function timeout:** The manual discover route sets `maxDuration = 300` (5 min). This requires a Vercel plan that supports extended duration (e.g. Pro). On Hobby, functions are limited to ~10s; if the process is killed before completion, the pipeline run can stay "running" in the DB. Manual trigger uses `forceNewRun: true` so the next click supersedes any stuck run. Cron does not force; stuck runs are marked failed after 3 minutes (`STALE_RUN_MINUTES`).
 
 **References:**
 

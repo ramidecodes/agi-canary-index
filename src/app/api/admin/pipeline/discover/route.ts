@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   if (!apiKey) {
     return NextResponse.json(
       { error: "OPENROUTER_API_KEY not configured" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
@@ -37,7 +37,11 @@ export async function POST(request: Request) {
     const db = getDb();
     const stats = await runDiscovery({
       db,
-      options: { openRouterApiKey: apiKey, dryRun },
+      options: {
+        openRouterApiKey: apiKey,
+        dryRun,
+        forceNewRun: true,
+      },
     });
 
     return NextResponse.json({
