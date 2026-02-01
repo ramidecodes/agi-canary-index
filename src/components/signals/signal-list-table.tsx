@@ -117,8 +117,8 @@ export function SignalListTable({
                       signal.confidence >= 0.7
                         ? "text-green-600 dark:text-green-400"
                         : signal.confidence >= 0.5
-                        ? "text-muted-foreground"
-                        : "text-muted-foreground/70"
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground/70"
                     }
                   >
                     {(signal.confidence * 100).toFixed(0)}%

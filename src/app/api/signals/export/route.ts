@@ -45,19 +45,19 @@ function toCsv(signals: SignalExplorerResult[]): string {
         const val = s[h as keyof SignalExplorerResult];
         if (h === "axesImpacted" && Array.isArray(val)) {
           return escapeCsv(
-            val.map((a) => `${a.axis}:${a.magnitude}`).join("; ")
+            val.map((a) => `${a.axis}:${a.magnitude}`).join("; "),
           );
         }
         if (h === "metric" && val && typeof val === "object") {
           return escapeCsv(
             `${(val as { name: string; value: number; unit?: string }).name}: ${
               (val as { name: string; value: number; unit?: string }).value
-            }`
+            }`,
           );
         }
         return escapeCsv(val);
       })
-      .join(",")
+      .join(","),
   );
   return [headers.join(","), ...rows].join("\n");
 }
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     if (format !== "csv" && format !== "json") {
       return NextResponse.json(
         { error: "format must be csv or json" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     console.error("[api/signals/export]", err);
     return NextResponse.json(
       { error: "Failed to export signals" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

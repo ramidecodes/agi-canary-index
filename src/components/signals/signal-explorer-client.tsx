@@ -56,8 +56,8 @@ function filtersFromUrl(searchParams: URLSearchParams): SignalFiltersState {
       searchParams.get("hasBenchmark") === "true"
         ? true
         : searchParams.get("hasBenchmark") === "false"
-        ? false
-        : null,
+          ? false
+          : null,
     highConfidenceOnly:
       Number.parseFloat(searchParams.get("confidenceMin") ?? "0") >= 0.7,
     q: searchParams.get("q") ?? "",
@@ -87,10 +87,10 @@ export function SignalExplorerClient() {
   const signalFromUrl = searchParams.get("signal");
 
   const [filters, setFilters] = useState<SignalFiltersState>(() =>
-    filtersFromUrl(searchParams)
+    filtersFromUrl(searchParams),
   );
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(
-    signalFromUrl
+    signalFromUrl,
   );
   const [sheetOpen, setSheetOpen] = useState(!!signalFromUrl);
 
@@ -157,7 +157,7 @@ export function SignalExplorerClient() {
     (sourceId: string) => {
       handleFiltersChange({ ...filters, sourceId });
     },
-    [filters, handleFiltersChange]
+    [filters, handleFiltersChange],
   );
 
   return (
@@ -198,8 +198,8 @@ export function SignalExplorerClient() {
             {isLoading
               ? "Loading…"
               : error
-              ? "Failed to load signals"
-              : `${signals.length} signal${signals.length === 1 ? "" : "s"}`}
+                ? "Failed to load signals"
+                : `${signals.length} signal${signals.length === 1 ? "" : "s"}`}
           </p>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

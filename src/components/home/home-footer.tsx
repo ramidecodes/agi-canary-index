@@ -33,6 +33,9 @@ export function HomeFooter() {
         >
           Signals
         </Link>
+        <Link href="/news" className="hover:text-foreground transition-colors">
+          News
+        </Link>
         <Link href="/about" className="hover:text-foreground transition-colors">
           About
         </Link>

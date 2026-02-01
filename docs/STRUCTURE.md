@@ -36,6 +36,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
 - **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
 - **`signals/page.tsx`** — Signal Explorer page (list, filters, detail sheet, export)
+- **`news/page.tsx`** — News & Daily Brief page (archive, brief by date, article list, copy brief, share)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -82,6 +83,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `categories/route.ts` — GET distinct categories (reality events)
   - `search/route.ts` — GET search results (query: q)
 - **`api/movement/today/route.ts`** — GET today's significant changes
+- **`api/brief/`** — Daily Brief APIs
+  - `today/route.ts` — GET today's brief (movements, coverage, sources checked)
+  - `[date]/route.ts` — GET brief for date (YYYY-MM-DD)
+  - `archive/route.ts` — GET recent briefs list (query: limit)
+- **`api/news/route.ts`** — GET paginated news articles (query: limit, cursor, dateFrom, dateTo, axis, sourceTier)
+- **`api/news/filters/route.ts`** — GET filter options (axes, date range, source tiers)
 - **`api/stats/route.ts`** — GET public stats (source count)
 
 ### `src/components/`
@@ -94,7 +101,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page
   - `autonomy-thermometer.tsx`
   - `canary-strip.tsx` — Sticky canary indicators with popover
+  - `daily-brief-card.tsx` — Today's Movement card with expandable items, coverage, "View all" to /news
   - `todays-movement.tsx`, `timeline-preview.tsx`
+- **`news/`** — News & Daily Brief page components
+  - `news-page-client.tsx` — Client wrapper with SWR, URL state (date, filters)
+  - `copy-brief-button.tsx` — Copy brief as formatted text; fallback modal
+  - `news-article-list.tsx` — Article cards (title, source, tags, why it matters, confidence)
 - **`capabilities/`** — Capability Profile page components
   - `capability-profile-client.tsx` — Client wrapper, SWR, URL state
   - `time-scrubber.tsx` — Date slider + presets (shadcn Slider)
@@ -157,6 +169,10 @@ Shared code: DB, AI models, and future services.
 - **`signals/`** — Signal Explorer query logic
   - `query.ts` — parseExplorerFilters, querySignalsExplorer (shared with API)
   - `types.ts` — SignalExplorerItem, SignalDetail, AXIS_LABELS, TIER_LABELS
+- **`brief/`** — Daily Brief & News
+  - `types.ts` — DailyBrief, BriefItem, NewsArticle, NewsFiltersOptions
+  - `build-brief.ts` — getBriefForDate, build movements from snapshot/signals
+  - `news-query.ts` — queryNews (cursor-paginated articles from processed documents)
 - **`signal/`** — AI signal processing pipeline (AI SDK v6 + OpenRouter)
   - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
   - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)
@@ -189,6 +205,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **AUTONOMY-RISK.md** — Autonomy & Risk page, APIs, Recharts vs D3 evaluation
 - **TIMELINE.md** — Timeline page, APIs, event categories
 - **SIGNAL-EXPLORER.md** — Signal Explorer page, APIs, filters, export
+- **DAILY-BRIEF.md** — Daily Brief & News page, APIs, copy brief, share
 - **STRUCTURE.md** — This file
 
 ## Scripts (from `package.json`)

@@ -5,7 +5,7 @@ import { HomeHeader } from "./home-header";
 import { CanaryStrip } from "./canary-strip";
 import { CapabilityRadar } from "./capability-radar";
 import { AutonomyThermometer } from "./autonomy-thermometer";
-import { TodaysMovement } from "./todays-movement";
+import { DailyBriefCard } from "./daily-brief-card";
 import { TimelinePreview } from "./timeline-preview";
 import { HomeFooter } from "./home-footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,6 @@ import type {
   SnapshotHistoryEntry,
   Canary,
   TimelineEvent,
-  Movement,
 } from "@/lib/home/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -42,13 +41,6 @@ export function HomePageClient() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
-  const { data: movementData } = useSWR<{
-    movements: Movement[];
-    date: string;
-  }>("/api/movement/today", fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 5 * 60 * 1000,
-  });
   const { data: statsData } = useSWR<{ sourceCount: number }>(
     "/api/stats",
     fetcher,
@@ -59,9 +51,6 @@ export function HomePageClient() {
   const history = historyData?.history ?? [];
   const canaries = canariesData?.canaries ?? [];
   const events = timelineData?.events ?? [];
-  const movements = movementData?.movements ?? [];
-  const movementDate =
-    movementData?.date ?? new Date().toISOString().slice(0, 10);
   const sourceCount = statsData?.sourceCount ?? 0;
 
   const lastUpdate = snapshot?.createdAt ?? null;
@@ -132,7 +121,7 @@ export function HomePageClient() {
           </div>
           <div className="space-y-6">
             <AutonomyThermometer level={autonomyLevel} />
-            <TodaysMovement movements={movements} date={movementDate} />
+            <DailyBriefCard />
           </div>
         </div>
 

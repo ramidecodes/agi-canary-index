@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       const db = getDb();
       const { signals: explorerSignals } = await querySignalsExplorer(
         db,
-        filters
+        filters,
       );
       return NextResponse.json({
         signals: explorerSignals.map((s) => ({
@@ -75,14 +75,14 @@ export async function GET(request: NextRequest) {
         {
           error: `axis is required and must be one of: ${AXES.join(", ")}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const dateParam = searchParams.get("date");
     const limit = Math.min(
       Number.parseInt(searchParams.get("limit") ?? "50", 10),
-      100
+      100,
     );
 
     const db = getDb();
@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
     console.error("[api/signals]", err);
     return NextResponse.json(
       { error: "Failed to fetch signals" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

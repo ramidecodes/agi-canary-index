@@ -55,7 +55,7 @@ export function SignalFilters({
     (patch: Partial<SignalFiltersState>) => {
       onFiltersChange({ ...filters, ...patch });
     },
-    [filters, onFiltersChange]
+    [filters, onFiltersChange],
   );
 
   const handleAxisToggle = useCallback(
@@ -65,7 +65,7 @@ export function SignalFilters({
       else next.delete(axis);
       update({ axes: next });
     },
-    [filters.axes, update]
+    [filters.axes, update],
   );
 
   const handleSearchSubmit = useCallback(
@@ -73,7 +73,7 @@ export function SignalFilters({
       e.preventDefault();
       update({ q: localQ.trim() });
     },
-    [localQ, update]
+    [localQ, update],
   );
 
   const handleHighConfidenceToggle = useCallback(
@@ -83,7 +83,7 @@ export function SignalFilters({
         confidenceMin: checked ? 0.7 : 0,
       });
     },
-    [update]
+    [update],
   );
 
   const handleReset = useCallback(() => {

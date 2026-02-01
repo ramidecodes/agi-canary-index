@@ -37,8 +37,8 @@ function buildCitation(signal: SignalDetail): string {
   if (signal.url) parts.push(signal.url);
   parts.push(
     `AGI Canary Watcher Signal Explorer. Retrieved ${formatDate(
-      signal.createdAt
-    )}.`
+      signal.createdAt,
+    )}.`,
   );
   return parts.join(". ");
 }
@@ -63,7 +63,7 @@ export function SignalDetailSheet({
   } = useSWR<SignalDetail>(
     open && signalId ? `/api/signals/${signalId}` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const handleCopyCitation = useCallback(async () => {

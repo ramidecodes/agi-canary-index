@@ -13,14 +13,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     if (!id) {
       return NextResponse.json(
         { error: "Signal ID required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,7 +82,7 @@ export async function GET(
     console.error("[api/signals/[id]]", err);
     return NextResponse.json(
       { error: "Failed to fetch signal" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

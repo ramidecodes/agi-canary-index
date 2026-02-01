@@ -59,7 +59,7 @@ export interface SignalExplorerResult {
 }
 
 export function parseExplorerFilters(
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): SignalExplorerFilters {
   const axesParam = searchParams.get("axes");
   const axes =
@@ -84,8 +84,8 @@ export function parseExplorerFilters(
     hasBenchmarkParam === "true"
       ? true
       : hasBenchmarkParam === "false"
-      ? false
-      : undefined;
+        ? false
+        : undefined;
   const q = (searchParams.get("q") ?? "").trim() || undefined;
   const sort = (searchParams.get("sort") ?? "createdAt") as
     | "createdAt"
@@ -93,11 +93,11 @@ export function parseExplorerFilters(
   const order = (searchParams.get("order") ?? "desc") as "asc" | "desc";
   const limit = Math.min(
     Number.parseInt(searchParams.get("limit") ?? "100", 10),
-    500
+    500,
   );
   const offset = Math.max(
     0,
-    Number.parseInt(searchParams.get("offset") ?? "0", 10)
+    Number.parseInt(searchParams.get("offset") ?? "0", 10),
   );
 
   return {
@@ -130,7 +130,7 @@ function escapeIlikePattern(s: string): string {
 
 export async function querySignalsExplorer(
   db: ReturnType<typeof getDb>,
-  filters: SignalExplorerFilters
+  filters: SignalExplorerFilters,
 ): Promise<{ signals: SignalExplorerResult[]; total: number }> {
   const conditions: SQL[] = [];
 
@@ -139,12 +139,12 @@ export async function querySignalsExplorer(
   }
   if (filters.sourceTier) {
     conditions.push(
-      eq(sources.tier, filters.sourceTier as "TIER_0" | "TIER_1" | "DISCOVERY")
+      eq(sources.tier, filters.sourceTier as "TIER_0" | "TIER_1" | "DISCOVERY"),
     );
   }
   if (filters.confidenceMin != null) {
     conditions.push(
-      sql`${signals.confidence} >= ${String(filters.confidenceMin)}`
+      sql`${signals.confidence} >= ${String(filters.confidenceMin)}`,
     );
   }
   if (filters.hasBenchmark === true) {
@@ -154,17 +154,17 @@ export async function querySignalsExplorer(
   }
   if (filters.dateFrom) {
     conditions.push(
-      gte(signals.createdAt, new Date(`${filters.dateFrom}T00:00:00Z`))
+      gte(signals.createdAt, new Date(`${filters.dateFrom}T00:00:00Z`)),
     );
   }
   if (filters.dateTo) {
     conditions.push(
-      lte(signals.createdAt, new Date(`${filters.dateTo}T23:59:59.999Z`))
+      lte(signals.createdAt, new Date(`${filters.dateTo}T23:59:59.999Z`)),
     );
   }
   if (filters.q) {
     conditions.push(
-      ilike(signals.claimSummary, `%${escapeIlikePattern(filters.q)}%`)
+      ilike(signals.claimSummary, `%${escapeIlikePattern(filters.q)}%`),
     );
   }
 
@@ -176,14 +176,14 @@ export async function querySignalsExplorer(
         ? asc(signals.confidence)
         : desc(signals.confidence)
       : filters.order === "asc"
-      ? asc(signals.createdAt)
-      : desc(signals.createdAt);
+        ? asc(signals.createdAt)
+        : desc(signals.createdAt);
 
   // When filtering by axes we filter in-memory, so fetch extra to compensate
   const fetchLimit =
     filters.axes?.length && filters.axes.length > 0
       ? Math.min((filters.limit ?? 100) * 3, 1000)
-      : filters.limit ?? 100;
+      : (filters.limit ?? 100);
 
   // Fetch signals with document -> item -> source
   const rows = await db
