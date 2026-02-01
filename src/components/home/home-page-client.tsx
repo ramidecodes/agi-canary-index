@@ -1,15 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { CanaryStrip } from "./canary-strip";
-import { CapabilityRadar } from "./capability-radar";
 import { AutonomyThermometer } from "./autonomy-thermometer";
 import { DailyBriefCard } from "./daily-brief-card";
 import { TimelinePreview } from "./timeline-preview";
+import { HeroSection } from "./hero-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHomeStore } from "@/lib/home/store";
 import type {
   Snapshot,
   SnapshotHistoryEntry,
@@ -18,6 +21,28 @@ import type {
 } from "@/lib/home/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+/** Sync URL ?filter= with store (both directions). */
+function useCanaryFilterUrlSync() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeCanaryFilter = useHomeStore((s) => s.activeCanaryFilter);
+  const setCanaryFilter = useHomeStore((s) => s.setCanaryFilter);
+
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    setCanaryFilter(filter ?? null);
+  }, [searchParams, setCanaryFilter]);
+
+  useEffect(() => {
+    const current = searchParams.get("filter");
+    if (current === activeCanaryFilter) return;
+    const path = activeCanaryFilter
+      ? `/?filter=${encodeURIComponent(activeCanaryFilter)}`
+      : "/";
+    router.replace(path, { scroll: false });
+  }, [activeCanaryFilter, router, searchParams]);
+}
 
 export function HomePageClient() {
   const { data: snapshotData } = useSWR<{ snapshot: Snapshot | null }>(
@@ -40,10 +65,13 @@ export function HomePageClient() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
+
   const snapshot = snapshotData?.snapshot ?? null;
   const history = historyData?.history ?? [];
   const canaries = canariesData?.canaries ?? [];
   const events = timelineData?.events ?? [];
+
+  useCanaryFilterUrlSync();
 
   const hasNoData = !snapshot && canaries.length === 0 && events.length === 0;
 
@@ -58,8 +86,14 @@ export function HomePageClient() {
   })();
 
   const isMobile = useIsMobile();
-  const radarSize = isMobile ? 280 : 360;
+  const heroRadarSize = isMobile ? 320 : 500;
   const showGhosts = !isMobile;
+
+  const activeCanaryFilter = useHomeStore((s) => s.activeCanaryFilter);
+  const highlightAxes =
+    activeCanaryFilter && canaries.length > 0
+      ? (canaries.find((c) => c.id === activeCanaryFilter)?.axesWatched ?? [])
+      : undefined;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -80,39 +114,35 @@ export function HomePageClient() {
         </Card>
       )}
 
+      {!hasNoData && (
+        <HeroSection
+          snapshot={snapshot}
+          history={history}
+          radarSize={heroRadarSize}
+          showGhosts={showGhosts}
+          highlightAxes={highlightAxes}
+        />
+      )}
+
       {canaries.length > 0 && <CanaryStrip canaries={canaries} />}
 
-      {/* Mobile: single column; Desktop: radar + sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Capability Radar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-center">
-                <CapabilityRadar
-                  snapshot={snapshot}
-                  history={showGhosts ? history : []}
-                  size={radarSize}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          <TimelinePreview events={events} />
+      {!hasNoData && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+            <TimelinePreview events={events} />
+          </div>
+          <div className="space-y-6 hidden lg:block">
+            <AutonomyThermometer level={autonomyLevel} />
+            <DailyBriefCard axesToShow={highlightAxes ?? undefined} />
+          </div>
         </div>
-        <div className="space-y-6 hidden lg:block">
-          <AutonomyThermometer level={autonomyLevel} />
-          <DailyBriefCard />
-        </div>
-      </div>
+      )}
 
-      {/* Mobile: brief below radar (thermometer available via Autonomy tab); desktop: thermometer + brief in sidebar */}
-      <div className="space-y-6 lg:hidden">
-        <DailyBriefCard />
-      </div>
+      {!hasNoData && (
+        <div className="space-y-6 lg:hidden">
+          <DailyBriefCard axesToShow={highlightAxes ?? undefined} />
+        </div>
+      )}
 
       <p className="text-center sm:hidden pt-2">
         <Link

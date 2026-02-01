@@ -165,7 +165,7 @@ Shared code: DB, AI models, and future services.
   - `schema.ts` — Tables, enums, indexes, RLS policies
   - `relations.ts` — Drizzle relations
   - `validators.ts` — Zod schemas and inferred types (incl. updateSourceSchema, bulkSourcesActionSchema)
-  - `seed.ts` — Seed script (`pnpm run db:seed`); seeds 14 Tier-0/Tier-1 sources
+  - `seed.ts` — Seed script (`pnpm run db:seed`); upserts Tier-0/Tier-1/Discovery sources by name (16 in SEED_SOURCES)
 - **`sources.ts`** — Source registry constants and helpers
   - `AUTO_DISABLE_FAILURE_THRESHOLD`, `getSourceHealthStatus()`, `SEED_SOURCES`
 - **`auth.ts`** — Server-side auth for admin API routes (`requireAuth()`)

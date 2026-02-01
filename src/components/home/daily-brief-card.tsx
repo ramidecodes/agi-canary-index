@@ -132,7 +132,16 @@ function BriefItemRow({
   );
 }
 
-export function DailyBriefCard({ className = "" }: { className?: string }) {
+interface DailyBriefCardProps {
+  className?: string;
+  /** When set, only show movements for these axis keys (e.g. from active canary filter). */
+  axesToShow?: string[] | null;
+}
+
+export function DailyBriefCard({
+  className = "",
+  axesToShow,
+}: DailyBriefCardProps) {
   const { data, error } = useSWR<{ brief: DailyBrief; isExact: boolean }>(
     "/api/brief/today",
     fetcher,
@@ -141,7 +150,11 @@ export function DailyBriefCard({ className = "" }: { className?: string }) {
 
   const brief = data?.brief ?? null;
   const isExact = data?.isExact ?? true;
-  const movements = brief?.movements ?? [];
+  const allMovements = brief?.movements ?? [];
+  const movements =
+    axesToShow && axesToShow.length > 0
+      ? allMovements.filter((m) => axesToShow.includes(m.axis))
+      : allMovements;
   const generatedAt = brief?.generatedAt ?? null;
   const coverageScore = brief?.coverageScore ?? null;
   const signalsProcessed = brief?.signalsProcessed ?? 0;
@@ -177,7 +190,9 @@ export function DailyBriefCard({ className = "" }: { className?: string }) {
           <>
             {movements.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No significant changes.
+                {axesToShow?.length
+                  ? "No movements for this filter."
+                  : "No significant changes."}
               </p>
             ) : (
               <ul className="space-y-0">

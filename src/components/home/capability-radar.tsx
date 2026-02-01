@@ -30,6 +30,8 @@ interface CapabilityRadarProps {
   /** When provided, use these instead of home store (e.g. capability profile page). */
   selectedAxis?: string | null;
   onAxisClick?: (axis: string) => void;
+  /** Axis keys to highlight (e.g. from active canary filter). */
+  highlightAxes?: string[];
 }
 
 export function CapabilityRadar({
@@ -39,6 +41,7 @@ export function CapabilityRadar({
   className = "",
   selectedAxis: selectedAxisProp,
   onAxisClick,
+  highlightAxes,
 }: CapabilityRadarProps) {
   const homeStore = useHomeStore();
   const selectedRadarAxis =
@@ -243,6 +246,7 @@ export function CapabilityRadar({
           {/* Axis labels (clickable) */}
           {axisPoints.map(({ axis, label, x, y }) => {
             const isSelected = selectedRadarAxis === axis;
+            const isHighlighted = highlightAxes?.includes(axis) ?? false;
             const labelR = size * 0.44;
             const angle = Math.atan2(y - center.y, x - center.x);
             const lx = center.x + labelR * Math.cos(angle);
@@ -255,9 +259,9 @@ export function CapabilityRadar({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="currentColor"
-                fillOpacity={isSelected ? 1 : 0.7}
+                fillOpacity={isSelected ? 1 : isHighlighted ? 0.95 : 0.7}
                 fontSize={size > 400 ? "13" : "11"}
-                fontWeight={isSelected ? 600 : 400}
+                fontWeight={isSelected || isHighlighted ? 600 : 400}
                 className="pointer-events-none select-none"
               >
                 {label}
