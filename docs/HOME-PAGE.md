@@ -58,5 +58,5 @@ All public (no auth):
 
 ## Navigation
 
-- `/capabilities`, `/autonomy`, `/timeline` are placeholders until Phase 3.2–4.2.
-- Footer links `/about`, `/methodology`, `/sources` are placeholders.
+- `/capabilities`, `/autonomy`, `/timeline`, `/signals`, `/news` — main app pages.
+- Footer links `/about`, `/methodology`, `/sources` — informational pages (implemented).

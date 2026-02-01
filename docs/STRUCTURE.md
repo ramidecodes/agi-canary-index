@@ -38,6 +38,9 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
   - **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
   - **`signals/page.tsx`** — Signal Explorer page (list, filters, detail sheet, export; desktop redirect banner on mobile)
+  - **`about/page.tsx`** — About page (mission, architecture, principles)
+  - **`methodology/page.tsx`** — Methodology page (frameworks, axes, pipeline)
+  - **`sources/page.tsx`** — Data sources page (public list of trusted sources, grouped by tier)
 - `globals.css` — Global styles (includes safe-area insets for mobile)
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -94,6 +97,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`api/news/route.ts`** — GET paginated news articles (query: limit, cursor, dateFrom, dateTo, axis, sourceTier)
 - **`api/news/filters/route.ts`** — GET filter options (axes, date range, source tiers)
 - **`api/stats/route.ts`** — GET public stats (source count)
+- **`api/sources/route.ts`** — GET public list of active data sources (no auth)
 
 ### `src/components/`
 
@@ -145,6 +149,8 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `event-detail-sheet.tsx` — Shadcn Sheet with event details
 - **`signals/`** — Signal Explorer page components
   - `signal-explorer-client.tsx` — Client wrapper, SWR, URL state
+- **`sources/`** — Data sources page components
+  - `data-sources-client.tsx` — Client wrapper, SWR fetch, table grouped by tier
   - `signal-filters.tsx` — Axis, date, tier, confidence filters
   - `signal-list-table.tsx` — Sortable table with row click
   - `signal-detail-sheet.tsx` — Shadcn Sheet with full signal details
