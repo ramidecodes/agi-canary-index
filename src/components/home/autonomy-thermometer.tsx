@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const LEVELS = [
   {
@@ -36,7 +37,12 @@ export function AutonomyThermometer({
   const segmentHeight = 100 / LEVELS.length;
 
   return (
-    <Card className={className}>
+    <Card
+      className={cn(
+        "border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-sm shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset]",
+        className,
+      )}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">Autonomy Level</CardTitle>
       </CardHeader>
@@ -88,11 +94,15 @@ export function AutonomyThermometer({
             </div>
           </div>
 
-          <div className="mt-2 space-y-0.5">
+          <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
             {LEVELS.map((l) => (
               <div
                 key={l.id}
-                className="text-xs text-muted-foreground flex items-center gap-2"
+                className="flex items-center gap-2"
+                style={{
+                  fontFamily:
+                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                }}
               >
                 <div
                   className="w-2 h-2 rounded-full shrink-0"

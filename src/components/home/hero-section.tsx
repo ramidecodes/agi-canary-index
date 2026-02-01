@@ -21,15 +21,22 @@ export function HeroSection({
 }: HeroSectionProps) {
   return (
     <section
-      className="relative rounded-xl border border-border bg-card/50 py-8 sm:py-12 md:py-14 px-4 sm:px-6 overflow-hidden"
+      className="relative rounded-xl border border-border/80 bg-card/60 dark:bg-card/50 backdrop-blur-md py-8 sm:py-12 md:py-14 px-4 sm:px-6 overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]"
       aria-labelledby="hero-heading"
     >
-      {/* Subtle gradient overlay */}
+      {/* Gradient overlay — clearly visible for control-room feel */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]"
+        className="absolute inset-0 pointer-events-none opacity-[0.12] dark:opacity-[0.28]"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, var(--canary-accent), transparent)",
+            "radial-gradient(ellipse 85% 55% at 50% 0%, var(--canary-accent), transparent 65%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.08] dark:opacity-[0.22]"
+        style={{
+          background:
+            "radial-gradient(ellipse 65% 45% at 50% 45%, var(--chart-1), transparent 55%)",
         }}
       />
 

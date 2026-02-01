@@ -65,11 +65,17 @@ export function HomePageClient() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
+  const { data: statsData } = useSWR<{ sourceCount: number }>(
+    "/api/stats",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+  );
 
   const snapshot = snapshotData?.snapshot ?? null;
   const history = historyData?.history ?? [];
   const canaries = canariesData?.canaries ?? [];
   const events = timelineData?.events ?? [];
+  const sourceCount = statsData?.sourceCount ?? 0;
 
   useCanaryFilterUrlSync();
 
@@ -124,7 +130,21 @@ export function HomePageClient() {
         />
       )}
 
-      {canaries.length > 0 && <CanaryStrip canaries={canaries} />}
+      {(canaries.length > 0 || snapshot != null || sourceCount > 0) && (
+        <CanaryStrip
+          canaries={canaries}
+          status={{
+            lastUpdate: snapshot?.createdAt ?? null,
+            sourceCount,
+            coveragePercent: snapshot?.coverageScore ?? null,
+            isStale:
+              snapshot?.createdAt != null
+                ? Date.now() - new Date(snapshot.createdAt).getTime() >
+                  24 * 60 * 60 * 1000
+                : false,
+          }}
+        />
+      )}
 
       {!hasNoData && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">

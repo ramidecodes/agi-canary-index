@@ -152,28 +152,29 @@ export function CapabilityRadar({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            {/* Cold blue accent — tuned to pop on dark background (Instrumental Minimalism) */}
             <linearGradient id="radar-fill" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop
                 offset="0%"
-                stopColor="oklch(0.488 0.243 264.376)"
-                stopOpacity="0.4"
+                stopColor="oklch(0.58 0.22 264)"
+                stopOpacity="0.45"
               />
               <stop
                 offset="100%"
-                stopColor="oklch(0.488 0.243 264.376)"
-                stopOpacity="0.1"
+                stopColor="oklch(0.58 0.22 264)"
+                stopOpacity="0.12"
               />
             </linearGradient>
             <linearGradient id="glow-fill" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop
                 offset="0%"
-                stopColor="oklch(0.488 0.243 264.376)"
-                stopOpacity="0.15"
+                stopColor="oklch(0.58 0.22 264)"
+                stopOpacity="0.2"
               />
               <stop
                 offset="100%"
-                stopColor="oklch(0.488 0.243 264.376)"
-                stopOpacity="0.02"
+                stopColor="oklch(0.58 0.22 264)"
+                stopOpacity="0.03"
               />
             </linearGradient>
           </defs>
@@ -237,7 +238,7 @@ export function CapabilityRadar({
             <polygon
               points={polygons.current}
               fill="url(#radar-fill)"
-              stroke="oklch(0.488 0.243 264.376)"
+              stroke="oklch(0.58 0.22 264)"
               strokeWidth="1.5"
               className="transition-all duration-500 ease-out"
             />
@@ -262,6 +263,10 @@ export function CapabilityRadar({
                 fillOpacity={isSelected ? 1 : isHighlighted ? 0.95 : 0.7}
                 fontSize={size > 400 ? "13" : "11"}
                 fontWeight={isSelected || isHighlighted ? 600 : 400}
+                style={{
+                  fontFamily:
+                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                }}
                 className="pointer-events-none select-none"
               >
                 {label}
@@ -308,8 +313,12 @@ export function CapabilityRadar({
 
         {!hasData && (
           <div
-            className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm"
-            style={{ pointerEvents: "none" }}
+            className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm animate-radar-await"
+            style={{
+              pointerEvents: "none",
+              fontFamily:
+                "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+            }}
           >
             Awaiting data
           </div>

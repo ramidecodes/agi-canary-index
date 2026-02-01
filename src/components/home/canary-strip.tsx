@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Canary } from "@/lib/home/types";
 import { useHomeStore } from "@/lib/home/store";
+import { formatTimestamp } from "@/components/layout/status-badges";
 import { X } from "lucide-react";
 
 const HOVER_DELAY_MS = 150;
@@ -29,12 +30,28 @@ const STATUS_LABELS = {
   gray: "No data",
 } as const;
 
+const chipBaseClass =
+  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200 min-h-[44px] shrink-0 justify-center border-border/80 bg-card/80 text-muted-foreground";
+
+export interface StripStatus {
+  lastUpdate: string | null;
+  sourceCount: number;
+  coveragePercent?: number | null;
+  isStale?: boolean;
+}
+
 interface CanaryStripProps {
   canaries: Canary[];
+  /** When provided, status pills (Updated, N sources) are shown at the start of the strip. */
+  status?: StripStatus | null;
   className?: string;
 }
 
-export function CanaryStrip({ canaries, className = "" }: CanaryStripProps) {
+export function CanaryStrip({
+  canaries,
+  status,
+  className = "",
+}: CanaryStripProps) {
   const {
     hoveredCanaryId,
     setHoveredCanaryId,
@@ -66,13 +83,56 @@ export function CanaryStrip({ canaries, className = "" }: CanaryStripProps) {
   return (
     <div
       className={cn(
-        "sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border-y border-border",
+        "sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/80 dark:bg-background/70 backdrop-blur-md border-y border-border/80 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset]",
         className,
       )}
       role="toolbar"
-      aria-label="Canary filters"
+      aria-label="Canary filters and status"
     >
       <div className="flex flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
+        {status != null && (
+          <>
+            {/* biome-ignore lint/a11y/useSemanticElements: live status region, not form output */}
+            <span
+              className={cn(
+                chipBaseClass,
+                "font-mono text-xs",
+                status.isStale &&
+                  "border-amber-500/40 text-amber-600 dark:text-amber-400",
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                role="img"
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full",
+                  status.isStale
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-emerald-500",
+                )}
+                aria-label={status.isStale ? "Data may be stale" : "Live"}
+              />
+              Updated {formatTimestamp(status.lastUpdate)}
+            </span>
+            {status.sourceCount > 0 && (
+              <span className={cn(chipBaseClass, "font-mono text-xs")}>
+                {status.sourceCount} sources
+              </span>
+            )}
+            {status.coveragePercent != null && (
+              <span className={cn(chipBaseClass, "font-mono text-xs")}>
+                {(status.coveragePercent * 100).toFixed(0)}% coverage
+              </span>
+            )}
+            {canaries.length > 0 && (
+              <span
+                className="h-4 w-px bg-border shrink-0 mx-0.5"
+                aria-hidden
+              />
+            )}
+          </>
+        )}
         {activeCanaryFilter && (
           <Button
             variant="ghost"
@@ -108,8 +168,8 @@ export function CanaryStrip({ canaries, className = "" }: CanaryStripProps) {
                       "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200 min-h-[44px] shrink-0 justify-center",
                       "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
                       isActive
-                        ? "border-primary bg-primary/15 text-foreground scale-[1.02]"
-                        : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground hover:border-muted-foreground/30",
+                        ? "border-primary/80 bg-primary/20 text-foreground ring-1 ring-primary/30"
+                        : "border-border/80 bg-card/80 text-muted-foreground hover:bg-accent/90 hover:text-foreground hover:border-muted-foreground/40",
                     )}
                     aria-pressed={isActive}
                     aria-label={`Filter by ${canary.name}${

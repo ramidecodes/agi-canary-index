@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { DailyBrief, BriefItem, BriefDirection } from "@/lib/brief/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -163,7 +164,12 @@ export function DailyBriefCard({
     brief?.resolvedDate ?? new Date().toISOString().slice(0, 10);
 
   return (
-    <Card className={className}>
+    <Card
+      className={cn(
+        "border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-sm shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset]",
+        className,
+      )}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">
@@ -205,7 +211,13 @@ export function DailyBriefCard({
                 ))}
               </ul>
             )}
-            <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground pt-2 border-t">
+            <div
+              className="grid grid-cols-3 gap-2 text-xs text-muted-foreground pt-2 border-t"
+              style={{
+                fontFamily:
+                  "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+              }}
+            >
               <span title="Sources checked">Sources: {sourcesChecked}</span>
               <span title="Signals extracted">Signals: {signalsProcessed}</span>
               <span title="Coverage score">
