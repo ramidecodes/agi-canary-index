@@ -152,28 +152,46 @@ async function seed() {
   console.log(`  Inserted/updated ${canaries.length} canary definitions.`);
 
   console.log("Seeding source registry (Tier-0 and Tier-1)...");
-  const existingNames = new Set(
-    (await db.select({ name: sources.name }).from(sources)).map((r) => r.name),
-  );
   let inserted = 0;
+  let updated = 0;
   for (const s of SEED_SOURCES) {
-    if (existingNames.has(s.name)) continue;
-    await db.insert(sources).values({
-      name: s.name,
-      url: s.url,
-      tier: s.tier,
-      trustWeight: s.trustWeight,
-      cadence: s.cadence,
-      domainType: s.domainType,
-      sourceType: s.sourceType,
-      queryConfig: s.queryConfig ?? null,
-      isActive: true,
-    });
-    existingNames.add(s.name);
-    inserted++;
+    const existing = await db
+      .select({ id: sources.id })
+      .from(sources)
+      .where(eq(sources.name, s.name))
+      .limit(1);
+    if (existing.length > 0) {
+      await db
+        .update(sources)
+        .set({
+          url: s.url,
+          tier: s.tier,
+          trustWeight: s.trustWeight,
+          cadence: s.cadence,
+          domainType: s.domainType,
+          sourceType: s.sourceType,
+          queryConfig: s.queryConfig ?? null,
+          updatedAt: new Date(),
+        })
+        .where(eq(sources.id, existing[0].id));
+      updated++;
+    } else {
+      await db.insert(sources).values({
+        name: s.name,
+        url: s.url,
+        tier: s.tier,
+        trustWeight: s.trustWeight,
+        cadence: s.cadence,
+        domainType: s.domainType,
+        sourceType: s.sourceType,
+        queryConfig: s.queryConfig ?? null,
+        isActive: true,
+      });
+      inserted++;
+    }
   }
   console.log(
-    `  Inserted ${inserted} sources; ${existingNames.size} total names in registry.`,
+    `  Inserted ${inserted}, updated ${updated} sources; ${SEED_SOURCES.length} total in seed.`
   );
 
   console.log("Seeding timeline events (50+ historical AI milestones)...");
@@ -532,7 +550,7 @@ async function seed() {
       category: e.category,
       sourceUrl: e.sourceUrl ?? null,
       axesImpacted: e.axesImpacted ?? null,
-    })),
+    }))
   );
 
   console.log(`  Inserted ${timelineSeedData.length} timeline events.`);

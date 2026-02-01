@@ -1,6 +1,6 @@
 # Source Registry & Management
 
-**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (14 Tier-0/Tier-1 sources). Auth via Clerk: `/admin` and `/api/admin` protected; sign-in at `/sign-in`. See [AUTH.md](../AUTH.md).
+**Implemented:** Admin UI at `/admin/sources`; API at `/api/admin/sources`. Seed: `pnpm run db:seed` (16 Tier-0/Tier-1 + Discovery sources; upserts by name so re-running seed updates URLs and types). Auth via Clerk: `/admin` and `/api/admin` protected; sign-in at `/sign-in`. See [AUTH.md](../AUTH.md).
 
 ## Goal
 
@@ -21,16 +21,18 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 
 1. **Pre-configured Tier-0 Sources**
 
-   - Stanford HAI (AI Index, news)
-   - METR (evaluations, blog)
-   - ARC Prize (ARC-AGI updates)
-   - OECD (AI Capability Indicators)
-   - DeepMind Research
-   - OpenAI Research
-   - Anthropic Research
-   - Epoch AI (trend analysis)
-   - UK AISI (Frontier AI Trends)
-   - arXiv (filtered: cs.AI, cs.LG with keywords)
+   - Stanford HAI (AI Index, news) — curated
+   - METR (evaluations, blog) — RSS
+   - ARC Prize (ARC-AGI updates) — RSS
+   - OECD (AI Capability Indicators) — curated (may 403; no official RSS)
+   - DeepMind Research — RSS (`deepmind.com/blog/rss.xml`)
+   - OpenAI Research — RSS (`openai.com/news/rss.xml`)
+   - Anthropic Research — RSS (`anthropic.com/news/feed_anthropic.xml`)
+   - Epoch AI (trend analysis) — RSS
+   - UK AISI (Frontier AI Trends) — curated
+   - arXiv cs.AI — RSS (`rss.arxiv.org/rss/cs.AI`)
+   - Google AI Blog — RSS (`research.google/blog/rss/`)
+   - AI2 (Allen Institute) — curated (`blog.allenai.org`)
 
 2. **Pre-configured Tier-1 Sources**
 
@@ -74,7 +76,7 @@ As an administrator of the AGI Canary Watcher, I want to manage trusted data sou
 - `sources` - Main source registry (last_success_at, error_count provide health status)
 
 **Seed Data:**
-Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
+Pre-populate sources table with the Tier-0/Tier-1/Discovery sources listed above. Seed upserts by name: re-running `pnpm run db:seed` updates URL, source_type, tier, etc. for existing sources without resetting `last_success_at` or `error_count`. Do not add "AI News (sample)" (example.com) to seed; if present in DB, deactivate or remove manually.
 
 ## User Flow
 
@@ -119,7 +121,7 @@ Pre-populate sources table with the 14 Tier-0/Tier-1 sources listed above.
 
 ## Acceptance Criteria
 
-- [ ] 14 pre-configured sources seeded on deployment
+- [ ] Tier-0/Tier-1/Discovery sources seeded on deployment (16 in SEED_SOURCES; seed upserts by name)
 - [ ] Admin can add new sources with all configuration options
 - [ ] Test fetch validates source before saving
 - [ ] Sources auto-disable after 5 consecutive failures

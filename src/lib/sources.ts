@@ -20,7 +20,7 @@ export type SourceHealthStatus = "green" | "yellow" | "red";
  * - red: many errors (>= threshold) or never succeeded
  */
 export function getSourceHealthStatus(
-  source: Pick<SourceRow, "lastSuccessAt" | "errorCount">,
+  source: Pick<SourceRow, "lastSuccessAt" | "errorCount">
 ): SourceHealthStatus {
   if (source.errorCount >= AUTO_DISABLE_FAILURE_THRESHOLD) return "red";
   if (source.lastSuccessAt == null && source.errorCount > 0) return "yellow";
@@ -82,7 +82,7 @@ export const SEED_SOURCES: Array<{
   },
   {
     name: "DeepMind Research",
-    url: "https://www.deepmind.com/blog",
+    url: "https://www.deepmind.com/blog/rss.xml",
     tier: "TIER_0",
     trustWeight: "0.95",
     cadence: "weekly",
@@ -91,21 +91,21 @@ export const SEED_SOURCES: Array<{
   },
   {
     name: "OpenAI Research",
-    url: "https://openai.com/research",
+    url: "https://openai.com/news/rss.xml",
     tier: "TIER_0",
     trustWeight: "0.95",
     cadence: "weekly",
     domainType: "research",
-    sourceType: "curated",
+    sourceType: "rss",
   },
   {
     name: "Anthropic Research",
-    url: "https://www.anthropic.com/research",
+    url: "https://www.anthropic.com/news/feed_anthropic.xml",
     tier: "TIER_0",
     trustWeight: "0.95",
     cadence: "weekly",
     domainType: "research",
-    sourceType: "curated",
+    sourceType: "rss",
   },
   {
     name: "Epoch AI",
@@ -127,16 +127,30 @@ export const SEED_SOURCES: Array<{
   },
   {
     name: "arXiv cs.AI",
-    url: "http://arxiv.org/list/cs.AI/recent",
+    url: "https://rss.arxiv.org/rss/cs.AI",
     tier: "TIER_0",
     trustWeight: "0.8",
     cadence: "daily",
     domainType: "research",
+    sourceType: "rss",
+  },
+  {
+    name: "Google AI Blog",
+    url: "https://research.google/blog/rss/",
+    tier: "TIER_0",
+    trustWeight: "0.9",
+    cadence: "weekly",
+    domainType: "research",
+    sourceType: "rss",
+  },
+  {
+    name: "AI2 (Allen Institute)",
+    url: "https://blog.allenai.org/",
+    tier: "TIER_0",
+    trustWeight: "0.85",
+    cadence: "weekly",
+    domainType: "research",
     sourceType: "curated",
-    queryConfig: {
-      categories: ["cs.AI", "cs.LG"],
-      keywords: ["AGI", "capability", "benchmark"],
-    },
   },
   // Tier-1
   {

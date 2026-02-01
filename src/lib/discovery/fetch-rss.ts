@@ -11,12 +11,20 @@ import { canonicalizeUrl, urlHash } from "./url";
 const FETCH_TIMEOUT_MS = 30_000;
 const MAX_ITEMS = 500;
 
-/** Fix common RSS/XML issues (unescaped ampersands in attributes). */
+/** Fix common RSS/XML issues before parsing. */
 function sanitizeRssXml(xml: string): string {
-  return xml.replace(
+  let out = xml;
+  // Unescaped ampersands in attributes
+  out = out.replace(
     /&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g,
     "&amp;"
   );
+  // Attributes without value (e.g. "<tag attr>" or "<tag attr />") break parsers
+  out = out.replace(
+    /\s+([a-zA-Z:_][a-zA-Z0-9._:-]*)\s*(?!=)([/>])/g,
+    (_, name, bracket) => ` ${name}=""${bracket}`
+  );
+  return out;
 }
 
 export async function fetchRss(

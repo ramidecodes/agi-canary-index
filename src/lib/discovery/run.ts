@@ -4,7 +4,7 @@
  * @see docs/features/03-discovery-pipeline.md
  */
 
-import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { items, pipelineRuns, sourceFetchLogs, sources } from "../db/schema";
 import { fetchCurated } from "./fetch-curated";
 import { fetchRss } from "./fetch-rss";
@@ -15,6 +15,10 @@ import type { DiscoveredItem, DiscoveryRunStats } from "./types";
 const CONCURRENCY = 5;
 const DEDUP_DAYS = 30;
 const X_SOURCE_ENABLED = true;
+/** Mark runs stuck in "running" longer than this as failed before starting. */
+const STALE_RUN_MINUTES = 15;
+/** Max time per source fetch so one hung source does not block the whole run. */
+const SOURCE_FETCH_TIMEOUT_MS = 60_000;
 
 export interface DiscoveryOptions {
   dryRun?: boolean;
@@ -47,6 +51,21 @@ export async function runDiscovery(
   };
 
   if (!options.dryRun) {
+    const staleCutoff = new Date(Date.now() - STALE_RUN_MINUTES * 60 * 1000);
+    await db
+      .update(pipelineRuns)
+      .set({
+        status: "failed",
+        completedAt: new Date(),
+        errorLog: "Marked failed (stale run)",
+      })
+      .where(
+        and(
+          eq(pipelineRuns.status, "running"),
+          lt(pipelineRuns.startedAt, staleCutoff)
+        )
+      );
+
     const running = await db
       .select({ id: pipelineRuns.id })
       .from(pipelineRuns)
@@ -100,11 +119,19 @@ export async function runDiscovery(
       const batch = activeSources.slice(i, i + CONCURRENCY);
       await Promise.all(
         batch.map(async (src) => {
-          const result = await fetchFromSource(
-            src,
-            options.openRouterApiKey,
-            xEnabled
-          );
+          const result = await Promise.race([
+            fetchFromSource(src, options.openRouterApiKey, xEnabled),
+            new Promise<{ items: DiscoveredItem[]; error?: string }>(
+              (_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Source fetch timeout (60s)")),
+                  SOURCE_FETCH_TIMEOUT_MS
+                )
+            ),
+          ]).catch((err) => ({
+            items: [] as DiscoveredItem[],
+            error: err instanceof Error ? err.message : "Source fetch timeout",
+          }));
           if (runId && result.items) {
             await logFetch(
               db,
@@ -221,6 +248,19 @@ export async function runDiscovery(
     const errMsg = err instanceof Error ? err.message : "Discovery failed";
     await markRunFailed(errMsg);
     throw err;
+  } finally {
+    if (!options.dryRun && runId) {
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "failed",
+          completedAt: new Date(),
+          errorLog: "Run did not complete (timeout or crash)",
+        })
+        .where(
+          and(eq(pipelineRuns.id, runId), eq(pipelineRuns.status, "running"))
+        );
+    }
   }
 
   stats.durationMs = Date.now() - startMs;
