@@ -52,7 +52,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
               <Link
                 href="/"
                 className={cn(
-                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded"
+                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded",
                 )}
               >
                 <span className="text-foreground">AGI</span>{" "}
@@ -75,7 +75,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
                 href="/"
                 className={cn(
                   navLinkClass,
-                  pathname === "/" && "text-foreground font-medium"
+                  pathname === "/" && "text-foreground font-medium",
                 )}
                 aria-current={pathname === "/" ? "page" : undefined}
               >
@@ -86,7 +86,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
               const isGroupActive = group.items.some(
                 (item) =>
                   pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(item.href))
+                  (item.href !== "/" && pathname.startsWith(item.href)),
               );
               return (
                 <li key={group.label}>
@@ -98,7 +98,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
                         className={cn(
                           navLinkClass,
                           "h-auto py-2 px-2 font-normal",
-                          isGroupActive && "text-foreground font-medium"
+                          isGroupActive && "text-foreground font-medium",
                         )}
                         aria-label={`${group.label} menu`}
                       >
