@@ -50,6 +50,8 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`api/admin/pipeline/`** — Pipeline triggers
   - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`)
   - `acquire/route.ts` — POST manual acquisition (proxies to Worker)
+  - `process/route.ts` — POST signal processing (body: `{ documentIds?: string[] }`); AI extraction, signal creation
+  - `snapshot/route.ts` — POST daily snapshot (body: `{ date?: string }`); aggregates signals for date
 - **`api/admin/documents/[id]/content/`** — Document content
   - `route.ts` — GET markdown from R2
 
@@ -82,6 +84,12 @@ Shared code: DB, AI models, and future services.
   - `firecrawl.ts` — Firecrawl scrape API client
   - `validate.ts` — Content quality validation (length, paywall)
   - `metadata.ts` — Metadata extraction (OG, article tags)
+- **`signal/`** — AI signal processing pipeline (AI SDK v6 + OpenRouter)
+  - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
+  - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)
+  - `run.ts` — Orchestration (acquired docs → R2 fetch → extract → signals, mark processed)
+  - `snapshot.ts` — Daily snapshot aggregation (axis scores from signals)
+  - `index.ts` — Re-exports
 - **`r2.ts`** — R2 S3 client for document fetch (Next.js app)
 
 ### `src/middleware.ts`
@@ -102,6 +110,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **INFRASTRUCTURE.md** — Neon, Vercel, Cloudflare, R2
 - **DISCOVERY.md** — Discovery pipeline implementation guide
 - **ACQUISITION.md** — Acquisition pipeline implementation guide
+- **SIGNAL-PROCESSING.md** — Signal processing pipeline (AI extraction, snapshot)
 - **MODELS.md** — AI model IDs
 - **STRUCTURE.md** — This file
 
