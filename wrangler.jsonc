@@ -1,4 +1,6 @@
 {
+  // Pipeline Infrastructure (FRED 13). Secrets: DATABASE_URL, OPENROUTER_API_KEY,
+  // FIRECRAWL_API_KEY — set via `wrangler secret put` or `pnpm run infra:secrets`.
   "name": "agi-canary-pipeline",
   "main": "workers/pipeline/index.ts",
   "compatibility_date": "2025-03-07",
@@ -22,12 +24,14 @@
   "env": {
     "dev": {
       "name": "agi-canary-pipeline-dev",
+      "vars": { "SCORING_VERSION": "1.0.0" },
       "r2_buckets": [
         { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-dev" }
       ]
     },
     "staging": {
       "name": "agi-canary-pipeline-staging",
+      "vars": { "SCORING_VERSION": "1.0.0" },
       "r2_buckets": [
         {
           "binding": "DOCUMENTS",
@@ -37,6 +41,7 @@
     },
     "prod": {
       "name": "agi-canary-pipeline-prod",
+      "vars": { "SCORING_VERSION": "1.0.0" },
       "r2_buckets": [
         { "binding": "DOCUMENTS", "bucket_name": "agi-canary-documents-prod" }
       ]

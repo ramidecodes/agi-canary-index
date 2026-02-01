@@ -1,5 +1,7 @@
 # Pipeline Infrastructure
 
+**Implemented:** `wrangler.jsonc` with cron, R2 binding, env overrides; Worker at `workers/pipeline/index.ts` (Discovery + Acquisition); Neon via `@neondatabase/serverless` and `createDb(env.DATABASE_URL)`; scripts: `infra:provision`, `infra:deploy`, `infra:secrets`. See [docs/INFRASTRUCTURE.md](../INFRASTRUCTURE.md).
+
 ## Goal
 
 Define the Cloudflare infrastructure required for the AGI Canary data pipeline. The pipeline (Discovery, Acquisition) runs on Cloudflare Workers and requires wrangler configuration, bindings, and deployment setup. The app (Next.js) runs on Vercel—this FRED covers only the Cloudflare side of the hybrid architecture.
@@ -91,14 +93,14 @@ As a developer deploying the AGI Canary pipeline, I want a well-defined wrangler
 
 ## Acceptance Criteria
 
-- [ ] wrangler.jsonc exists with required fields
-- [ ] DATABASE_URL secret set and Workers connect to Neon via Neon serverless driver
-- [ ] R2 binding configured; Workers can put/get objects
-- [ ] Cron trigger fires at scheduled time
-- [ ] Observability enabled (head_sampling_rate: 1)
-- [ ] Secrets stored via wrangler secret, not in config
-- [ ] Worker deploys successfully with `wrangler deploy`
-- [ ] Compatibility date and flags match Cloudflare docs
+- [x] wrangler.jsonc exists with required fields
+- [x] DATABASE_URL secret set and Workers connect to Neon via Neon serverless driver
+- [x] R2 binding configured; Workers can put/get objects
+- [x] Cron trigger fires at scheduled time
+- [x] Observability enabled (head_sampling_rate: 1)
+- [x] Secrets stored via wrangler secret, not in config
+- [x] Worker deploys successfully with `wrangler deploy`
+- [x] Compatibility date and flags match Cloudflare docs
 
 ## Edge Cases
 
