@@ -61,14 +61,14 @@ const SearchResultSchema = z.object({
         ])
         .optional(),
       rationale: z.string().optional(),
-    })
+    }),
   ),
 });
 
 export async function fetchSearch(
   sourceId: string,
   apiKey: string,
-  queryConfig?: Record<string, unknown>
+  queryConfig?: Record<string, unknown>,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const keywords = (queryConfig?.keywords as string[]) ?? SEARCH_KEYWORDS;
   const query = `Find recent (last 7 days) AI-related news, research updates, policy announcements, and agent project releases. 
@@ -98,7 +98,7 @@ Return only URLs with titles and brief snippets. Add a category and a short rati
         const hash = await urlHash(canonical);
         const taggedSnippet = r.category
           ? `${r.category}: ${r.snippet ?? ""}`.trim()
-          : r.snippet ?? undefined;
+          : (r.snippet ?? undefined);
         items.push({
           url: canonical,
           urlHash: hash,

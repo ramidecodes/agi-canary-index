@@ -2,6 +2,10 @@
  * Vercel Cron entry point - daily pipeline run.
  * GET /api/pipeline/cron (Vercel sends CRON_SECRET as Bearer token)
  * Runs discovery → acquire. Auth: Authorization: Bearer ${CRON_SECRET}
+ *
+ * @deprecated This route is deprecated. Use Cloudflare Worker with Cron trigger instead.
+ * See docs/INFRASTRUCTURE.md for the new architecture.
+ *
  * @see docs/features/03-discovery-pipeline.md
  * @see docs/features/04-acquisition-pipeline.md
  */

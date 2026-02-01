@@ -5,6 +5,7 @@
  */
 
 import {
+  bigserial,
   boolean,
   date,
   decimal,
@@ -60,6 +61,25 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "reality",
   "fiction",
   "speculative",
+]);
+
+// Job types for the 5-stage ETL pipeline
+export const jobTypeEnum = pgEnum("job_type", [
+  "discover",
+  "fetch",
+  "extract",
+  "map",
+  "aggregate",
+]);
+
+// Job statuses including RETRY for backoff and DEAD for dead-lettering
+export const jobStatusEnum = pgEnum("job_status", [
+  "pending",
+  "running",
+  "retry",
+  "done",
+  "failed",
+  "dead",
 ]);
 
 // -----------------------------------------------------------------------------
@@ -358,6 +378,77 @@ export const timelineEvents = pgTable(
   (t) => [
     index("timeline_events_date_idx").on(t.date),
     pgPolicy("timeline_events_public_all", {
+      as: "permissive",
+      for: "all",
+      to: "public",
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+  ],
+);
+
+/** ETL pipeline jobs queue (durable queue backed by Postgres). */
+export const jobs = pgTable(
+  "jobs",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+
+    // Links job to a pipeline run for grouping/audit
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => pipelineRuns.id, { onDelete: "cascade" }),
+    type: jobTypeEnum("type").notNull(),
+
+    // Payload: keep small (ids, urls, pointers - not full content)
+    payload: jsonb("payload")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+
+    status: jobStatusEnum("status").default("pending").notNull(),
+    priority: integer("priority").default(100).notNull(), // lower = higher priority
+
+    // Retry/backoff fields
+    attempts: integer("attempts").default(0).notNull(),
+    maxAttempts: integer("max_attempts").default(5).notNull(),
+    availableAt: timestamp("available_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+
+    // SKIP LOCKED fields for safe concurrent claiming
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: text("locked_by"), // worker instance ID
+
+    // Error tracking
+    lastError: text("last_error"),
+
+    // Idempotency: dedupe_key prevents duplicate jobs per run
+    // Examples: "FETCH:<url_hash>", "EXTRACT:<doc_id>", "AGG:<date>:<version>"
+    dedupeKey: text("dedupe_key"),
+
+    // Result storage (optional, for audit/debugging)
+    result: jsonb("result").$type<Record<string, unknown>>(),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    // Fast job claiming: status + available_at + priority + id
+    index("jobs_claim_idx").on(t.status, t.availableAt, t.priority, t.id),
+
+    // Filter by type
+    index("jobs_type_idx").on(t.type),
+
+    // Filter by run
+    index("jobs_run_id_idx").on(t.runId),
+
+    // Idempotency: unique per run+type+dedupe_key (partial index where dedupe_key is not null)
+    // Note: Partial unique index created via raw SQL in migration
+    pgPolicy("jobs_public_all", {
       as: "permissive",
       for: "all",
       to: "public",

@@ -23,7 +23,7 @@ const ARTICLE_PATH_PATTERNS = [
 
 export async function fetchCurated(
   pageUrl: string,
-  sourceId: string
+  sourceId: string,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -86,7 +86,7 @@ export async function fetchCurated(
 
 function extractArticleLinks(
   html: string,
-  baseUrl: URL
+  baseUrl: URL,
 ): Array<{ href: string; text?: string }> {
   const results: Array<{ href: string; text?: string }> = [];
   const hrefRe = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;

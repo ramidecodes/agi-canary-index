@@ -17,19 +17,19 @@ function sanitizeRssXml(xml: string): string {
   // Unescaped ampersands in attributes
   out = out.replace(
     /&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g,
-    "&amp;"
+    "&amp;",
   );
   // Attributes without value (e.g. "<tag attr>" or "<tag attr />") break parsers
   out = out.replace(
     /\s+([a-zA-Z:_][a-zA-Z0-9._:-]*)\s*(?!=)([/>])/g,
-    (_, name, bracket) => ` ${name}=""${bracket}`
+    (_, name, bracket) => ` ${name}=""${bracket}`,
   );
   return out;
 }
 
 export async function fetchRss(
   feedUrl: string,
-  sourceId: string
+  sourceId: string,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);

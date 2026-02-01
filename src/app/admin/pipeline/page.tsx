@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +19,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 type DiscoverResult = {
   ok: boolean;
@@ -81,23 +83,34 @@ function PipelineStepCard({
 export default function AdminPipelinePage() {
   const [discoverDryRun, setDiscoverDryRun] = useState(false);
   const [snapshotDate, setSnapshotDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10),
   );
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [acquireLoading, setAcquireLoading] = useState(false);
   const [processLoading, setProcessLoading] = useState(false);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [discoverResult, setDiscoverResult] = useState<DiscoverResult | null>(
-    null
+    null,
   );
   const [acquireResult, setAcquireResult] = useState<AcquireResult | null>(
-    null
+    null,
   );
   const [processResult, setProcessResult] = useState<ProcessResult | null>(
-    null
+    null,
   );
   const [snapshotResult, setSnapshotResult] = useState<SnapshotResult | null>(
-    null
+    null,
+  );
+
+  // Fetch job queue status
+  const { data: jobStatus, mutate: refreshJobStatus } = useSWR(
+    "/api/admin/jobs",
+    async (url) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch job status");
+      return res.json();
+    },
+    { refreshInterval: 5000 },
   );
 
   const handleDiscover = useCallback(async () => {
@@ -114,7 +127,7 @@ export default function AdminPipelinePage() {
       if (res.ok) {
         if (data.skipped && data.skipReason === "run_already_in_progress") {
           toast.warning(
-            "Discovery skipped: a run is already in progress. Click again to force a new run."
+            "Discovery skipped: a run is already in progress. Click again to force a new run.",
           );
         } else {
           const msg = discoverDryRun
@@ -149,7 +162,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.itemsAcquired ?? 0} documents acquired (${
             data.itemsProcessed ?? 0
-          } processed)`
+          } processed)`,
         );
       } else {
         toast.error(data.error ?? "Acquisition failed");
@@ -176,7 +189,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.documentsProcessed ?? 0} docs processed, ${
             data.signalsCreated ?? 0
-          } signals created`
+          } signals created`,
         );
       } else {
         toast.error(data.error ?? "Signal processing failed");
@@ -207,7 +220,7 @@ export default function AdminPipelinePage() {
         toast.success(
           `${data.signalCount ?? 0} signals aggregated${
             data.created ? ", snapshot created" : ""
-          }`
+          }`,
         );
       } else {
         toast.error(data.error ?? "Snapshot creation failed");
@@ -219,6 +232,27 @@ export default function AdminPipelinePage() {
     }
   }, [snapshotDate]);
 
+  const handleKickRunner = useCallback(async () => {
+    try {
+      // Proxy through Next.js API to keep INTERNAL_TOKEN server-side
+      const res = await fetch("/api/admin/worker/kick", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        toast.success(
+          `Runner kicked: ${data.processed} processed, ${data.remaining} remaining`,
+        );
+        refreshJobStatus();
+      } else {
+        toast.error(data.error || "Failed to kick runner");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to kick runner");
+    }
+  }, [refreshJobStatus]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -227,6 +261,72 @@ export default function AdminPipelinePage() {
           Manually trigger each stage of the data pipeline.
         </p>
       </div>
+
+      {/* Job Queue Status Panel */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Job Queue Status</CardTitle>
+              <CardDescription>
+                Current state of the ETL job queue
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                refreshJobStatus();
+                handleKickRunner();
+              }}
+            >
+              Kick Runner
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {jobStatus ? (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Jobs by Status</h3>
+                <div className="flex flex-wrap gap-2">
+                  {jobStatus.statusCounts?.map(
+                    (s: { status: string; count: string }) => (
+                      <Badge key={s.status} variant="outline">
+                        {s.status}: {s.count}
+                      </Badge>
+                    ),
+                  )}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Jobs by Type</h3>
+                <div className="flex flex-wrap gap-2">
+                  {jobStatus.typeCounts?.map(
+                    (t: { type: string; count: string }) => (
+                      <Badge key={t.type} variant="secondary">
+                        {t.type}: {t.count}
+                      </Badge>
+                    ),
+                  )}
+                </div>
+              </div>
+              {jobStatus.activeRuns && jobStatus.activeRuns.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Active Runs</h3>
+                  <div className="text-muted-foreground text-sm">
+                    {jobStatus.activeRuns.length} running pipeline run(s)
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Loading job status...
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="space-y-4">
         <PipelineStepCard
