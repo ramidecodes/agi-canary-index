@@ -25,7 +25,7 @@ const ARTICLE_PATH_PATTERNS = [
 
 function extractArticleLinks(
   html: string,
-  baseUrl: URL
+  baseUrl: URL,
 ): Array<{ href: string; text?: string }> {
   const root = parse(html, {
     lowerCaseTagName: true,
@@ -60,7 +60,7 @@ function extractArticleLinks(
 
 export async function fetchCurated(
   pageUrl: string,
-  sourceId: string
+  sourceId: string,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);

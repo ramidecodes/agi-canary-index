@@ -1,10 +1,11 @@
 /**
  * Web search discovery via Perplexity Sonar (OpenRouter).
  * Extracts URLs from search results with citations.
+ * Uses AI SDK v6 generateText with Output.object().
  * @see docs/features/03-discovery-pipeline.md
  */
 
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { WEB_SEARCH_MODEL } from "../ai-models";
 import type { DiscoveredItem } from "./types";
@@ -44,7 +45,7 @@ const SEARCH_KEYWORDS = [
 const SearchResultSchema = z.object({
   results: z.array(
     z.object({
-      url: z.string().url(),
+      url: z.url(),
       title: z.string(),
       snippet: z.string().optional(),
       domain: z.string().optional(),
@@ -82,14 +83,14 @@ Return only URLs with titles and brief snippets. Add a category and a short rati
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
     await new Promise((r) => setImmediate(r)); // Yield before AI call so event loop can serve other requests
     try {
-      const result = await generateObject({
+      const result = await generateText({
         model: getOpenRouterModel(apiKey, WEB_SEARCH_MODEL),
-        schema: SearchResultSchema,
+        output: Output.object({ schema: SearchResultSchema }),
         prompt: query,
         abortSignal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
       });
 
-      const results = result.object.results ?? [];
+      const results = result.output?.results ?? [];
       const items: DiscoveredItem[] = [];
       for (const r of results) {
         if (!r.url || typeof r.url !== "string") continue;

@@ -88,7 +88,7 @@ export const canaryThresholdsSchema = z.object({
 // -----------------------------------------------------------------------------
 
 export const insertSourceSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.uuid().optional(),
   name: z.string().max(512),
   url: z.string().max(2048),
   tier: sourceTierSchema,
@@ -106,18 +106,18 @@ export const insertSourceSchema = z.object({
 
 /** Partial update for PATCH (admin source registry). */
 export const updateSourceSchema = insertSourceSchema.partial().extend({
-  id: z.string().uuid().optional(),
+  id: z.uuid().optional(),
 });
 
 /** Bulk action body for admin source registry. */
 export const bulkSourcesActionSchema = z.object({
-  sourceIds: z.array(z.string().uuid()).min(1),
+  sourceIds: z.array(z.uuid()).min(1),
   action: z.enum(["enable", "disable", "change_tier"]),
   tier: sourceTierSchema.optional(),
 });
 
 export const insertPipelineRunSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.uuid().optional(),
   startedAt: z.coerce.date().optional(),
   completedAt: z.coerce.date().optional(),
   status: pipelineRunStatusSchema.default("running"),
@@ -129,9 +129,9 @@ export const insertPipelineRunSchema = z.object({
 });
 
 export const insertItemSchema = z.object({
-  id: z.string().uuid().optional(),
-  runId: z.string().uuid(),
-  sourceId: z.string().uuid(),
+  id: z.uuid().optional(),
+  runId: z.uuid(),
+  sourceId: z.uuid(),
   url: z.string().max(2048),
   urlHash: z.string().max(64),
   title: z.string().max(1024).optional(),
@@ -141,8 +141,8 @@ export const insertItemSchema = z.object({
 });
 
 export const insertDocumentSchema = z.object({
-  id: z.string().uuid().optional(),
-  itemId: z.string().uuid(),
+  id: z.uuid().optional(),
+  itemId: z.uuid(),
   rawBlobKey: z.string().max(512).optional(),
   cleanBlobKey: z.string().max(512).optional(),
   extractedMetadata: z.record(z.string(), z.unknown()).optional(),
@@ -152,8 +152,8 @@ export const insertDocumentSchema = z.object({
 });
 
 export const insertSignalSchema = z.object({
-  id: z.string().uuid().optional(),
-  documentId: z.string().uuid(),
+  id: z.uuid().optional(),
+  documentId: z.uuid(),
   claimSummary: z.string(),
   axesImpacted: z.array(axisImpactSchema).optional(),
   metric: signalMetricSchema.optional(),
@@ -164,12 +164,12 @@ export const insertSignalSchema = z.object({
 });
 
 export const insertDailySnapshotSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.uuid().optional(),
   date: z.string(),
   axisScores: z.record(z.string(), axisScoreSchema).optional(),
   canaryStatuses: z.array(canaryStatusSchema).optional(),
   coverageScore: z.string().optional(),
-  signalIds: z.array(z.string().uuid()).optional(),
+  signalIds: z.array(z.uuid()).optional(),
   notes: z.array(z.string()).optional(),
   createdAt: z.coerce.date().optional(),
 });
@@ -185,7 +185,7 @@ export const insertCanaryDefinitionSchema = z.object({
 });
 
 export const insertTimelineEventSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.uuid().optional(),
   date: z.string(),
   title: z.string().max(512),
   description: z.string(),
