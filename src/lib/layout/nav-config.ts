@@ -16,6 +16,33 @@ export interface PrimaryNavItem extends NavItem {
   desktopOnlyOnMobile?: boolean;
 }
 
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+/** Desktop header: grouped dropdowns. Home is standalone; Explore and About are groups. */
+export const HEADER_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Explore",
+    items: [
+      { href: "/autonomy", label: "Autonomy" },
+      { href: "/news", label: "News" },
+      { href: "/timeline", label: "Timeline" },
+      { href: "/signals", label: "Signals" },
+    ],
+  },
+  {
+    label: "About",
+    items: [
+      { href: "/about", label: "About" },
+      { href: "/capabilities", label: "Capabilities" },
+      { href: "/methodology", label: "Methodology" },
+      { href: "/sources", label: "Data sources" },
+    ],
+  },
+];
+
 /** Primary tabs: bottom bar on mobile, part of footer on desktop. */
 export const PRIMARY_NAV: PrimaryNavItem[] = [
   { href: "/", label: "Home", icon: "home" },
@@ -43,14 +70,9 @@ export const FOOTER_NAV: NavItem[] = [
   { href: "/admin/sources", label: "Admin" },
 ];
 
-/** All footer links in order: primary + secondary + footer-only + external. */
+/** Minimal footer links: Admin, About, and external. */
 export function getFooterNavItems(): NavItem[] {
-  return [
-    ...PRIMARY_NAV.map(({ href, label }) => ({ href, label })),
-    ...SECONDARY_NAV,
-    ...FOOTER_NAV,
-    ...EXTERNAL_NAV,
-  ];
+  return [...FOOTER_NAV, { href: "/about", label: "About" }, ...EXTERNAL_NAV];
 }
 
 /** Primary items for mobile bottom bar (exclude desktop-only on mobile). */

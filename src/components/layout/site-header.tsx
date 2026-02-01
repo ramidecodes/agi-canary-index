@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNavSheet } from "./mobile-nav-sheet";
-import { PRIMARY_NAV, SECONDARY_NAV } from "@/lib/layout/nav-config";
+import { HEADER_NAV_GROUPS } from "@/lib/layout/nav-config";
 import { cn } from "@/lib/utils";
 import logoImg from "@/app/logo.png";
 
@@ -51,7 +52,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
               <Link
                 href="/"
                 className={cn(
-                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded",
+                  "hover:text-foreground/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded"
                 )}
               >
                 <span className="text-foreground">AGI</span>{" "}
@@ -69,22 +70,50 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
           aria-label="Primary navigation"
         >
           <ul className="flex items-center gap-1">
-            {PRIMARY_NAV.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+            <li>
+              <Link
+                href="/"
+                className={cn(
+                  navLinkClass,
+                  pathname === "/" && "text-foreground font-medium"
+                )}
+                aria-current={pathname === "/" ? "page" : undefined}
+              >
+                Home
+              </Link>
+            </li>
+            {HEADER_NAV_GROUPS.map((group) => {
+              const isGroupActive = group.items.some(
+                (item) =>
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href))
+              );
               return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      navLinkClass,
-                      isActive && "text-foreground font-medium",
-                    )}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    {item.label}
-                  </Link>
+                <li key={group.label}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          navLinkClass,
+                          "h-auto py-2 px-2 font-normal",
+                          isGroupActive && "text-foreground font-medium"
+                        )}
+                        aria-label={`${group.label} menu`}
+                      >
+                        {group.label}
+                        <ChevronDown className="ml-0.5 size-4 shrink-0 opacity-70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-40">
+                      {group.items.map((item) => (
+                        <DropdownMenuItem key={item.href} asChild>
+                          <Link href={item.href}>{item.label}</Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </li>
               );
             })}
@@ -92,27 +121,6 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "hidden lg:inline-flex text-muted-foreground hover:text-foreground",
-                )}
-                aria-label="More pages"
-              >
-                More
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-40">
-              {SECONDARY_NAV.map((item) => (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link href={item.href}>{item.label}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
           <span className="hidden lg:inline-flex">
             <ThemeToggle />
           </span>
