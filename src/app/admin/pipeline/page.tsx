@@ -27,6 +27,8 @@ type DiscoverResult = {
   jobEnqueued?: boolean;
   runId?: string;
   message?: string;
+  processed?: number;
+  remaining?: number;
   itemsDiscovered?: number;
   itemsInserted?: number;
   sourcesSucceeded?: number;
@@ -129,9 +131,14 @@ export default function AdminPipelinePage() {
       setDiscoverResult(data);
       if (res.ok) {
         if (data.jobEnqueued) {
+          const runnerInfo =
+            data.processed != null && data.remaining != null
+              ? ` Runner: ${data.processed} processed, ${data.remaining} remaining.`
+              : "";
           toast.success(
-            data.message ??
-              "Discovery job enqueued. Check Job Queue Status for progress.",
+            (data.message ??
+              "Discovery job enqueued. Check Job Queue Status for progress.") +
+              runnerInfo,
           );
           refreshJobStatus();
         } else if (
@@ -373,7 +380,11 @@ export default function AdminPipelinePage() {
               {discoverResult.ok
                 ? discoverResult.jobEnqueued
                   ? (discoverResult.message ??
-                    "Job enqueued. Check Job Queue Status above for progress.")
+                      "Job enqueued. Check Job Queue Status above for progress.") +
+                    (discoverResult.processed != null &&
+                    discoverResult.remaining != null
+                      ? ` (Runner: ${discoverResult.processed} processed, ${discoverResult.remaining} remaining)`
+                      : "")
                   : discoverResult.skipped &&
                       discoverResult.skipReason === "run_already_in_progress"
                     ? "Discovery skipped: a run is already in progress. Click again to force a new run."

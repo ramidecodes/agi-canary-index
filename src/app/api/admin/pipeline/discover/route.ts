@@ -94,6 +94,8 @@ export async function POST(request: Request) {
       runId: enqueueData.runId,
       jobEnqueued: true,
       dryRun,
+      processed: kickData.processed,
+      remaining: kickData.remaining,
       message: dryRun
         ? "Discovery job enqueued (dry run). Check Job Queue Status for progress."
         : "Discovery job enqueued. Check Job Queue Status for progress.",

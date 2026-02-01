@@ -77,33 +77,62 @@ export async function runDiscovery(
           ),
         );
 
-      // Only block if ANOTHER run is in progress (not our own runId when provided)
-      const runningQuery =
-        options.runId != null
-          ? db
-              .select({ id: pipelineRuns.id })
-              .from(pipelineRuns)
-              .where(
-                and(
-                  eq(pipelineRuns.status, "running"),
-                  ne(pipelineRuns.id, options.runId),
-                ),
-              )
-              .limit(1)
-          : db
-              .select({ id: pipelineRuns.id })
-              .from(pipelineRuns)
-              .where(eq(pipelineRuns.status, "running"))
-              .limit(1);
-      const running = await runningQuery;
+      // Only block if ANOTHER run is in progress (not our own runId when provided).
+      // When runId is provided (Worker path): only skip if another run started *after* this run,
+      // so an old stuck run does not block new runs.
+      let running: { id: string }[];
+      if (options.runId != null) {
+        const [ourRun] = await db
+          .select({ startedAt: pipelineRuns.startedAt })
+          .from(pipelineRuns)
+          .where(eq(pipelineRuns.id, options.runId))
+          .limit(1);
+        const ourStartedAt = ourRun?.startedAt;
+        if (ourStartedAt == null) {
+          running = [];
+        } else {
+          running = await db
+            .select({ id: pipelineRuns.id })
+            .from(pipelineRuns)
+            .where(
+              and(
+                eq(pipelineRuns.status, "running"),
+                ne(pipelineRuns.id, options.runId),
+                gt(pipelineRuns.startedAt, ourStartedAt),
+              ),
+            )
+            .limit(1);
+        }
+      } else {
+        running = await db
+          .select({ id: pipelineRuns.id })
+          .from(pipelineRuns)
+          .where(eq(pipelineRuns.status, "running"))
+          .limit(1);
+      }
       if (running.length > 0) {
         stats.durationMs = Date.now() - startMs;
         stats.skipped = true;
         stats.skipReason = "run_already_in_progress";
+        // Do not leave the current run stuck in "running"; mark it terminal
+        if (options.runId) {
+          await db
+            .update(pipelineRuns)
+            .set({
+              status: "completed",
+              completedAt: new Date(),
+              itemsDiscovered: 0,
+              itemsProcessed: 0,
+              itemsFailed: 0,
+              errorLog: "Skipped: another run in progress",
+            })
+            .where(eq(pipelineRuns.id, options.runId));
+        }
         console.log(
           JSON.stringify({
             event: "discovery_skipped",
             reason: stats.skipReason,
+            runId: options.runId ?? undefined,
             durationMs: stats.durationMs,
           }),
         );
