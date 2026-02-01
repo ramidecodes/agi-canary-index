@@ -1,16 +1,15 @@
 "use client";
 
 import useSWR from "swr";
-import { HomeHeader } from "./home-header";
+import Link from "next/link";
 import { CanaryStrip } from "./canary-strip";
 import { CapabilityRadar } from "./capability-radar";
 import { AutonomyThermometer } from "./autonomy-thermometer";
 import { DailyBriefCard } from "./daily-brief-card";
 import { TimelinePreview } from "./timeline-preview";
-import { HomeFooter } from "./home-footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
   Snapshot,
   SnapshotHistoryEntry,
@@ -41,23 +40,10 @@ export function HomePageClient() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
-  const { data: statsData } = useSWR<{ sourceCount: number }>(
-    "/api/stats",
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
-  );
-
   const snapshot = snapshotData?.snapshot ?? null;
   const history = historyData?.history ?? [];
   const canaries = canariesData?.canaries ?? [];
   const events = timelineData?.events ?? [];
-  const sourceCount = statsData?.sourceCount ?? 0;
-
-  const lastUpdate = snapshot?.createdAt ?? null;
-  const coveragePercent = snapshot?.coverageScore ?? null;
-  const isStale = lastUpdate
-    ? Date.now() - new Date(lastUpdate).getTime() > 24 * 60 * 60 * 1000
-    : false;
 
   const hasNoData = !snapshot && canaries.length === 0 && events.length === 0;
 
@@ -71,63 +57,72 @@ export function HomePageClient() {
     return (p + t) / 2;
   })();
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
-        <HomeHeader
-          lastUpdate={lastUpdate}
-          sourceCount={sourceCount}
-          coveragePercent={coveragePercent}
-          isStale={isStale}
-        />
+  const isMobile = useIsMobile();
+  const radarSize = isMobile ? 280 : 360;
+  const showGhosts = !isMobile;
 
-        {hasNoData && (
-          <Card className="border-dashed">
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      {hasNoData && (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle>Awaiting first data run</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              The pipeline has not run yet. Configure sources and trigger
+              discovery to populate the control room.
+            </p>
+            <Button asChild>
+              <Link href="/admin/sources">Go to Admin</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {canaries.length > 0 && <CanaryStrip canaries={canaries} />}
+
+      {/* Mobile: single column; Desktop: radar + sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+          <Card>
             <CardHeader>
-              <CardTitle>Awaiting first data run</CardTitle>
+              <CardTitle className="text-base font-medium">
+                Capability Radar
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground text-sm">
-                The pipeline has not run yet. Configure sources and trigger
-                discovery to populate the control room.
-              </p>
-              <Button asChild>
-                <Link href="/admin/sources">Go to Admin</Link>
-              </Button>
+            <CardContent>
+              <div className="flex justify-center">
+                <CapabilityRadar
+                  snapshot={snapshot}
+                  history={showGhosts ? history : []}
+                  size={radarSize}
+                />
+              </div>
             </CardContent>
           </Card>
-        )}
-
-        {canaries.length > 0 && <CanaryStrip canaries={canaries} />}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-medium">
-                  Capability Radar
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-center">
-                  <CapabilityRadar
-                    snapshot={snapshot}
-                    history={history}
-                    size={360}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
-            <AutonomyThermometer level={autonomyLevel} />
-            <DailyBriefCard />
-          </div>
+          <TimelinePreview events={events} />
         </div>
-
-        <TimelinePreview events={events} />
-        <HomeFooter />
+        <div className="space-y-6 hidden lg:block">
+          <AutonomyThermometer level={autonomyLevel} />
+          <DailyBriefCard />
+        </div>
       </div>
+
+      {/* Mobile: brief below radar (thermometer available via Autonomy tab); desktop: thermometer + brief in sidebar */}
+      <div className="space-y-6 lg:hidden">
+        <DailyBriefCard />
+      </div>
+
+      <p className="text-center sm:hidden pt-2">
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
+          aria-label="View on desktop for full analysis"
+        >
+          Full instrument →
+        </Link>
+      </p>
     </div>
   );
 }

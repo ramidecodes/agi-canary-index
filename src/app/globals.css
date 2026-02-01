@@ -116,6 +116,13 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* iOS safe areas: notch, home indicator. docs/features/12-mobile-design.md */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

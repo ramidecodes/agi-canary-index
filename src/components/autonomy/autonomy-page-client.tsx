@@ -12,7 +12,6 @@ import {
 import { HistoricalAutonomyChart } from "./historical-autonomy-chart";
 import { InterpretationGuide } from "./interpretation-guide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HomeFooter } from "@/components/home/home-footer";
 import type { Canary } from "@/lib/home/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -153,8 +152,6 @@ export function AutonomyPageClient() {
 
         {/* Interpretation guide */}
         <InterpretationGuide />
-
-        <HomeFooter />
       </div>
     </div>
   );

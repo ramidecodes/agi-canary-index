@@ -31,13 +31,15 @@ agi-canary-index/
 Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui** and **next-themes**.
 
 - `layout.tsx` — Root layout (ClerkProvider, ThemeProvider, Toaster)
-- `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
-- **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
-- **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
-- **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
-- **`signals/page.tsx`** — Signal Explorer page (list, filters, detail sheet, export)
-- **`news/page.tsx`** — News & Daily Brief page (archive, brief by date, article list, copy brief, share)
-- `globals.css` — Global styles
+- **`(main)/`** — Route group for main app (shared layout with header, footer, mobile bottom nav)
+  - `layout.tsx` — MainLayoutClient (SiteHeader, main, SiteFooter, MobileBottomNav)
+  - `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
+  - **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
+  - **`news/page.tsx`** — News & Daily Brief page (archive, brief by date, article list, copy brief, share)
+  - **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
+  - **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
+  - **`signals/page.tsx`** — Signal Explorer page (list, filters, detail sheet, export; desktop redirect banner on mobile)
+- `globals.css` — Global styles (includes safe-area insets for mobile)
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
 - **`admin/`** — Admin UI (Source Registry; protected by Clerk)
@@ -95,12 +97,23 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 
 - **`theme-provider.tsx`** — next-themes provider
 - **`theme-toggle.tsx`** — Dark/light/system theme switcher
+- **`layout/`** — Shared app shell (DRY nav, mobile design; see docs/features/12-mobile-design.md)
+  - `site-header.tsx` — Logo, tagline, Admin link (desktop), hamburger (mobile)
+  - `site-footer.tsx` — Footer nav (desktop only; uses nav-config)
+  - `mobile-bottom-nav.tsx` — Bottom tab bar (Home, Autonomy, News, Timeline, Signals); 44px touch targets
+  - `mobile-nav-sheet.tsx` — Hamburger menu (secondary links, theme toggle)
+  - `home-status-badges.tsx` — Status badges for home page (fetches snapshot/stats only on /)
+  - `status-badges.tsx` — Status row (updated, sources, coverage, stale)
+  - `desktop-redirect-banner.tsx` — "For full analysis, view on desktop" (mobile, e.g. signals page)
+  - `index.ts` — Layout exports
+- **`lib/layout/nav-config.ts`** — Single source of truth for primary/secondary/external nav items
+- **`hooks/use-mobile.ts`** — useIsMobile() (viewport &lt; 640px) for conditional UI
 - **`home/`** — Home page (Control Room) components
-  - `home-page-client.tsx` — Client wrapper with SWR data fetching
-  - `home-header.tsx`, `home-footer.tsx`
-  - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page
+  - `home-page-client.tsx` — Client wrapper with SWR data fetching (no header/footer; layout provides)
+  - `home-header.tsx`, `home-footer.tsx` — Deprecated; use layout components
+  - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page; simplified on mobile (no ghost lines)
   - `autonomy-thermometer.tsx`
-  - `canary-strip.tsx` — Sticky canary indicators with popover
+  - `canary-strip.tsx` — Sticky canary indicators with popover; horizontal scroll + 44px touch on mobile
   - `daily-brief-card.tsx` — Today's Movement card with expandable items, coverage, "View all" to /news
   - `todays-movement.tsx`, `timeline-preview.tsx`
 - **`news/`** — News & Daily Brief page components

@@ -8,7 +8,6 @@ import { TimelineVisualization } from "./timeline-visualization";
 import { TimelineFilters } from "./timeline-filters";
 import { TimeNavigation } from "./time-navigation";
 import { EventDetailSheet } from "./event-detail-sheet";
-import { HomeFooter } from "@/components/home/home-footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimelineEvent } from "@/lib/timeline/types";
 
@@ -148,8 +147,6 @@ export function TimelinePageClient() {
             </p>
           </CardContent>
         </Card>
-
-        <HomeFooter />
       </div>
 
       <EventDetailSheet

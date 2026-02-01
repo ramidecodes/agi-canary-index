@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * @deprecated Use SiteHeader + StatusBadges from @/components/layout instead.
+ * Header and status are now provided by the (main) layout (MainLayoutClient).
+ */
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 

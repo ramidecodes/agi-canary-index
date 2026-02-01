@@ -9,13 +9,11 @@ export const metadata = {
 
 function TimelinePageSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
-        <div className="h-12 w-64 bg-muted/30 rounded animate-pulse" />
-        <div className="h-10 w-full bg-muted/30 rounded animate-pulse" />
-        <div className="h-96 bg-muted/30 rounded-xl animate-pulse" />
-        <div className="h-16 w-full bg-muted/30 rounded animate-pulse" />
-      </div>
+    <div className="space-y-8">
+      <div className="h-12 w-64 bg-muted/30 rounded animate-pulse" />
+      <div className="h-10 w-full bg-muted/30 rounded animate-pulse" />
+      <div className="h-96 bg-muted/30 rounded-xl animate-pulse" />
+      <div className="h-16 w-full bg-muted/30 rounded animate-pulse" />
     </div>
   );
 }

@@ -54,7 +54,7 @@ export function CanaryStrip({ canaries, className = "" }: CanaryStripProps) {
     <div
       className={`sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border-y border-border ${className}`}
     >
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
         {canaries.map((canary) => {
           const colorClass = STATUS_COLORS[canary.status];
           const isHovered = hoveredCanaryId === canary.id;
@@ -72,7 +72,7 @@ export function CanaryStrip({ canaries, className = "" }: CanaryStripProps) {
                 <PopoverAnchor asChild>
                   <Link
                     href={`/autonomy?canary=${canary.id}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background min-h-[44px] min-w-[44px] shrink-0 justify-center"
                   >
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${colorClass}`}

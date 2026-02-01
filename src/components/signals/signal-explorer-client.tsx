@@ -8,7 +8,7 @@ import { SignalFilters } from "./signal-filters";
 import type { SignalFiltersState } from "./signal-filters";
 import { SignalListTable } from "./signal-list-table";
 import { SignalDetailSheet } from "./signal-detail-sheet";
-import { HomeFooter } from "@/components/home/home-footer";
+import { DesktopRedirectBanner } from "@/components/layout/desktop-redirect-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -237,7 +237,7 @@ export function SignalExplorerClient() {
           </CardContent>
         </Card>
 
-        <HomeFooter />
+        <DesktopRedirectBanner />
       </div>
 
       <SignalDetailSheet

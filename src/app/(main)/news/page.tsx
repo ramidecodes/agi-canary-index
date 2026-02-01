@@ -15,12 +15,10 @@ export const metadata: Metadata = {
 
 function NewsPageSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-8 space-y-8">
-        <div className="h-8 w-2/3 bg-muted/30 rounded animate-pulse" />
-        <div className="h-48 bg-muted/30 rounded-xl animate-pulse" />
-        <div className="h-64 bg-muted/30 rounded-xl animate-pulse" />
-      </div>
+    <div className="space-y-8">
+      <div className="h-8 w-2/3 bg-muted/30 rounded animate-pulse" />
+      <div className="h-48 bg-muted/30 rounded-xl animate-pulse" />
+      <div className="h-64 bg-muted/30 rounded-xl animate-pulse" />
     </div>
   );
 }
