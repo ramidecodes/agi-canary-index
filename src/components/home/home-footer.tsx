@@ -21,6 +21,12 @@ export function HomeFooter() {
         >
           Autonomy & Risk
         </Link>
+        <Link
+          href="/timeline"
+          className="hover:text-foreground transition-colors"
+        >
+          Timeline
+        </Link>
         <Link href="/about" className="hover:text-foreground transition-colors">
           About
         </Link>

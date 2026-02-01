@@ -34,6 +34,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
 - **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
 - **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
+- **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -71,7 +72,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `current/route.ts` — GET current autonomy level and uncertainty
   - `history/route.ts` — GET historical autonomy levels (query: days)
   - `coverage/route.ts` — GET evaluation coverage metrics
-- **`api/timeline/recent/route.ts`** — GET recent timeline events
+- **`api/timeline/`** — Timeline APIs
+  - `route.ts` — GET events in range (query: start, end, category)
+  - `recent/route.ts` — GET recent timeline events (query: limit)
+  - `event/[id]/route.ts` — GET single event by ID
+  - `categories/route.ts` — GET distinct categories (reality events)
+  - `search/route.ts` — GET search results (query: q)
 - **`api/movement/today/route.ts`** — GET today's significant changes
 - **`api/stats/route.ts`** — GET public stats (source count)
 
@@ -101,6 +107,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `evaluation-coverage-meter.tsx` — Eval coverage breakdown
   - `historical-autonomy-chart.tsx` — Recharts line/area chart
   - `interpretation-guide.tsx` — Collapsible guide
+- **`timeline/`** — Timeline page components
+  - `timeline-page-client.tsx` — Client wrapper, SWR, URL state
+  - `timeline-visualization.tsx` — Horizontal scroll timeline with event markers
+  - `timeline-filters.tsx` — Category checkboxes, search input
+  - `time-navigation.tsx` — Quick-jump buttons (2020, 2022, 2024, Today)
+  - `event-detail-sheet.tsx` — Shadcn Sheet with event details
 - **`ui/`** — shadcn components (button, card, dialog, slider, popover, tooltip, collapsible, etc.)
 
 ### `src/lib/`
@@ -129,6 +141,8 @@ Shared code: DB, AI models, and future services.
 - **`home/`** — Home page types and Zustand store
   - `types.ts` — Snapshot, Canary, TimelineEvent, Movement
   - `store.ts` — useHomeStore (radar axis, canary hover, radar days)
+- **`timeline/`** — Timeline page types
+  - `types.ts` — TimelineEvent, TimelineCategory
 - **`capabilities/`** — Capability Profile state and types
   - `store.ts` — useCapabilityProfileStore (selectedDate, activeAxis, filters, sortBy)
   - `types.ts` — AxisHistoryPoint, AxisSourceEntry, SnapshotRange
@@ -162,6 +176,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **MODELS.md** — AI model IDs
 - **CAPABILITY-PROFILE.md** — Capability Profile page, APIs, Recharts usage
 - **AUTONOMY-RISK.md** — Autonomy & Risk page, APIs, Recharts vs D3 evaluation
+- **TIMELINE.md** — Timeline page, APIs, event categories
 - **STRUCTURE.md** — This file
 
 ## Scripts (from `package.json`)
