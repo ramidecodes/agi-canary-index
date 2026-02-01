@@ -32,7 +32,7 @@ export interface DiscoveryContext {
  * deduplicates, and inserts new items.
  */
 export async function runDiscovery(
-  ctx: DiscoveryContext,
+  ctx: DiscoveryContext
 ): Promise<DiscoveryRunStats> {
   const { db, options } = ctx;
   const startMs = Date.now();
@@ -71,134 +71,156 @@ export async function runDiscovery(
     }
   }
 
-  const activeSources = await db
-    .select()
-    .from(sources)
-    .where(eq(sources.isActive, true));
-
-  const allItems: DiscoveredItem[] = [];
-  const xEnabled = options.xSearchEnabled ?? X_SOURCE_ENABLED;
-
-  for (let i = 0; i < activeSources.length; i += CONCURRENCY) {
-    const batch = activeSources.slice(i, i + CONCURRENCY);
-    await Promise.all(
-      batch.map(async (src) => {
-        const result = await fetchFromSource(
-          src,
-          options.openRouterApiKey,
-          xEnabled,
-        );
-        if (runId && result.items) {
-          await logFetch(
-            db,
-            runId,
-            src.id,
-            src.name,
-            result.items.length,
-            !!result.error,
-            result.error,
-          );
-        }
-        if (result.error) {
-          stats.perSource.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            itemsFound: 0,
-            success: false,
-            error: result.error,
-          });
-          stats.sourcesFailed++;
-          if (!options.dryRun) {
-            await db
-              .update(sources)
-              .set({
-                errorCount: sql`${sources.errorCount} + 1`,
-                updatedAt: new Date(),
-              })
-              .where(eq(sources.id, src.id));
-          }
-        } else {
-          stats.perSource.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            itemsFound: result.items.length,
-            success: true,
-          });
-          stats.sourcesSucceeded++;
-          if (!options.dryRun) {
-            await db
-              .update(sources)
-              .set({
-                lastSuccessAt: new Date(),
-                errorCount: 0,
-                updatedAt: new Date(),
-              })
-              .where(eq(sources.id, src.id));
-          }
-          allItems.push(...result.items);
-        }
-        return result;
-      }),
-    );
-  }
-
-  stats.itemsDiscovered = allItems.length;
-
-  const uniqueByHash = new Map<string, DiscoveredItem>();
-  for (const item of allItems) {
-    if (!uniqueByHash.has(item.urlHash)) {
-      uniqueByHash.set(item.urlHash, item);
+  const markRunFailed = async (errMsg: string) => {
+    if (!options.dryRun && runId) {
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "failed",
+          completedAt: new Date(),
+          errorLog: errMsg.slice(0, 4096),
+        })
+        .where(eq(pipelineRuns.id, runId));
     }
-  }
-  const uniqueItems = [...uniqueByHash.values()];
+  };
 
-  if (!options.dryRun && runId && uniqueItems.length > 0) {
-    const hashes = uniqueItems.map((i) => i.urlHash);
-    const cutoff = new Date(Date.now() - DEDUP_DAYS * 24 * 60 * 60 * 1000);
-    const existing = await db
-      .select({ urlHash: items.urlHash })
-      .from(items)
-      .where(
-        and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff)),
+  try {
+    const activeRows = await db
+      .select()
+      .from(sources)
+      .where(eq(sources.isActive, true));
+    const activeSources = activeRows.filter(
+      (s) => !s.url.includes("example.com")
+    );
+
+    const allItems: DiscoveredItem[] = [];
+    const xEnabled = options.xSearchEnabled ?? X_SOURCE_ENABLED;
+
+    for (let i = 0; i < activeSources.length; i += CONCURRENCY) {
+      const batch = activeSources.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async (src) => {
+          const result = await fetchFromSource(
+            src,
+            options.openRouterApiKey,
+            xEnabled
+          );
+          if (runId && result.items) {
+            await logFetch(
+              db,
+              runId,
+              src.id,
+              src.name,
+              result.items.length,
+              !!result.error,
+              result.error
+            );
+          }
+          if (result.error) {
+            stats.perSource.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              itemsFound: 0,
+              success: false,
+              error: result.error,
+            });
+            stats.sourcesFailed++;
+            if (!options.dryRun) {
+              await db
+                .update(sources)
+                .set({
+                  errorCount: sql`${sources.errorCount} + 1`,
+                  updatedAt: new Date(),
+                })
+                .where(eq(sources.id, src.id));
+            }
+          } else {
+            stats.perSource.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              itemsFound: result.items.length,
+              success: true,
+            });
+            stats.sourcesSucceeded++;
+            if (!options.dryRun) {
+              await db
+                .update(sources)
+                .set({
+                  lastSuccessAt: new Date(),
+                  errorCount: 0,
+                  updatedAt: new Date(),
+                })
+                .where(eq(sources.id, src.id));
+            }
+            allItems.push(...result.items);
+          }
+          return result;
+        })
       );
-    const seenHashes = new Set(existing.map((r) => r.urlHash));
-    const toInsert = uniqueItems.filter((i) => !seenHashes.has(i.urlHash));
+    }
 
-    if (toInsert.length > 0) {
-      const values = toInsert.map((item) => ({
-        runId,
-        sourceId: item.sourceId,
-        url: item.url,
-        urlHash: item.urlHash,
-        title: item.title,
-        status: "pending" as const,
-        publishedAt: item.publishedAt,
-      }));
-      const inserted = await db
-        .insert(items)
-        .values(values)
-        .onConflictDoNothing({ target: items.url })
-        .returning({ id: items.id });
-      stats.itemsInserted = inserted.length;
-      for (const row of inserted) {
-        stats.insertedItemIds?.push(row.id);
+    stats.itemsDiscovered = allItems.length;
+
+    const uniqueByHash = new Map<string, DiscoveredItem>();
+    for (const item of allItems) {
+      if (!uniqueByHash.has(item.urlHash)) {
+        uniqueByHash.set(item.urlHash, item);
       }
     }
-  } else if (options.dryRun) {
-    stats.itemsInserted = uniqueItems.length;
-  }
+    const uniqueItems = [...uniqueByHash.values()];
 
-  if (!options.dryRun && runId) {
-    await db
-      .update(pipelineRuns)
-      .set({
-        status: "completed",
-        completedAt: new Date(),
-        itemsDiscovered: stats.itemsDiscovered,
-        itemsProcessed: 0,
-        itemsFailed: 0,
-      })
-      .where(eq(pipelineRuns.id, runId));
+    if (!options.dryRun && runId && uniqueItems.length > 0) {
+      const hashes = uniqueItems.map((i) => i.urlHash);
+      const cutoff = new Date(Date.now() - DEDUP_DAYS * 24 * 60 * 60 * 1000);
+      const existing = await db
+        .select({ urlHash: items.urlHash })
+        .from(items)
+        .where(
+          and(inArray(items.urlHash, hashes), gt(items.discoveredAt, cutoff))
+        );
+      const seenHashes = new Set(existing.map((r) => r.urlHash));
+      const toInsert = uniqueItems.filter((i) => !seenHashes.has(i.urlHash));
+
+      if (toInsert.length > 0) {
+        const values = toInsert.map((item) => ({
+          runId,
+          sourceId: item.sourceId,
+          url: item.url,
+          urlHash: item.urlHash,
+          title: item.title,
+          status: "pending" as const,
+          publishedAt: item.publishedAt,
+        }));
+        const inserted = await db
+          .insert(items)
+          .values(values)
+          .onConflictDoNothing({ target: items.url })
+          .returning({ id: items.id });
+        stats.itemsInserted = inserted.length;
+        for (const row of inserted) {
+          stats.insertedItemIds?.push(row.id);
+        }
+      }
+    } else if (options.dryRun) {
+      stats.itemsInserted = uniqueItems.length;
+    }
+
+    if (!options.dryRun && runId) {
+      await db
+        .update(pipelineRuns)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          itemsDiscovered: stats.itemsDiscovered,
+          itemsProcessed: 0,
+          itemsFailed: 0,
+        })
+        .where(eq(pipelineRuns.id, runId));
+    }
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : "Discovery failed";
+    await markRunFailed(errMsg);
+    throw err;
   }
 
   stats.durationMs = Date.now() - startMs;
@@ -213,7 +235,7 @@ async function fetchFromSource(
     queryConfig?: Record<string, unknown> | null;
   },
   apiKey: string,
-  xEnabled: boolean,
+  xEnabled: boolean
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   switch (src.sourceType) {
     case "rss":
@@ -239,13 +261,13 @@ async function logFetch(
   _sourceName: string,
   itemsFound: number,
   failed: boolean,
-  errorMessage?: string,
+  errorMessage?: string
 ): Promise<void> {
   await db.insert(sourceFetchLogs).values({
     runId,
     sourceId,
     status: failed ? "failure" : "success",
     itemsFound,
-    errorMessage: failed ? (errorMessage ?? "Unknown error") : null,
+    errorMessage: failed ? errorMessage ?? "Unknown error" : null,
   });
 }

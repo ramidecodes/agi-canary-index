@@ -11,9 +11,17 @@ import { canonicalizeUrl, urlHash } from "./url";
 const FETCH_TIMEOUT_MS = 30_000;
 const MAX_ITEMS = 500;
 
+/** Fix common RSS/XML issues (unescaped ampersands in attributes). */
+function sanitizeRssXml(xml: string): string {
+  return xml.replace(
+    /&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g,
+    "&amp;"
+  );
+}
+
 export async function fetchRss(
   feedUrl: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -46,7 +54,29 @@ export async function fetchRss(
       },
     });
 
-    const feed = await parser.parseString(text);
+    let feed: {
+      items?: Array<{
+        link?: string;
+        guid?: string;
+        title?: string;
+        pubDate?: string;
+        isoDate?: string;
+        dcDate?: string;
+      }>;
+    };
+    try {
+      feed = (await parser.parseString(sanitizeRssXml(text))) as typeof feed;
+    } catch (parseErr) {
+      const msg =
+        parseErr instanceof Error ? parseErr.message : "XML parse failed";
+      return {
+        items: [],
+        error:
+          msg.includes("entity") || msg.includes("Entity")
+            ? "Malformed RSS/XML (invalid entities or attributes)"
+            : msg,
+      };
+    }
     const rawItems = feed.items ?? [];
     const sorted = [...rawItems].sort((a, b) => {
       const aDate = parseDate(a.pubDate ?? a.isoDate ?? a.dcDate);

@@ -13,11 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/lib/db/seed.ts",
-    "worker:dev": "wrangler dev",
-    "worker:deploy": "wrangler deploy",
     "infra:provision": "tsx scripts/infra-provision.ts",
-    "infra:deploy": "bash scripts/infra-deploy.sh",
-    "infra:secrets": "tsx scripts/infra-secrets.ts",
     "infra:teardown": "tsx scripts/infra-teardown.ts"
   },
   "dependencies": {
@@ -56,7 +52,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
-    "@cloudflare/workers-types": "^4.20260131.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

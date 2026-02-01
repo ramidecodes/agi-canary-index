@@ -32,7 +32,7 @@ async function prompt(question: string): Promise<string> {
 
 function run(
   cmd: string,
-  args: string[] = [],
+  args: string[] = []
 ): { ok: boolean; stderr?: string } {
   try {
     execSync([cmd, ...args].join(" "), {
@@ -47,33 +47,12 @@ function run(
 
 async function main() {
   console.log(`Teardown for env: ${env}`);
-  console.log(
-    `This will remove R2 bucket: ${bucketName} and the pipeline Worker for this env.`,
-  );
-  console.log("Neon database and wrangler secrets are not modified.");
-  const confirm = await prompt(
-    `Remove R2 bucket and Worker for ${env}? (y/N): `,
-  );
+  console.log(`This will remove R2 bucket: ${bucketName}.`);
+  console.log("Pipeline runs on Vercel; Neon database is not modified.");
+  const confirm = await prompt(`Remove R2 bucket for ${env}? (y/N): `);
   if (confirm !== "y" && confirm !== "yes") {
     console.log("Aborted.");
     return;
-  }
-
-  // Delete Worker for this env (wrangler delete --env <env>)
-  console.log(`Removing Worker (env: ${env})...`);
-  const workerResult = run("pnpm exec wrangler delete", ["--env", env]);
-  if (workerResult.ok) {
-    console.log(`Worker for ${env} removed.`);
-  } else if (
-    workerResult.stderr?.includes("not found") ||
-    workerResult.stderr?.includes("Unknown")
-  ) {
-    console.log(`Worker for ${env} does not exist (skipped).`);
-  } else {
-    console.warn(
-      `Worker deletion reported an error (may already be gone):`,
-      workerResult.stderr,
-    );
   }
 
   // Delete R2 bucket
@@ -91,7 +70,7 @@ async function main() {
   }
 
   console.log(
-    "Teardown complete. Secrets and Neon database were not modified.",
+    "Teardown complete. Secrets and Neon database were not modified."
   );
 }
 
