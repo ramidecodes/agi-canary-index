@@ -5,8 +5,9 @@ import type { TimelineEvent } from "@/lib/timeline/types";
 
 const MIN_YEAR = 1950;
 const MAX_YEAR = 2030;
-const PX_PER_YEAR = 24;
-const TRACK_HEIGHT = 48;
+const PX_PER_YEAR = 36;
+const TRACK_HEIGHT = 80;
+const LABEL_MAX_LEN = 28;
 
 const CATEGORY_COLORS: Record<string, string> = {
   benchmark: "hsl(var(--chart-1))",
@@ -32,6 +33,11 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function shortTitle(title: string, maxLen = LABEL_MAX_LEN): string {
+  if (title.length <= maxLen) return title;
+  return `${title.slice(0, maxLen - 1)}…`;
+}
+
 export interface TimelineVisualizationProps {
   events: TimelineEvent[];
   onEventClick: (event: TimelineEvent) => void;
@@ -47,10 +53,15 @@ export function TimelineVisualization({
   const contentWidth = (MAX_YEAR - MIN_YEAR) * PX_PER_YEAR;
 
   const positionedEvents = useMemo(() => {
-    return events.map((e) => ({
+    const withX = events.map((e) => ({
       ...e,
       x: dateToX(e.date, PX_PER_YEAR),
       color: CATEGORY_COLORS[e.category] ?? "hsl(var(--primary))",
+    }));
+    withX.sort((a, b) => a.x - b.x);
+    return withX.map((e, i) => ({
+      ...e,
+      labelAbove: i % 2 === 1,
     }));
   }, [events]);
 
@@ -85,7 +96,7 @@ export function TimelineVisualization({
         aria-label="Timeline scroll"
       >
         <div
-          style={{ width: contentWidth, minHeight: 100 }}
+          style={{ width: contentWidth, minHeight: 32 + TRACK_HEIGHT }}
           className="relative"
         >
           {/* Year axis */}
@@ -113,11 +124,11 @@ export function TimelineVisualization({
             />
           ))}
 
-          {/* Event tracks */}
+          {/* Event track: labels (staggered) + dots */}
           <div
             className="absolute"
             style={{
-              top: 40,
+              top: 32,
               left: 0,
               width: contentWidth,
               height: TRACK_HEIGHT,
@@ -131,7 +142,7 @@ export function TimelineVisualization({
                 className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
                 style={{
                   left: e.x - 6,
-                  top: 12,
+                  top: 26,
                   width: 12,
                   height: 12,
                   backgroundColor: e.color,
@@ -140,6 +151,46 @@ export function TimelineVisualization({
                 aria-label={`${e.title}, ${formatDate(e.date)}`}
               />
             ))}
+            {/* Labels above track */}
+            {positionedEvents
+              .filter((e) => e.labelAbove)
+              .map((e) => (
+                <div
+                  key={`above-${e.id}`}
+                  className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
+                  style={{
+                    left: Math.max(0, e.x - 60),
+                    top: 0,
+                    width: 120,
+                    textAlign: "center",
+                  }}
+                >
+                  <span className="block font-mono">{formatDate(e.date)}</span>
+                  <span className="block font-medium text-foreground truncate">
+                    {shortTitle(e.title)}
+                  </span>
+                </div>
+              ))}
+            {/* Labels below track */}
+            {positionedEvents
+              .filter((e) => !e.labelAbove)
+              .map((e) => (
+                <div
+                  key={`below-${e.id}`}
+                  className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none"
+                  style={{
+                    left: Math.max(0, e.x - 60),
+                    top: 44,
+                    width: 120,
+                    textAlign: "center",
+                  }}
+                >
+                  <span className="block font-mono">{formatDate(e.date)}</span>
+                  <span className="block font-medium text-foreground truncate">
+                    {shortTitle(e.title)}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       </section>

@@ -47,3 +47,8 @@ The Timeline page at `/timeline` displays reality-track events (technical milest
 - **TimelineFilters** — Category checkboxes, search input
 - **TimeNavigation** — Quick-jump buttons (2020, 2022, 2024, Today)
 - **EventDetailSheet** — Shadcn Sheet with event details, source link, axes
+
+## Design
+
+- **Home preview** (`TimelinePreview`): Horizontal card strip; recent events from `/api/timeline/recent?limit=6`. Cards use `min-w-60` (240px), `gap-6`, and `line-clamp-2` for titles; full title on hover via `title`. Keeps the strip from feeling crowded.
+- **Full timeline** (`TimelineVisualization`): Scale is 36px per year (1950–2030) so recent events spread out. Each event shows a dot plus a staggered label (date + truncated title, 28 chars); labels alternate above/below the track to reduce overlap. Full title and description in the detail sheet on click.

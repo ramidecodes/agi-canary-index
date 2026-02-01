@@ -48,7 +48,7 @@ export function TimelinePreview({
           <p className="text-sm text-muted-foreground">No events yet.</p>
         ) : (
           <ul
-            className="flex gap-4 overflow-x-auto pb-2 -mx-1 scrollbar-thin list-none"
+            className="flex gap-6 overflow-x-auto pb-2 -mx-1 scrollbar-thin list-none"
             style={{ scrollbarWidth: "thin" }}
           >
             {events.map((e) => (
@@ -56,7 +56,8 @@ export function TimelinePreview({
                 <Link
                   key={e.id}
                   href={`/timeline?event=${e.id}`}
-                  className="shrink-0 w-48 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                  title={e.title}
+                  className="shrink-0 min-w-60 w-60 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span

@@ -54,6 +54,7 @@ As a visitor interested in AI progress history, I want to explore a timeline of 
    - Minor events: smaller markers, visible on zoom
    - Clusters: grouped when zoomed out, expand on zoom
    - Color coding by category
+   - Implemented: 36px/year scale; staggered labels (date + short title) above/below track; home preview uses 6 recent events, wider cards and gap, full title on hover.
 
 ## Data Requirements
 
