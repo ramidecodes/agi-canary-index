@@ -75,6 +75,7 @@ export function HomePageClient() {
   );
   const { data: autonomyData } = useSWR<{
     level: number;
+    levelIndex: number;
     levelLabel: string;
     uncertainty: number;
     insufficientData: boolean;
@@ -92,12 +93,14 @@ export function HomePageClient() {
     autonomyData != null
       ? {
           level: autonomyData.level,
+          levelIndex: autonomyData.levelIndex,
           levelLabel: autonomyData.levelLabel,
           uncertainty: autonomyData.uncertainty,
           insufficientData: autonomyData.insufficientData,
         }
       : {
           level: 0.35,
+          levelIndex: 1,
           levelLabel: "Scripted agent (Level 1)",
           uncertainty: 0.3,
           insufficientData: true,
@@ -185,6 +188,7 @@ export function HomePageClient() {
             <DailyBriefCard axesToShow={highlightAxes ?? undefined} />
             <AutonomyThermometer
               level={autonomy.level}
+              levelIndex={autonomy.levelIndex}
               uncertainty={autonomy.uncertainty}
               levelLabel={autonomy.levelLabel}
               insufficientData={autonomy.insufficientData}

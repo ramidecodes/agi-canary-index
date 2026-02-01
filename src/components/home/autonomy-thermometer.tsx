@@ -29,9 +29,16 @@ const LEVELS = [
   },
 ] as const;
 
+/** Append valid oklch alpha so e.g. "oklch(0.7 0.17 162)" → "oklch(0.7 0.17 162 / 0.3)". */
+function withAlpha(color: string, alpha: number): string {
+  return color.replace(/\)$/, ` / ${alpha})`);
+}
+
 interface AutonomyThermometerProps {
   /** 0–1 normalized autonomy level (from /api/autonomy/current) */
   level?: number;
+  /** Discrete level 0–4 from API; when provided, used for fill color to match API label */
+  levelIndex?: number;
   /** Uncertainty range (e.g. 0.2); optional visual band */
   uncertainty?: number;
   /** Current level label from API (e.g. "Scripted agent (Level 1)") */
@@ -43,12 +50,14 @@ interface AutonomyThermometerProps {
 
 export function AutonomyThermometer({
   level = 0.35,
+  levelIndex: levelIndexProp,
   uncertainty,
   levelLabel,
   insufficientData = false,
   className = "",
 }: AutonomyThermometerProps) {
   const normalized = Math.max(0, Math.min(1, level));
+  const levelIndex = levelIndexProp ?? Math.min(4, Math.round(normalized * 4));
   const segmentHeight = 100 / LEVELS.length;
   /** Ensure fill is visible: minimum 18% height so low values (e.g. 0.35) still read clearly */
   const fillHeight = Math.max(18, normalized * 100);
@@ -96,7 +105,7 @@ export function AutonomyThermometer({
                   key={l.id}
                   className="flex-1 transition-colors"
                   style={{
-                    backgroundColor: `${l.color}25`,
+                    backgroundColor: withAlpha(l.color, 0.15),
                     minHeight: `${segmentHeight}%`,
                   }}
                 />
@@ -113,9 +122,7 @@ export function AutonomyThermometer({
                 height: `${fillHeight}%`,
                 background: insufficientData
                   ? "var(--muted)"
-                  : `linear-gradient(to top, ${LEVELS[0].color}55, ${
-                      LEVELS[LEVELS.length - 1].color
-                    }75)`,
+                  : withAlpha(LEVELS[levelIndex].color, 0.6),
               }}
             />
 
@@ -137,7 +144,7 @@ export function AutonomyThermometer({
                 <div
                   key={l.id}
                   className="h-px w-full"
-                  style={{ backgroundColor: `${l.color}50` }}
+                  style={{ backgroundColor: withAlpha(l.color, 0.31) }}
                 />
               ))}
             </div>
