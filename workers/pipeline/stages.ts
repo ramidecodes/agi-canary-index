@@ -48,13 +48,16 @@ async function processDiscover(
   env: Env,
   db: NeonDatabase,
 ): Promise<void> {
-  // Run discovery
+  const dryRun = job.payload.dryRun === true;
+
+  // Run discovery (use job.runId when from Worker to avoid orphaned runs)
   const stats = await runDiscovery({
     db,
     options: {
       openRouterApiKey: env.OPENROUTER_API_KEY,
-      dryRun: false,
+      dryRun,
       forceNewRun: false,
+      runId: job.runId,
     },
   });
 

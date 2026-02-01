@@ -26,6 +26,8 @@ export interface DiscoveryOptions {
   xSearchEnabled?: boolean;
   /** When true (e.g. manual admin trigger), supersede any running run and start a new one. */
   forceNewRun?: boolean;
+  /** When provided (e.g. from Worker job), use this run instead of creating a new one. */
+  runId?: string;
 }
 
 export interface DiscoveryContext {
@@ -92,8 +94,8 @@ export async function runDiscovery(
     }
   }
 
-  let runId: string | null = null;
-  if (!options.dryRun) {
+  let runId: string | null = options.runId ?? null;
+  if (!options.dryRun && !runId) {
     const [run] = await db
       .insert(pipelineRuns)
       .values({ status: "running" })
@@ -247,7 +249,7 @@ export async function runDiscovery(
       stats.itemsInserted = uniqueItems.length;
     }
 
-    if (!options.dryRun && runId) {
+    if (runId) {
       await db
         .update(pipelineRuns)
         .set({
@@ -264,7 +266,7 @@ export async function runDiscovery(
     await markRunFailed(errMsg);
     throw err;
   } finally {
-    if (!options.dryRun && runId) {
+    if (runId) {
       await db
         .update(pipelineRuns)
         .set({

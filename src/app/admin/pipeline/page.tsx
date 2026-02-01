@@ -24,6 +24,9 @@ import { Badge } from "@/components/ui/badge";
 type DiscoverResult = {
   ok: boolean;
   dryRun?: boolean;
+  jobEnqueued?: boolean;
+  runId?: string;
+  message?: string;
   itemsDiscovered?: number;
   itemsInserted?: number;
   sourcesSucceeded?: number;
@@ -125,7 +128,16 @@ export default function AdminPipelinePage() {
       const data = (await res.json()) as DiscoverResult & { error?: string };
       setDiscoverResult(data);
       if (res.ok) {
-        if (data.skipped && data.skipReason === "run_already_in_progress") {
+        if (data.jobEnqueued) {
+          toast.success(
+            data.message ??
+              "Discovery job enqueued. Check Job Queue Status for progress.",
+          );
+          refreshJobStatus();
+        } else if (
+          data.skipped &&
+          data.skipReason === "run_already_in_progress"
+        ) {
           toast.warning(
             "Discovery skipped: a run is already in progress. Click again to force a new run.",
           );
@@ -145,7 +157,7 @@ export default function AdminPipelinePage() {
     } finally {
       setDiscoverLoading(false);
     }
-  }, [discoverDryRun]);
+  }, [discoverDryRun, refreshJobStatus]);
 
   const handleAcquire = useCallback(async () => {
     setAcquireLoading(true);
@@ -359,20 +371,23 @@ export default function AdminPipelinePage() {
           {discoverResult && (
             <p className="text-muted-foreground text-sm">
               {discoverResult.ok
-                ? discoverResult.skipped &&
-                  discoverResult.skipReason === "run_already_in_progress"
-                  ? "Discovery skipped: a run is already in progress. Click again to force a new run."
-                  : `${discoverResult.itemsInserted ?? 0} items inserted, ${
-                      discoverResult.sourcesSucceeded ?? 0
-                    } sources succeeded${
-                      discoverResult.sourcesFailed
-                        ? `, ${discoverResult.sourcesFailed} failed`
-                        : ""
-                    }${
-                      discoverResult.durationMs
-                        ? ` (${(discoverResult.durationMs / 1000).toFixed(1)}s)`
-                        : ""
-                    }`
+                ? discoverResult.jobEnqueued
+                  ? (discoverResult.message ??
+                    "Job enqueued. Check Job Queue Status above for progress.")
+                  : discoverResult.skipped &&
+                      discoverResult.skipReason === "run_already_in_progress"
+                    ? "Discovery skipped: a run is already in progress. Click again to force a new run."
+                    : `${discoverResult.itemsInserted ?? 0} items inserted, ${
+                        discoverResult.sourcesSucceeded ?? 0
+                      } sources succeeded${
+                        discoverResult.sourcesFailed
+                          ? `, ${discoverResult.sourcesFailed} failed`
+                          : ""
+                      }${
+                        discoverResult.durationMs
+                          ? ` (${(discoverResult.durationMs / 1000).toFixed(1)}s)`
+                          : ""
+                      }`
                 : null}
             </p>
           )}
