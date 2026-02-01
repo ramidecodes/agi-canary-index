@@ -1,7 +1,15 @@
 /**
- * GET /api/signals?axis=X&date=Y&limit=50
+ * GET /api/signals
+ *
+ * Mode 1 (Capability Profile): axis=X&date=Y&limit=50
  * Returns signals for a specific axis and optional date (snapshot date).
+ *
+ * Mode 2 (Signal Explorer): axes, dateFrom, dateTo, sourceTier, sourceId,
+ * confidenceMin, hasBenchmark, q, sort, order, limit, offset
+ * Returns filtered signals for the explorer UI.
+ *
  * @see docs/features/07-capability-profile.md
+ * @see docs/features/10-signal-explorer.md
  */
 
 import { type NextRequest, NextResponse } from "next/server";
@@ -15,6 +23,10 @@ import {
   sources,
 } from "@/lib/db/schema";
 import { AXES } from "@/lib/signal/schemas";
+import {
+  parseExplorerFilters,
+  querySignalsExplorer,
+} from "@/lib/signals/query";
 
 export const dynamic = "force-dynamic";
 
@@ -28,18 +40,50 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const axisParam = searchParams.get("axis");
+
+    // Explorer mode: axis omitted, use full filters
+    if (!axisParam) {
+      const filters = parseExplorerFilters(searchParams);
+      const db = getDb();
+      const { signals: explorerSignals } = await querySignalsExplorer(
+        db,
+        filters
+      );
+      return NextResponse.json({
+        signals: explorerSignals.map((s) => ({
+          signalId: s.id,
+          id: s.id,
+          claimSummary: s.claimSummary,
+          axesImpacted: s.axesImpacted,
+          metric: s.metric,
+          confidence: s.confidence,
+          classification: s.classification,
+          createdAt: s.createdAt,
+          title: s.title,
+          url: s.url,
+          sourceId: s.sourceId,
+          sourceName: s.sourceName,
+          sourceTier: s.sourceTier,
+          sourceUrl: s.sourceUrl,
+        })),
+      });
+    }
+
+    // Capability profile mode: axis required
+    if (!isValidAxis(axisParam)) {
+      return NextResponse.json(
+        {
+          error: `axis is required and must be one of: ${AXES.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+
     const dateParam = searchParams.get("date");
     const limit = Math.min(
       Number.parseInt(searchParams.get("limit") ?? "50", 10),
-      100,
+      100
     );
-
-    if (!axisParam || !isValidAxis(axisParam)) {
-      return NextResponse.json(
-        { error: `axis is required and must be one of: ${AXES.join(", ")}` },
-        { status: 400 },
-      );
-    }
 
     const db = getDb();
 
@@ -169,7 +213,7 @@ export async function GET(request: NextRequest) {
     console.error("[api/signals]", err);
     return NextResponse.json(
       { error: "Failed to fetch signals" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

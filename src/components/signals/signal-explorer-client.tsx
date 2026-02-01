@@ -1,0 +1,250 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { SignalFilters } from "./signal-filters";
+import type { SignalFiltersState } from "./signal-filters";
+import { SignalListTable } from "./signal-list-table";
+import { SignalDetailSheet } from "./signal-detail-sheet";
+import { HomeFooter } from "@/components/home/home-footer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download } from "lucide-react";
+import type { SignalExplorerItem } from "@/lib/signals/types";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+function buildSignalsUrl(filters: SignalFiltersState): string {
+  const params = new URLSearchParams();
+  if (filters.axes.size > 0) {
+    params.set("axes", [...filters.axes].join(","));
+  }
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.sourceTier) params.set("sourceTier", filters.sourceTier);
+  if (filters.sourceId) params.set("sourceId", filters.sourceId);
+  if (filters.confidenceMin > 0) {
+    params.set("confidenceMin", String(filters.confidenceMin));
+  }
+  if (filters.hasBenchmark === true) params.set("hasBenchmark", "true");
+  if (filters.hasBenchmark === false) params.set("hasBenchmark", "false");
+  if (filters.q) params.set("q", filters.q);
+  params.set("limit", "200");
+  return `/api/signals?${params.toString()}`;
+}
+
+function filtersFromUrl(searchParams: URLSearchParams): SignalFiltersState {
+  const axesParam = searchParams.get("axes");
+  const axes = new Set(axesParam ? axesParam.split(",").filter(Boolean) : []);
+  return {
+    axes,
+    dateFrom: searchParams.get("dateFrom") ?? "",
+    dateTo: searchParams.get("dateTo") ?? "",
+    sourceTier: searchParams.get("sourceTier"),
+    sourceId: searchParams.get("sourceId"),
+    confidenceMin:
+      Number.parseFloat(searchParams.get("confidenceMin") ?? "0") || 0,
+    hasBenchmark:
+      searchParams.get("hasBenchmark") === "true"
+        ? true
+        : searchParams.get("hasBenchmark") === "false"
+        ? false
+        : null,
+    highConfidenceOnly:
+      Number.parseFloat(searchParams.get("confidenceMin") ?? "0") >= 0.7,
+    q: searchParams.get("q") ?? "",
+  };
+}
+
+function filtersToUrlParams(filters: SignalFiltersState): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.axes.size > 0) {
+    params.set("axes", [...filters.axes].join(","));
+  }
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.sourceTier) params.set("sourceTier", filters.sourceTier);
+  if (filters.sourceId) params.set("sourceId", filters.sourceId);
+  if (filters.confidenceMin > 0) {
+    params.set("confidenceMin", String(filters.confidenceMin));
+  }
+  if (filters.hasBenchmark === true) params.set("hasBenchmark", "true");
+  if (filters.hasBenchmark === false) params.set("hasBenchmark", "false");
+  if (filters.q) params.set("q", filters.q);
+  return params;
+}
+
+export function SignalExplorerClient() {
+  const searchParams = useSearchParams();
+  const signalFromUrl = searchParams.get("signal");
+
+  const [filters, setFilters] = useState<SignalFiltersState>(() =>
+    filtersFromUrl(searchParams)
+  );
+  const [selectedSignalId, setSelectedSignalId] = useState<string | null>(
+    signalFromUrl
+  );
+  const [sheetOpen, setSheetOpen] = useState(!!signalFromUrl);
+
+  useEffect(() => {
+    setFilters(filtersFromUrl(searchParams));
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (signalFromUrl && signalFromUrl !== selectedSignalId) {
+      setSelectedSignalId(signalFromUrl);
+      setSheetOpen(true);
+    }
+  }, [signalFromUrl, selectedSignalId]);
+
+  const signalsUrl = useMemo(() => buildSignalsUrl(filters), [filters]);
+
+  const { data, error, isLoading } = useSWR<{
+    signals: SignalExplorerItem[];
+  }>(signalsUrl, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30 * 1000,
+  });
+
+  const signals = data?.signals ?? [];
+
+  const handleFiltersChange = useCallback((next: SignalFiltersState) => {
+    setFilters(next);
+    const params = filtersToUrlParams(next);
+    const url = new URL(window.location.href);
+    url.search = params.toString();
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  const handleRowClick = useCallback((signal: SignalExplorerItem) => {
+    setSelectedSignalId(signal.id);
+    setSheetOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.set("signal", signal.id);
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  const handleSheetClose = useCallback(() => {
+    setSheetOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("signal");
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  const handleExportCsv = useCallback(() => {
+    const params = filtersToUrlParams(filters);
+    params.set("format", "csv");
+    params.set("limit", "10000");
+    window.open(`/api/signals/export?${params.toString()}`, "_blank");
+  }, [filters]);
+
+  const handleExportJson = useCallback(() => {
+    const params = filtersToUrlParams(filters);
+    params.set("format", "json");
+    params.set("limit", "10000");
+    window.open(`/api/signals/export?${params.toString()}`, "_blank");
+  }, [filters]);
+
+  const handleSourceClick = useCallback(
+    (sourceId: string) => {
+      handleFiltersChange({ ...filters, sourceId });
+    },
+    [filters, handleFiltersChange]
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">Signal Explorer</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Explore and audit the evidence behind every metric. Filter by
+              axis, source, confidence, and export for verification.
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Control Room
+          </Link>
+        </div>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">
+              Filter & search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SignalFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {isLoading
+              ? "Loading…"
+              : error
+              ? "Failed to load signals"
+              : `${signals.length} signal${signals.length === 1 ? "" : "s"}`}
+          </p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCsv}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportJson}>
+                Export as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <SignalListTable
+          signals={signals}
+          onRowClick={handleRowClick}
+          onSourceClick={handleSourceClick}
+          isLoading={isLoading}
+        />
+
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-sm text-muted-foreground">
+              Click a row to view full signal details, citations, and source
+              link. Use filters to narrow by capability axis, source tier, or
+              confidence. Export filtered results as CSV or JSON for external
+              analysis.
+            </p>
+          </CardContent>
+        </Card>
+
+        <HomeFooter />
+      </div>
+
+      <SignalDetailSheet
+        signalId={selectedSignalId}
+        open={sheetOpen}
+        onOpenChange={(open) => !open && handleSheetClose()}
+      />
+    </div>
+  );
+}

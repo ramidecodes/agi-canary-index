@@ -35,6 +35,7 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`capabilities/page.tsx`** — Capability Profile page (radar, time scrubber, domain breakdown, source map, axis detail modal)
 - **`autonomy/page.tsx`** — Autonomy & Risk page (gauge, risk canaries, trigger log, coverage meter, historical chart)
 - **`timeline/page.tsx`** — Timeline page (AI milestones, time navigation, filters, event detail sheet)
+- **`signals/page.tsx`** — Signal Explorer page (list, filters, detail sheet, export)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -65,7 +66,9 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`api/axis/[axis]/`** — Axis data for capability profile
   - `history/route.ts` — GET axis history (query: days)
   - `sources/route.ts` — GET sources contributing to axis
-- **`api/signals/route.ts`** — GET signals (query: axis, date, limit)
+- **`api/signals/route.ts`** — GET signals (mode 1: axis+date for capability profile; mode 2: full explorer filters)
+- **`api/signals/[id]/route.ts`** — GET single signal detail
+- **`api/signals/export/route.ts`** — GET export filtered signals as CSV or JSON
 - **`api/signals/recent/route.ts`** — GET recent signals for autonomy axes (query: axes, limit)
 - **`api/canaries/route.ts`** — GET canary definitions with status (query: type=risk for risk canaries only)
 - **`api/autonomy/`** — Autonomy & Risk APIs
@@ -113,6 +116,11 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `timeline-filters.tsx` — Category checkboxes, search input
   - `time-navigation.tsx` — Quick-jump buttons (2020, 2022, 2024, Today)
   - `event-detail-sheet.tsx` — Shadcn Sheet with event details
+- **`signals/`** — Signal Explorer page components
+  - `signal-explorer-client.tsx` — Client wrapper, SWR, URL state
+  - `signal-filters.tsx` — Axis, date, tier, confidence filters
+  - `signal-list-table.tsx` — Sortable table with row click
+  - `signal-detail-sheet.tsx` — Shadcn Sheet with full signal details
 - **`ui/`** — shadcn components (button, card, dialog, slider, popover, tooltip, collapsible, etc.)
 
 ### `src/lib/`
@@ -146,6 +154,9 @@ Shared code: DB, AI models, and future services.
 - **`capabilities/`** — Capability Profile state and types
   - `store.ts` — useCapabilityProfileStore (selectedDate, activeAxis, filters, sortBy)
   - `types.ts` — AxisHistoryPoint, AxisSourceEntry, SnapshotRange
+- **`signals/`** — Signal Explorer query logic
+  - `query.ts` — parseExplorerFilters, querySignalsExplorer (shared with API)
+  - `types.ts` — SignalExplorerItem, SignalDetail, AXIS_LABELS, TIER_LABELS
 - **`signal/`** — AI signal processing pipeline (AI SDK v6 + OpenRouter)
   - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
   - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)
@@ -177,6 +188,7 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **CAPABILITY-PROFILE.md** — Capability Profile page, APIs, Recharts usage
 - **AUTONOMY-RISK.md** — Autonomy & Risk page, APIs, Recharts vs D3 evaluation
 - **TIMELINE.md** — Timeline page, APIs, event categories
+- **SIGNAL-EXPLORER.md** — Signal Explorer page, APIs, filters, export
 - **STRUCTURE.md** — This file
 
 ## Scripts (from `package.json`)

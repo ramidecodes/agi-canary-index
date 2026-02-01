@@ -27,6 +27,12 @@ export function HomeFooter() {
         >
           Timeline
         </Link>
+        <Link
+          href="/signals"
+          className="hover:text-foreground transition-colors"
+        >
+          Signals
+        </Link>
         <Link href="/about" className="hover:text-foreground transition-colors">
           About
         </Link>
