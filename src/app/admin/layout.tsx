@@ -24,6 +24,9 @@ export default function AdminLayout({
               <Link href="/">← Home</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/pipeline">Pipeline</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
               <Link href="/admin/sources">Sources</Link>
             </Button>
           </div>

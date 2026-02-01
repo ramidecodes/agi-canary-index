@@ -42,8 +42,10 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - `globals.css` — Global styles (includes safe-area insets for mobile)
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
-- **`admin/`** — Admin UI (Source Registry; protected by Clerk)
-  - `layout.tsx` — Admin nav (Home, Sources, UserButton, ThemeToggle)
+- **`admin/`** — Admin UI (Source Registry, Pipeline Controls; protected by Clerk)
+  - `layout.tsx` — Admin nav (Home, Pipeline, Sources, UserButton, ThemeToggle)
+  - **`pipeline/`** — Pipeline controls (manual triggers for discover, acquire, process, snapshot)
+    - `page.tsx` — Step cards with trigger buttons, dry run, date picker
   - **`sources/`** — Source registry
     - `page.tsx` — List sources, health status, bulk actions
     - `source-form.tsx` — Shared form (add/edit) with test fetch

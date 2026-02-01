@@ -23,22 +23,22 @@ export function HomePageClient() {
   const { data: snapshotData } = useSWR<{ snapshot: Snapshot | null }>(
     "/api/snapshot/latest",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
   const { data: historyData } = useSWR<{ history: SnapshotHistoryEntry[] }>(
     "/api/snapshot/history?days=90",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
   const { data: canariesData } = useSWR<{ canaries: Canary[] }>(
     "/api/canaries",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
   const { data: timelineData } = useSWR<{ events: TimelineEvent[] }>(
     "/api/timeline/recent?limit=6",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
   );
   const snapshot = snapshotData?.snapshot ?? null;
   const history = historyData?.history ?? [];
