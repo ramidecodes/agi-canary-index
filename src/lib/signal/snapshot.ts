@@ -33,7 +33,7 @@ function directionMultiplier(direction: string): number {
  */
 export async function createDailySnapshot(
   db: ReturnType<typeof createDb>,
-  dateStr: string
+  dateStr: string,
 ): Promise<{ created: boolean; signalCount: number }> {
   const rows = await db
     .select({

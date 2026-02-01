@@ -31,7 +31,7 @@ agi-canary-index/
 Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui** and **next-themes**.
 
 - `layout.tsx` — Root layout (ClerkProvider, ThemeProvider, Toaster)
-- `page.tsx` — Home page
+- `page.tsx` — Home page (Control Room; radar, canaries, movement, timeline)
 - `globals.css` — Global styles
 - **`sign-in/[[...sign-in]]/page.tsx`** — Clerk sign-in page
 - **`sign-up/[[...sign-up]]/page.tsx`** — Clerk sign-up page
@@ -54,12 +54,26 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `snapshot/route.ts` — POST daily snapshot (body: `{ date?: string }`); aggregates signals for date
 - **`api/admin/documents/[id]/content/`** — Document content
   - `route.ts` — GET markdown from R2
+- **`api/snapshot/`** — Public snapshot API
+  - `latest/route.ts` — GET latest daily snapshot
+  - `history/route.ts` — GET snapshot history (query: days)
+- **`api/canaries/route.ts`** — GET canary definitions with status
+- **`api/timeline/recent/route.ts`** — GET recent timeline events
+- **`api/movement/today/route.ts`** — GET today's significant changes
+- **`api/stats/route.ts`** — GET public stats (source count)
 
 ### `src/components/`
 
 - **`theme-provider.tsx`** — next-themes provider
 - **`theme-toggle.tsx`** — Dark/light/system theme switcher
-- **`ui/`** — shadcn components (button, input, table, badge, etc.)
+- **`home/`** — Home page (Control Room) components
+  - `home-page-client.tsx` — Client wrapper with SWR data fetching
+  - `home-header.tsx`, `home-footer.tsx`
+  - `capability-radar.tsx` — D3 radar chart (9 axes)
+  - `autonomy-thermometer.tsx`
+  - `canary-strip.tsx` — Sticky canary indicators with popover
+  - `todays-movement.tsx`, `timeline-preview.tsx`
+- **`ui/`** — shadcn components (button, card, popover, tooltip, etc.)
 
 ### `src/lib/`
 
@@ -84,6 +98,9 @@ Shared code: DB, AI models, and future services.
   - `firecrawl.ts` — Firecrawl scrape API client
   - `validate.ts` — Content quality validation (length, paywall)
   - `metadata.ts` — Metadata extraction (OG, article tags)
+- **`home/`** — Home page types and Zustand store
+  - `types.ts` — Snapshot, Canary, TimelineEvent, Movement
+  - `store.ts` — useHomeStore (radar axis, canary hover, radar days)
 - **`signal/`** — AI signal processing pipeline (AI SDK v6 + OpenRouter)
   - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
   - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)

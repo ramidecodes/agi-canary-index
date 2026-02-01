@@ -1,27 +1,31 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import { HomePageClient } from "@/components/home/home-page-client";
 
-export default function Home() {
+export const metadata = {
+  title: "AGI Canary Watcher",
+  description: "Epistemic instrumentation for AGI progress",
+};
+
+function HomePageSkeleton() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-      <main className="flex w-full max-w-3xl flex-col items-center gap-12 px-8 py-24 text-center">
-        <div className="space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            AGI Canary Index
-          </h1>
-          <p className="text-muted-foreground">
-            Epistemic instrumentation for AGI progress
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+        <div className="h-24 bg-muted/30 rounded-lg animate-pulse" />
+        <div className="h-8 w-3/4 bg-muted/30 rounded animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 h-96 bg-muted/30 rounded-xl animate-pulse" />
+          <div className="h-64 bg-muted/30 rounded-xl animate-pulse" />
         </div>
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <Link
-            href="/admin/sources"
-            prefetch={false}
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-6 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Admin: Source Registry
-          </Link>
-        </div>
-      </main>
+        <div className="h-32 bg-muted/30 rounded-xl animate-pulse" />
+      </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomePageSkeleton />}>
+      <HomePageClient />
+    </Suspense>
   );
 }
