@@ -29,12 +29,14 @@ The Timeline page at `/timeline` displays reality-track events (technical milest
 
 ## Seed Data
 
-`pnpm run db:seed` seeds 40+ historical AI milestones (1956–2025). To add or update timeline events, extend `timelineSeedData` in `src/lib/db/seed.ts` and re-run `pnpm run db:seed` (reality events are cleared and re-inserted idempotently).
+`pnpm run db:seed` seeds curated AI milestones (1956–2025). To add or update timeline events, extend `timelineSeedData` in `src/lib/db/seed.ts` and re-run `pnpm run db:seed` (reality events are cleared and re-inserted idempotently).
 
-- **benchmark**: Deep Blue, Watson, ImageNet, AlphaGo, SWE-bench, ARC Prize, etc.
-- **model**: BERT, GPT-2/3/4, Claude, Gemini, DALL-E, Codex, o1
+**Curation:** Only foundational milestones—breakthrough research, flagship benchmarks, landmark models, major policy. Incremental releases and eval frameworks (e.g. METR, HELM) are excluded.
+
+- **benchmark**: Deep Blue, Watson, ImageNet, AlphaGo, AlphaStar, SWE-bench Verified, ARC Prize
+- **model**: BERT, GPT-2/3/4, Claude 3, Gemini 1.5, DALL-E, Codex, o1
 - **policy**: Lighthill Report, OECD AI Principles, EU AI Act
-- **research**: Dartmouth, Perceptron, ELIZA, Backpropagation, Transformer
+- **research**: Dartmouth, Perceptron, ELIZA, Backpropagation, Seq2seq, Transformer
 
 ## URL State
 

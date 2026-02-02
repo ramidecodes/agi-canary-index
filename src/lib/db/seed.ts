@@ -191,16 +191,19 @@ async function seed() {
     }
   }
   console.log(
-    `  Inserted ${inserted}, updated ${updated} sources; ${SEED_SOURCES.length} total in seed.`,
+    `  Inserted ${inserted}, updated ${updated} sources; ${SEED_SOURCES.length} total in seed.`
   );
 
-  console.log("Seeding timeline events (50+ historical AI milestones)...");
+  console.log("Seeding timeline events (curated AI milestones)...");
+  // Curated milestones: foundational research, breakthrough benchmarks, flagship models, major policy.
+  // Excluded: incremental releases, speculation, minor eval frameworks (METR, HELM).
   const timelineSeedData = [
+    // Research foundations
     {
       date: "1956-08-01",
       title: "Dartmouth Conference",
       description:
-        "Birth of AI as a field. John McCarthy, Marvin Minsky, and others coined the term 'artificial intelligence' and outlined goals for machine learning and reasoning.",
+        "Birth of AI. John McCarthy, Marvin Minsky, and others coined the term 'artificial intelligence' and outlined goals for machine learning and reasoning.",
       eventType: "reality" as const,
       category: "research" as const,
       sourceUrl: "https://en.wikipedia.org/wiki/Dartmouth_workshop",
@@ -228,7 +231,7 @@ async function seed() {
       date: "1973-01-01",
       title: "Lighthill Report",
       description:
-        "UK government report criticizing AI research progress. Led to reduced funding and the 'AI winter'.",
+        "UK government report criticizing AI research progress. Led to reduced funding and the AI winter.",
       eventType: "reality" as const,
       category: "policy" as const,
     },
@@ -242,6 +245,7 @@ async function seed() {
       sourceUrl: "https://en.wikipedia.org/wiki/Backpropagation",
       axesImpacted: ["learning_efficiency"],
     },
+    // Breakthrough benchmarks
     {
       date: "1997-05-11",
       title: "Deep Blue beats Kasparov",
@@ -294,7 +298,7 @@ async function seed() {
     },
     {
       date: "2017-06-01",
-      title: "Transformer architecture (Attention is All You Need)",
+      title: "Transformer (Attention is All You Need)",
       description:
         "Vaswani et al. introduced the Transformer. Became the backbone of GPT, BERT, and virtually all modern LLMs.",
       eventType: "reality" as const,
@@ -302,11 +306,12 @@ async function seed() {
       sourceUrl: "https://arxiv.org/abs/1706.03762",
       axesImpacted: ["reasoning", "learning_efficiency"],
     },
+    // LLM era
     {
       date: "2018-06-01",
       title: "BERT released",
       description:
-        "Google's BERT achieved state-of-the-art on NLP benchmarks via masked language modeling and fine-tuning.",
+        "Google's BERT achieved state-of-the-art on NLP via masked language modeling. Established pretrain-finetune paradigm.",
       eventType: "reality" as const,
       category: "model" as const,
       sourceUrl: "https://arxiv.org/abs/1810.04805",
@@ -326,7 +331,7 @@ async function seed() {
       date: "2019-10-01",
       title: "AlphaStar (StarCraft II)",
       description:
-        "DeepMind's AlphaStar reached Grandmaster level in StarCraft II. Major milestone in real-time strategy and long-horizon planning.",
+        "DeepMind's AlphaStar reached Grandmaster level in StarCraft II. Major milestone in long-horizon planning and real-time strategy.",
       eventType: "reality" as const,
       category: "benchmark" as const,
       sourceUrl:
@@ -373,26 +378,6 @@ async function seed() {
       axesImpacted: ["tool_use", "reasoning"],
     },
     {
-      date: "2021-11-01",
-      title: "METR (Model Evaluation for Robustness)",
-      description:
-        "Epoch AI's METR framework for tracking model evaluations and robustness. Influential evaluation infrastructure.",
-      eventType: "reality" as const,
-      category: "benchmark" as const,
-      sourceUrl: "https://epoch.ai",
-      axesImpacted: ["robustness"],
-    },
-    {
-      date: "2022-01-01",
-      title: "HELM (Holistic Evaluation of Language Models)",
-      description:
-        "Stanford CRFM's HELM benchmarks language models across many scenarios. Key evaluation framework.",
-      eventType: "reality" as const,
-      category: "benchmark" as const,
-      sourceUrl: "https://crfm.stanford.edu/helm/",
-      axesImpacted: ["reasoning"],
-    },
-    {
       date: "2022-11-30",
       title: "ChatGPT launched",
       description:
@@ -413,16 +398,6 @@ async function seed() {
       axesImpacted: ["reasoning", "tool_use", "planning"],
     },
     {
-      date: "2023-12-01",
-      title: "Claude 2.1 / Opus",
-      description:
-        "Anthropic's Claude 2.1 with 200K context. Emphasized safety and long-context reasoning.",
-      eventType: "reality" as const,
-      category: "model" as const,
-      sourceUrl: "https://www.anthropic.com/news/claude-2-1",
-      axesImpacted: ["reasoning", "alignment_safety"],
-    },
-    {
       date: "2023-12-06",
       title: "EU AI Act adopted",
       description:
@@ -433,6 +408,7 @@ async function seed() {
         "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
       axesImpacted: ["alignment_safety"],
     },
+    // Recent milestones (2024+)
     {
       date: "2024-01-01",
       title: "ARC Prize launched",
@@ -458,7 +434,7 @@ async function seed() {
       date: "2024-03-01",
       title: "Claude 3 Opus",
       description:
-        "Anthropic's Claude 3 Opus. Top-tier performance on evaluations with emphasis on safety.",
+        "Anthropic's Claude 3 Opus. Top-tier performance with emphasis on safety and long-context reasoning.",
       eventType: "reality" as const,
       category: "model" as const,
       sourceUrl: "https://www.anthropic.com/news/claude-3-model-family",
@@ -495,25 +471,6 @@ async function seed() {
       axesImpacted: ["reasoning", "planning"],
     },
     {
-      date: "2024-12-01",
-      title: "Claude 3.5 Sonnet / Opus 4",
-      description:
-        "Anthropic's Claude 3.5 Sonnet and Opus 4. Continued advances in coding and long-context tasks.",
-      eventType: "reality" as const,
-      category: "model" as const,
-      sourceUrl: "https://www.anthropic.com/news",
-      axesImpacted: ["reasoning", "tool_use"],
-    },
-    {
-      date: "2025-01-01",
-      title: "GPT-5 / o3 speculation",
-      description:
-        "Industry anticipation of next-generation reasoning and agentic models from OpenAI and others.",
-      eventType: "reality" as const,
-      category: "research" as const,
-      axesImpacted: ["reasoning", "planning", "tool_use"],
-    },
-    {
       date: "2025-05-01",
       title: "EU AI Act implementation begins",
       description:
@@ -522,16 +479,6 @@ async function seed() {
       category: "policy" as const,
       sourceUrl:
         "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
-      axesImpacted: ["alignment_safety"],
-    },
-    {
-      date: "2025-08-01",
-      title: "OECD AI indicators report",
-      description:
-        "OECD published measurement framework for AI adoption and impact. Informs policy and research.",
-      eventType: "reality" as const,
-      category: "policy" as const,
-      sourceUrl: "https://www.oecd.org/digital/artificial-intelligence/",
       axesImpacted: ["alignment_safety"],
     },
   ];
@@ -550,7 +497,7 @@ async function seed() {
       category: e.category,
       sourceUrl: e.sourceUrl ?? null,
       axesImpacted: e.axesImpacted ?? null,
-    })),
+    }))
   );
 
   console.log(`  Inserted ${timelineSeedData.length} timeline events.`);
