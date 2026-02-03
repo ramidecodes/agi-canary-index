@@ -29,6 +29,20 @@
       "when": 1769934553979,
       "tag": "0003_tiny_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769950000000,
+      "tag": "0004_add_signals_source_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769950100000,
+      "tag": "0005_source_updates_rss_only",
+      "breakpoints": true
     }
   ]
 }
