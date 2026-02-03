@@ -67,27 +67,27 @@ export function HomePageClient() {
   const { data: snapshotData } = useSWR<{ snapshot: Snapshot | null }>(
     "/api/snapshot/latest",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
   );
   const { data: historyData } = useSWR<{ history: SnapshotHistoryEntry[] }>(
     "/api/snapshot/history?days=90",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
   );
   const { data: canariesData } = useSWR<{ canaries: Canary[] }>(
     "/api/canaries",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
   );
   const { data: timelineData } = useSWR<{ events: TimelineEvent[] }>(
     "/api/timeline/recent?limit=50",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
   );
   const { data: statsData } = useSWR<{ sourceCount: number }>(
     "/api/stats",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
   );
   const { data: autonomyData } = useSWR<{
     level: number;
@@ -133,23 +133,23 @@ export function HomePageClient() {
   const activeCanaryFilter = useHomeStore((s) => s.activeCanaryFilter);
   const highlightAxes =
     activeCanaryFilter && canaries.length > 0
-      ? (canaries.find((c) => c.id === activeCanaryFilter)?.axesWatched ?? [])
+      ? canaries.find((c) => c.id === activeCanaryFilter)?.axesWatched ?? []
       : undefined;
 
   /** Events sorted ascending by date so timeline shows left = older, right = newer (same as timeline page). */
   const timelineEventsAsc = useMemo(
     () =>
       [...events].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       ) as TimelinePageEvent[],
-    [events],
+    [events]
   );
 
   const handleTimelineEventClick = useCallback(
     (event: TimelinePageEvent) => {
       router.push(`/timeline?event=${event.id}`);
     },
-    [router, router.push],
+    [router, router.push]
   );
 
   return (
