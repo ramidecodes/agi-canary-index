@@ -15,16 +15,13 @@ export interface Env {
   FIRECRAWL_API_KEY: string;
   INTERNAL_TOKEN: string;
   DOCUMENTS: R2Bucket;
-  /** Base Worker URL (e.g. https://agi-canary-etl-prod.ramidecodes.workers.dev). Used to build /run URL for self-kick. */
+  /** Base Worker URL (e.g. https://agi-canary-etl-prod.ramidecodes.workers.dev). Self-kick uses ${WORKER_URL}/run. */
   WORKER_URL?: string;
-  /** Full URL to /run endpoint for self-kick. Overrides WORKER_URL if set. */
-  RUNNER_URL?: string;
   BATCH_SIZE: string;
   TIME_BUDGET_MS: string;
 }
 
 function getRunnerUrl(env: Env): string {
-  if (env.RUNNER_URL) return env.RUNNER_URL;
   const base = env.WORKER_URL?.replace(/\/$/, "");
   if (base) return `${base}/run`;
   return "https://agi-canary-etl.workers.dev/run";
@@ -35,7 +32,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<void> {
     const db = createDb(env.DATABASE_URL);
     const runId = await createPipelineRun(db);
@@ -58,7 +55,7 @@ export default {
         body: JSON.stringify({ runId }),
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      }),
+      })
     );
   },
 
@@ -66,7 +63,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    ctx: ExecutionContext,
+    ctx: ExecutionContext
   ): Promise<Response> {
     const url = new URL(request.url);
 
@@ -110,6 +107,17 @@ async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
   const instanceId = crypto.randomUUID();
 
   const jobs = await claimJobs(db, batchSize, instanceId);
+  if (jobs.length > 0) {
+    console.log(
+      JSON.stringify({
+        event: "jobs_claimed",
+        instanceId,
+        count: jobs.length,
+        jobIds: jobs.map((j) => j.id),
+        types: jobs.map((j) => j.type),
+      })
+    );
+  }
   let processed = 0;
 
   for (const job of jobs) {
@@ -134,7 +142,7 @@ async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
       remaining,
       timeBudgetMs: timeBudget,
       durationMs: Date.now() - started,
-    }),
+    })
   );
 
   // Self-kick if more jobs remain
@@ -146,7 +154,7 @@ async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
         headers: { Authorization: `Bearer ${env.INTERNAL_TOKEN}` },
       }).catch((err) => {
         console.error("Failed to self-kick runner:", err);
-      }),
+      })
     );
   }
 

@@ -53,8 +53,7 @@ Worker config (vars or secrets):
 
 - `BATCH_SIZE`: Jobs per `/run` invocation (default: 15)
 - `TIME_BUDGET_MS`: Time budget per run in ms (default: 180000, 3 min; discovery needs longer)
-- `WORKER_URL`: Base Worker URL for self-kick (e.g. `https://agi-canary-etl-prod.ramidecodes.workers.dev`). Worker builds `/run` from this. Same value as Vercel `WORKER_URL`; set via `wrangler secret put WORKER_URL` if using a custom domain.
-- `RUNNER_URL`: Full URL to `/run` (optional override; if set, used instead of `WORKER_URL` + `/run`)
+- `WORKER_URL`: Base Worker URL for self-kick (e.g. `https://agi-canary-etl-prod.ramidecodes.workers.dev`). Worker invokes `${WORKER_URL}/run` for self-kick. Same value as Vercel `WORKER_URL`; set via `wrangler secret put WORKER_URL` (required for prod so cron kicks the correct Worker).
 
 Clerk optional redirect URLs: see [.env.example](../.env.example). Model ID for signal extraction is hardcoded in `src/lib/ai-models.ts`; see [docs/MODELS.md](MODELS.md).
 

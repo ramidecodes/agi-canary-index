@@ -98,9 +98,8 @@ Worker configuration is in `wrangler.jsonc`:
   - Prod: `agi-canary-documents-prod`
 - **Environment Variables:**
   - `BATCH_SIZE`: Jobs per `/run` invocation (default: 15)
-  - `TIME_BUDGET_MS`: Time budget per run (default: 20000)
-  - `WORKER_URL`: Base Worker URL for self-kick (same as Vercel; Worker builds `/run` from it). Optional; set if using custom domain.
-- `RUNNER_URL`: Full URL to `/run` (optional override)
+  - `TIME_BUDGET_MS`: Time budget per run (default: 180000, 3 min)
+  - `WORKER_URL`: Base Worker URL for self-kick (Worker invokes `${WORKER_URL}/run`). Set for prod so cron kicks the prod Worker; same value as Vercel `WORKER_URL`.
 
 ## Vercel Environment Variables
 

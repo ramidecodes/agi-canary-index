@@ -8,6 +8,7 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  // 0 3 * * * = 3:00 UTC daily; applies to dev and prod unless overridden under env.<name>.triggers
   "triggers": {
     "crons": ["0 3 * * *"]
   },
