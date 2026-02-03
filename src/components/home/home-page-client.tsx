@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { CanaryStrip } from "./canary-strip";
 import { AutonomyThermometer } from "./autonomy-thermometer";
 import { DailyBriefCard } from "./daily-brief-card";
@@ -28,22 +28,38 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 function useCanaryFilterUrlSync() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const activeCanaryFilter = useHomeStore((s) => s.activeCanaryFilter);
   const setCanaryFilter = useHomeStore((s) => s.setCanaryFilter);
+  const hasMountedRef = useRef(false);
 
   useEffect(() => {
+    if (pathname !== "/") return;
     const filter = searchParams.get("filter");
     setCanaryFilter(filter ?? null);
-  }, [searchParams, setCanaryFilter]);
+    hasMountedRef.current = true;
+  }, [pathname, searchParams, setCanaryFilter]);
 
   useEffect(() => {
+    if (pathname !== "/") return;
+    // Avoid running URL sync before initial URL -> store hydration completes
+    if (!hasMountedRef.current) return;
     const current = searchParams.get("filter");
     if (current === activeCanaryFilter) return;
     const path = activeCanaryFilter
       ? `/?filter=${encodeURIComponent(activeCanaryFilter)}`
       : "/";
     router.replace(path, { scroll: false });
-  }, [activeCanaryFilter, router, searchParams]);
+  }, [activeCanaryFilter, pathname, router, searchParams]);
+
+  // Clear filter when leaving the homepage so returning to Home lands on a clean `/`.
+  useEffect(() => {
+    if (pathname !== "/") return;
+    return () => {
+      setCanaryFilter(null);
+      hasMountedRef.current = false;
+    };
+  }, [pathname, setCanaryFilter]);
 }
 
 export function HomePageClient() {
