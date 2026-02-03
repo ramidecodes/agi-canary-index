@@ -191,7 +191,7 @@ async function seed() {
     }
   }
   console.log(
-    `  Inserted ${inserted}, updated ${updated} sources; ${SEED_SOURCES.length} total in seed.`
+    `  Inserted ${inserted}, updated ${updated} sources; ${SEED_SOURCES.length} total in seed.`,
   );
 
   console.log("Seeding timeline events (curated AI milestones)...");
@@ -497,7 +497,7 @@ async function seed() {
       category: e.category,
       sourceUrl: e.sourceUrl ?? null,
       axesImpacted: e.axesImpacted ?? null,
-    }))
+    })),
   );
 
   console.log(`  Inserted ${timelineSeedData.length} timeline events.`);

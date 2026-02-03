@@ -4,29 +4,22 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import {
-  items,
-  documents,
-  pipelineRuns,
-  signals,
-} from "../../src/lib/db/schema";
+import { items, documents, pipelineRuns, signals } from "@/lib/db/schema";
 import type { Job, NeonDatabase } from "./db";
 import { enqueueJob } from "./db";
-import type { Env } from "./index";
-import { runDiscovery } from "../../src/lib/discovery/run";
-import { runAcquisition } from "../../src/lib/acquisition/run";
-import { extractSignals } from "../../src/lib/signal/extract";
-import { createDailySnapshot } from "../../src/lib/signal/snapshot";
-// R2 accessed via Workers binding in extract stage
-import type { SignalExtraction } from "../../src/lib/signal/schemas";
-// R2 is accessed via Workers binding, not S3 API
+import type { PipelineEnv } from "./types";
+import { runDiscovery } from "@/lib/discovery/run";
+import { runAcquisition } from "@/lib/acquisition/run";
+import { extractSignals } from "@/lib/signal/extract";
+import { createDailySnapshot } from "@/lib/signal/snapshot";
+import type { SignalExtraction } from "@/lib/signal/schemas";
 
 /**
  * Process a job based on its type.
  */
 export async function processJob(
   job: Job,
-  env: Env,
+  env: PipelineEnv,
   db: NeonDatabase,
 ): Promise<void> {
   switch (job.type) {
@@ -45,18 +38,14 @@ export async function processJob(
   }
 }
 
-/**
- * DISCOVER stage: Run discovery pipeline and enqueue FETCH jobs for discovered items.
- */
 async function processDiscover(
   job: Job,
-  env: Env,
+  env: PipelineEnv,
   db: NeonDatabase,
 ): Promise<void> {
   const dryRun = job.payload.dryRun === true;
 
   try {
-    // Run discovery (use job.runId when from Worker to avoid orphaned runs)
     const stats = await runDiscovery({
       db,
       options: {
@@ -67,7 +56,6 @@ async function processDiscover(
       },
     });
 
-    // Enqueue FETCH jobs for discovered items
     if (stats.insertedItemIds && stats.insertedItemIds.length > 0) {
       for (const itemId of stats.insertedItemIds) {
         const item = await db
@@ -88,7 +76,6 @@ async function processDiscover(
       }
     }
   } catch (err) {
-    // Ensure pipeline_run is marked failed when discovery job fails (e.g. timeout before runDiscovery catches)
     if (job.runId) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await db
@@ -104,21 +91,14 @@ async function processDiscover(
   }
 }
 
-/**
- * FETCH stage: Acquire content for an item and enqueue EXTRACT job.
- */
 async function processFetch(
   job: Job,
-  env: Env,
+  env: PipelineEnv,
   db: NeonDatabase,
 ): Promise<void> {
   const itemId = job.payload.itemId as string;
-  if (!itemId) {
-    throw new Error("FETCH job missing itemId");
-  }
+  if (!itemId) throw new Error("FETCH job missing itemId");
 
-  // Run acquisition for this item
-  // Convert Workers R2Binding to R2Bucket interface
   const r2Bucket = {
     async put(
       key: string,
@@ -129,16 +109,8 @@ async function processFetch(
         httpMetadata: options?.httpMetadata,
       });
     },
-    async get(key: string): Promise<{
-      body: ReadableStream;
-      metadata?: Record<string, unknown>;
-    } | null> {
-      const obj = await env.DOCUMENTS.get(key);
-      if (!obj) return null;
-      return {
-        body: obj.body,
-        metadata: obj.customMetadata,
-      };
+    async get(key: string) {
+      return env.DOCUMENTS.get(key);
     },
   };
 
@@ -151,7 +123,6 @@ async function processFetch(
     { itemIds: [itemId] },
   );
 
-  // If acquisition succeeded, enqueue EXTRACT job
   if (stats.itemsAcquired > 0) {
     const doc = await db
       .select({ id: documents.id })
@@ -171,20 +142,14 @@ async function processFetch(
   }
 }
 
-/**
- * EXTRACT stage: Extract signals from document and enqueue MAP job.
- */
 async function processExtract(
   job: Job,
-  env: Env,
+  env: PipelineEnv,
   db: NeonDatabase,
 ): Promise<void> {
   const documentId = job.payload.documentId as string;
-  if (!documentId) {
-    throw new Error("EXTRACT job missing documentId");
-  }
+  if (!documentId) throw new Error("EXTRACT job missing documentId");
 
-  // Get document with source info
   const docRows = await db.execute(sql`
     SELECT 
       d.id,
@@ -217,15 +182,13 @@ async function processExtract(
     published_at: Date | null;
   };
 
-  // Fetch content from R2 (Workers binding)
   const r2Obj = await env.DOCUMENTS.get(doc.clean_blob_key);
   if (!r2Obj) {
     throw new Error(`Content not found in R2: ${doc.clean_blob_key}`);
   }
-  const contentBytes = await r2Obj.arrayBuffer();
+  const contentBytes = await new Response(r2Obj.body).arrayBuffer();
   const content = new TextDecoder().decode(contentBytes);
 
-  // Extract signals
   const extraction = await extractSignals(
     content,
     {
@@ -238,7 +201,6 @@ async function processExtract(
     env.OPENROUTER_API_KEY,
   );
 
-  // Store extraction result and enqueue MAP job
   await db
     .update(documents)
     .set({
@@ -249,22 +211,16 @@ async function processExtract(
   await enqueueJob(db, {
     runId: job.runId,
     type: "map",
-    payload: { documentId, extractionId: documentId }, // Use doc ID as extraction ID
+    payload: { documentId, extractionId: documentId },
     dedupeKey: `MAP:${documentId}`,
     priority: 70,
   });
 }
 
-/**
- * MAP stage: Create signals from extracted claims and enqueue AGGREGATE job.
- */
 async function processMap(job: Job, db: NeonDatabase): Promise<void> {
   const documentId = job.payload.documentId as string;
-  if (!documentId) {
-    throw new Error("MAP job missing documentId");
-  }
+  if (!documentId) throw new Error("MAP job missing documentId");
 
-  // Get document with extraction metadata
   const docRows = await db.execute(sql`
     SELECT 
       d.id,
@@ -299,8 +255,6 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
   const trustWeight = doc.trust_weight;
   const scoringVersion = "v1";
   const CONFIDENCE_THRESHOLD = 0.3;
-
-  // Process each claim
   const claims = extraction.claims ?? [];
 
   for (const claim of claims) {
@@ -339,7 +293,6 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
     });
   }
 
-  // Mark document as processed
   await db
     .update(documents)
     .set({
@@ -347,7 +300,6 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
     })
     .where(eq(documents.id, documentId));
 
-  // Enqueue AGGREGATE job for the date
   const dateStr = new Date().toISOString().slice(0, 10);
   await enqueueJob(db, {
     runId: job.runId,
@@ -358,9 +310,6 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
   });
 }
 
-/**
- * AGGREGATE stage: Create daily snapshot from signals.
- */
 async function processAggregate(job: Job, db: NeonDatabase): Promise<void> {
   const dateStr =
     (job.payload.date as string) ?? new Date().toISOString().slice(0, 10);

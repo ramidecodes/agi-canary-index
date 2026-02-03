@@ -4,8 +4,8 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import { jobs } from "../../src/lib/db/schema";
-import type { createDb } from "../../src/lib/db";
+import { jobs } from "@/lib/db/schema";
+import type { createDb } from "@/lib/db";
 
 export type Job = typeof jobs.$inferSelect;
 export type NeonDatabase = ReturnType<typeof createDb>;
@@ -48,7 +48,7 @@ const BACKOFF_DELAYS = [
  */
 export async function releaseStaleJobLocks(
   db: NeonDatabase,
-  staleMinutes: number
+  staleMinutes: number,
 ): Promise<void> {
   await db.execute(sql`
     UPDATE jobs
@@ -68,9 +68,8 @@ export async function releaseStaleJobLocks(
 export async function claimJobs(
   db: NeonDatabase,
   limit: number,
-  lockedBy: string
+  lockedBy: string,
 ): Promise<Job[]> {
-  // Use raw SQL for SKIP LOCKED (Drizzle doesn't support it directly)
   const result = await db.execute(sql`
     WITH cte AS (
       SELECT id
@@ -99,7 +98,7 @@ export async function claimJobs(
  */
 export async function markJobDone(
   db: NeonDatabase,
-  jobId: bigint
+  jobId: bigint,
 ): Promise<void> {
   await db
     .update(jobs)
@@ -118,7 +117,7 @@ export async function markJobDone(
 export async function markJobFailed(
   db: NeonDatabase,
   jobId: bigint,
-  error: string
+  error: string,
 ): Promise<void> {
   const jobRows = await db
     .select()
@@ -133,7 +132,6 @@ export async function markJobFailed(
   const maxAttempts = job.maxAttempts;
 
   if (attempts >= maxAttempts) {
-    // Dead-letter: no more retries
     await db
       .update(jobs)
       .set({
@@ -146,7 +144,6 @@ export async function markJobFailed(
       })
       .where(eq(jobs.id, jobId));
   } else {
-    // Retry with backoff
     const delaySeconds =
       BACKOFF_DELAYS[Math.min(attempts - 1, BACKOFF_DELAYS.length - 1)];
     const availableAt = new Date(Date.now() + delaySeconds * 1000);
@@ -192,9 +189,8 @@ export async function enqueueJob(
     dedupeKey?: string;
     priority?: number;
     maxAttempts?: number;
-  }
+  },
 ): Promise<void> {
-  // If dedupeKey is provided, check for existing job
   if (job.dedupeKey) {
     const existing = await db.execute(sql`
       SELECT id FROM jobs
@@ -204,10 +200,7 @@ export async function enqueueJob(
       LIMIT 1
     `);
 
-    if (existing.rows.length > 0) {
-      // Job already exists, skip
-      return;
-    }
+    if (existing.rows.length > 0) return;
   }
 
   await db.insert(jobs).values({

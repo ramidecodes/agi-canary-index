@@ -8,14 +8,11 @@ Neon Project ID: young-boat-58197248
 
 ```
 agi-canary-index/
+├── .github/workflows/        # GitHub Actions (e.g. pipeline.yml for ETL)
 ├── drizzle/                 # Drizzle migrations and meta
 ├── docs/                     # Project documentation
 ├── public/                   # Static assets
-├── scripts/                  # Infra scripts (provision R2, teardown, secrets)
-├── workers/                  # Cloudflare Workers (ETL pipeline)
-│   └── pipeline/            # Worker entry point and stage processors
-├── wrangler.jsonc           # Cloudflare Worker config (cron, R2, env)
-├── vercel.json               # Vercel Cron (deprecated, kept for backward compat)
+├── scripts/                  # Infra scripts (provision R2, teardown, pipeline runner)
 ├── src/
 │   ├── app/                  # Next.js App Router
 │   ├── lib/                  # Shared libraries and services
@@ -63,16 +60,13 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
   - `[id]/route.ts` — PATCH update
   - `test-fetch/route.ts` — POST test fetch (validate URL)
   - `bulk/route.ts` — POST bulk enable/disable/change tier
-- **`api/admin/pipeline/`** — Pipeline triggers (Clerk auth); **DEPRECATED** — use Cloudflare Worker `/run` and `/jobs` endpoints instead
-  - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`)
+- **`api/admin/pipeline/`** — Pipeline triggers (Clerk auth)
+  - `discover/route.ts` — POST manual discovery (body: `{ dryRun?: boolean }`); enqueues DISCOVER job (pipeline runs via GitHub Actions)
   - `acquire/route.ts` — POST manual acquisition (Firecrawl + R2)
   - `process/route.ts` — POST signal processing (body: `{ documentIds?: string[] }`); AI extraction, signal creation
   - `snapshot/route.ts` — POST daily snapshot (body: `{ date?: string }`); aggregates signals for date
 - **`api/admin/jobs/`** — Job queue status API (Clerk auth)
   - `route.ts` — GET job counts by status/type, recent jobs, active runs
-- **`api/admin/worker/`** — Worker proxy API (Clerk auth, keeps INTERNAL_TOKEN server-side)
-  - `kick/route.ts` — POST kick the Worker runner
-- **`api/pipeline/cron/`** — Vercel Cron entry (Bearer CRON_SECRET); **DEPRECATED** — use Cloudflare Worker instead
 - **`api/admin/documents/[id]/content/`** — Document content
   - `route.ts` — GET markdown from R2
 - **`api/snapshot/`** — Public snapshot API
@@ -209,6 +203,11 @@ Shared code: DB, AI models, and future services.
   - `snapshot.ts` — Daily snapshot aggregation (axis scores from signals)
   - `index.ts` — Re-exports
 - **`r2.ts`** — R2 S3 client for document fetch (Next.js app)
+- **`pipeline/`** — ETL pipeline (job queue + stages); used by GitHub Actions runner and admin discover
+  - `db.ts` — Job queue: claimJobs, markJobDone, markJobFailed, releaseStaleJobLocks, enqueueJob, createPipelineRun
+  - `stages.ts` — Stage processors: DISCOVER, FETCH, EXTRACT, MAP, AGGREGATE
+  - `types.ts` — PipelineEnv (DB, R2, API keys, batch config)
+  - `index.ts` — Re-exports
 
 ### `src/middleware.ts`
 
@@ -228,7 +227,8 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **`base-descriptions/`** — Base context for AI and product
 - **AUTH.md** — Authentication (Clerk)
 - **DATABASE.md** — Schema, migrations, seed, JSONB shapes
-- **INFRASTRUCTURE.md** — Neon, Vercel, Cloudflare, R2
+- **INFRASTRUCTURE.md** — Neon, Vercel, GitHub Actions, R2
+- **GITHUB-ACTIONS-SETUP.md** — Step-by-step GitHub Actions pipeline configuration (secrets, manual run)
 - **DISCOVERY.md** — Discovery pipeline implementation guide
 - **ACQUISITION.md** — Acquisition pipeline implementation guide
 - **SIGNAL-PROCESSING.md** — Signal processing pipeline (AI extraction, snapshot)
@@ -238,33 +238,30 @@ Clerk middleware: protects `/admin(.*)` and `/api/admin(.*)`; unauthenticated re
 - **TIMELINE.md** — Timeline page, APIs, event categories
 - **SIGNAL-EXPLORER.md** — Signal Explorer page, APIs, filters, export
 - **DAILY-BRIEF.md** — Daily Brief & News page, APIs, copy brief, share
-- **WORKER-SETUP.md** — Cloudflare Worker setup, deployment, and production env vars
 - **STRUCTURE.md** — This file
+- **features/20-pipeline-github-actions.md** — Pipeline on GitHub Actions (replaces Cloudflare Workers)
 
-## `workers/`
+## `.github/workflows/`
 
-Cloudflare Worker for ETL pipeline orchestration:
-
-- **`pipeline/index.ts`** — Worker entry point with `scheduled()` (cron) and `fetch()` (HTTP) handlers
-- **`pipeline/db.ts`** — Job queue operations: claiming (SKIP LOCKED), marking done/failed, backoff logic
-- **`pipeline/stages.ts`** — Stage processors: DISCOVER, FETCH, EXTRACT, MAP, AGGREGATE
+- **`pipeline.yml`** — ETL pipeline: scheduled daily (3 AM UTC) and `workflow_dispatch`. Runs `pnpm run pipeline:gha` with Neon + R2 env.
 
 ## Scripts (from `package.json`)
 
-| Script                    | Description                        |
-| ------------------------- | ---------------------------------- |
-| `pnpm dev`                | Next.js dev server                 |
-| `pnpm build`              | Next.js build                      |
-| `pnpm lint`               | Biome check                        |
-| `pnpm format`             | Biome format                       |
-| `pnpm db:generate`        | Generate migration from schema     |
-| `pnpm db:migrate`         | Apply migrations                   |
-| `pnpm db:push`            | Push schema (dev)                  |
-| `pnpm db:studio`          | Drizzle Studio                     |
-| `pnpm db:seed`            | Run seed script                    |
-| `pnpm infra:provision`    | Create R2 bucket                   |
-| `pnpm infra:teardown`     | Remove R2 bucket for env           |
-| `pnpm infra:secrets`      | Interactive Worker secrets setup   |
-| `pnpm worker:dev`         | Run Worker locally (wrangler dev)  |
-| `pnpm worker:deploy`      | Deploy Worker to Cloudflare (dev)  |
-| `pnpm worker:deploy:prod` | Deploy Worker to Cloudflare (prod) |
+| Script                         | Description                        |
+| ------------------------------ | ---------------------------------- |
+| `pnpm dev`                     | Next.js dev server                 |
+| `pnpm build`                   | Next.js build                      |
+| `pnpm lint`                    | Biome check                        |
+| `pnpm format`                  | Biome format                       |
+| `pnpm db:generate`             | Generate migration from schema     |
+| `pnpm db:migrate`              | Apply migrations                   |
+| `pnpm db:push`                 | Push schema (dev)                  |
+| `pnpm db:studio`               | Drizzle Studio                     |
+| `pnpm db:seed`                 | Run seed script                    |
+| `pnpm infra:provision`         | Create R2 bucket                   |
+| `pnpm infra:teardown`          | Remove R2 bucket for env           |
+| `pnpm pipeline:gha`            | Run ETL pipeline (same as GHA job) |
+| `pnpm pipeline:discover:local` | Run discovery only (local)         |
+| `pnpm pipeline:acquire:local`  | Run acquisition only (local)       |
+| `pnpm pipeline:signal:local`   | Run signal processing only (local) |
+| `pnpm pipeline:snapshot:local` | Run snapshot only (local)          |

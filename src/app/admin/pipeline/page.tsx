@@ -131,14 +131,9 @@ export default function AdminPipelinePage() {
       setDiscoverResult(data);
       if (res.ok) {
         if (data.jobEnqueued) {
-          const runnerInfo =
-            data.processed != null && data.remaining != null
-              ? ` Runner: ${data.processed} processed, ${data.remaining} remaining.`
-              : "";
           toast.success(
-            (data.message ??
-              "Discovery job enqueued. Check Job Queue Status for progress.") +
-              runnerInfo,
+            data.message ??
+              "Discovery job enqueued. Pipeline runs via GitHub Actions; check Job Queue Status for progress.",
           );
           refreshJobStatus();
         } else if (
@@ -251,27 +246,6 @@ export default function AdminPipelinePage() {
     }
   }, [snapshotDate]);
 
-  const handleKickRunner = useCallback(async () => {
-    try {
-      // Proxy through Next.js API to keep INTERNAL_TOKEN server-side
-      const res = await fetch("/api/admin/worker/kick", {
-        method: "POST",
-      });
-
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        toast.success(
-          `Runner kicked: ${data.processed} processed, ${data.remaining} remaining`,
-        );
-        refreshJobStatus();
-      } else {
-        toast.error(data.error || "Failed to kick runner");
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to kick runner");
-    }
-  }, [refreshJobStatus]);
-
   return (
     <div className="space-y-6">
       <div>
@@ -294,12 +268,9 @@ export default function AdminPipelinePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                refreshJobStatus();
-                handleKickRunner();
-              }}
+              onClick={() => refreshJobStatus()}
             >
-              Kick Runner
+              Refresh
             </Button>
           </div>
         </CardHeader>
@@ -380,11 +351,7 @@ export default function AdminPipelinePage() {
               {discoverResult.ok
                 ? discoverResult.jobEnqueued
                   ? (discoverResult.message ??
-                      "Job enqueued. Check Job Queue Status above for progress.") +
-                    (discoverResult.processed != null &&
-                    discoverResult.remaining != null
-                      ? ` (Runner: ${discoverResult.processed} processed, ${discoverResult.remaining} remaining)`
-                      : "")
+                    "Job enqueued. Pipeline runs via GitHub Actions; check Job Queue Status above for progress.")
                   : discoverResult.skipped &&
                       discoverResult.skipReason === "run_already_in_progress"
                     ? "Discovery skipped: a run is already in progress. Click again to force a new run."
