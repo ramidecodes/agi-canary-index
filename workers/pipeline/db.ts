@@ -10,6 +10,30 @@ import type { createDb } from "../../src/lib/db";
 export type Job = typeof jobs.$inferSelect;
 export type NeonDatabase = ReturnType<typeof createDb>;
 
+/** Raw row from Postgres RETURNING *; driver may return snake_case or camelCase. */
+type RawJobRow = Record<string, unknown>;
+
+function rawRowToJob(row: RawJobRow): Job {
+  return {
+    id: row.id as bigint,
+    runId: (row.runId ?? row.run_id) as string,
+    type: row.type as Job["type"],
+    payload: row.payload as Record<string, unknown>,
+    status: row.status as Job["status"],
+    priority: Number(row.priority),
+    attempts: Number(row.attempts),
+    maxAttempts: Number(row.maxAttempts ?? row.max_attempts),
+    availableAt: (row.availableAt ?? row.available_at) as Date,
+    lockedAt: (row.lockedAt ?? row.locked_at) as Date | null,
+    lockedBy: (row.lockedBy ?? row.locked_by) as string | null,
+    lastError: (row.lastError ?? row.last_error) as string | null,
+    dedupeKey: (row.dedupeKey ?? row.dedupe_key) as string | null,
+    result: row.result as Record<string, unknown> | null,
+    createdAt: (row.createdAt ?? row.created_at) as Date,
+    updatedAt: (row.updatedAt ?? row.updated_at) as Date,
+  };
+}
+
 const BACKOFF_DELAYS = [
   60, // 1st fail: +1 minute
   300, // 2nd: +5 minutes
@@ -19,12 +43,32 @@ const BACKOFF_DELAYS = [
 ];
 
 /**
+ * Release stale job locks: reset jobs stuck in "running" longer than staleMinutes
+ * so they can be re-claimed (status -> retry, available_at = now, clear lock).
+ */
+export async function releaseStaleJobLocks(
+  db: NeonDatabase,
+  staleMinutes: number
+): Promise<void> {
+  await db.execute(sql`
+    UPDATE jobs
+    SET status = 'retry',
+        available_at = NOW(),
+        locked_at = NULL,
+        locked_by = NULL,
+        updated_at = NOW()
+    WHERE status = 'running'
+      AND locked_at < NOW() - INTERVAL '1 minute' * ${staleMinutes}
+  `);
+}
+
+/**
  * Claim a batch of jobs using SKIP LOCKED for safe concurrent claiming.
  */
 export async function claimJobs(
   db: NeonDatabase,
   limit: number,
-  lockedBy: string,
+  lockedBy: string
 ): Promise<Job[]> {
   // Use raw SQL for SKIP LOCKED (Drizzle doesn't support it directly)
   const result = await db.execute(sql`
@@ -46,7 +90,8 @@ export async function claimJobs(
     RETURNING *
   `);
 
-  return result.rows as Job[];
+  const rows = (result.rows ?? []) as RawJobRow[];
+  return rows.map(rawRowToJob);
 }
 
 /**
@@ -54,7 +99,7 @@ export async function claimJobs(
  */
 export async function markJobDone(
   db: NeonDatabase,
-  jobId: bigint,
+  jobId: bigint
 ): Promise<void> {
   await db
     .update(jobs)
@@ -73,7 +118,7 @@ export async function markJobDone(
 export async function markJobFailed(
   db: NeonDatabase,
   jobId: bigint,
-  error: string,
+  error: string
 ): Promise<void> {
   const jobRows = await db
     .select()
@@ -147,7 +192,7 @@ export async function enqueueJob(
     dedupeKey?: string;
     priority?: number;
     maxAttempts?: number;
-  },
+  }
 ): Promise<void> {
   // If dedupeKey is provided, check for existing job
   if (job.dedupeKey) {

@@ -38,6 +38,7 @@
         "BATCH_SIZE": "15",
         "TIME_BUDGET_MS": "180000"
       }
+      // limits.cpu_ms (e.g. 300000) is paid-plan only; free plan is 10ms CPU per request
     }
   }
 }

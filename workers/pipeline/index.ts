@@ -6,6 +6,7 @@ import {
   enqueueJob,
   markJobDone,
   markJobFailed,
+  releaseStaleJobLocks,
 } from "./db";
 import { processJob } from "./stages";
 
@@ -99,8 +100,12 @@ function isAuthorized(request: Request, env: Env): boolean {
   return token === env.INTERNAL_TOKEN;
 }
 
+const STALE_JOB_LOCK_MINUTES = 15;
+
 async function handleRun(env: Env, ctx: ExecutionContext): Promise<Response> {
   const db = createDb(env.DATABASE_URL);
+  await releaseStaleJobLocks(db, STALE_JOB_LOCK_MINUTES);
+
   const started = Date.now();
   const timeBudget = parseInt(env.TIME_BUDGET_MS, 10) || 180000; // 3 min default for discovery
   const batchSize = parseInt(env.BATCH_SIZE, 10) || 15;
