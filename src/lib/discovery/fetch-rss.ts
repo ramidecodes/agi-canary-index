@@ -9,7 +9,31 @@ import type { DiscoveredItem } from "./types";
 import { canonicalizeUrl, urlHash } from "./url";
 
 const FETCH_TIMEOUT_MS = 30_000;
-const MAX_ITEMS = 500;
+const MAX_ITEMS_DEFAULT = 50;
+
+/** Per-source caps to avoid one feed dominating. */
+const MAX_ITEMS_BY_SOURCE: Record<string, number> = {
+  "arXiv cs.AI": 50,
+  "arXiv cs.LG": 50,
+  "Medium AI Tag": 30,
+  "Medium ML Tag": 30,
+};
+
+/** URL path segments to skip (navigation, non-article pages). */
+const BLOCKLIST_PATH_SEGMENTS = [
+  "/contact",
+  "/contacts",
+  "/careers",
+  "/jobs",
+  "/search",
+  "/subscribe",
+  "/login",
+  "/signup",
+  "/about",
+  "/author/",
+  "/tag/",
+  "/category/",
+];
 
 /** Fix common RSS/XML issues before parsing. */
 function sanitizeRssXml(xml: string): string {
@@ -27,10 +51,23 @@ function sanitizeRssXml(xml: string): string {
   return out;
 }
 
+function isBlocklistedUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return BLOCKLIST_PATH_SEGMENTS.some(
+      (seg) => path === seg || path.startsWith(seg),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchRss(
   feedUrl: string,
   sourceId: string,
+  sourceName?: string,
 ): Promise<{ items: DiscoveredItem[]; error?: string }> {
+  const maxItems = MAX_ITEMS_BY_SOURCE[sourceName ?? ""] ?? MAX_ITEMS_DEFAULT;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -110,7 +147,7 @@ export async function fetchRss(
       const bDate = parseDate(b.pubDate ?? b.isoDate ?? b.dcDate);
       return bDate - aDate;
     });
-    const limited = sorted.slice(0, MAX_ITEMS);
+    const limited = sorted.slice(0, maxItems);
 
     const items: DiscoveredItem[] = [];
     let iter = 0;
@@ -123,6 +160,7 @@ export async function fetchRss(
       if (!link || typeof link !== "string") continue;
       const canonical = canonicalizeUrl(link);
       if (!canonical.startsWith("http")) continue;
+      if (isBlocklistedUrl(canonical)) continue;
       const hash = await urlHash(canonical);
       const pubDate = parseDate(entry.pubDate ?? entry.isoDate ?? entry.dcDate);
       items.push({

@@ -5,11 +5,14 @@
  */
 
 import { NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { dailySnapshots } from "@/lib/db/schema";
+import { dailySnapshots, signals } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
+
+/** Minimum signals in last 7 days to show a confident autonomy level. */
+const MIN_SIGNALS_FOR_CONFIDENCE = 10;
 
 /** Autonomy levels 0–4 as per FRED. Maps normalized 0–1 to level index. */
 const AUTONOMY_LEVELS = [
@@ -27,6 +30,27 @@ function normalizedToLevel(normalized: number): number {
 export async function GET() {
   try {
     const db = getDb();
+
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(signals)
+      .where(sql`${signals.createdAt} > NOW() - INTERVAL '7 days'`);
+
+    const totalSignalsLast7Days = Number(countRow?.count ?? 0);
+
+    if (totalSignalsLast7Days < MIN_SIGNALS_FOR_CONFIDENCE) {
+      return NextResponse.json({
+        insufficientData: true,
+        level: 0.35,
+        levelIndex: 1,
+        levelLabel: "Insufficient data",
+        uncertainty: 0.3,
+        levels: AUTONOMY_LEVELS,
+        lastUpdated: null,
+        message: "Need more signals for accurate assessment",
+      });
+    }
+
     const [row] = await db
       .select()
       .from(dailySnapshots)

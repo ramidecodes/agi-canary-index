@@ -1,6 +1,6 @@
 /**
  * Run the acquisition pipeline locally (no Worker).
- * Uses DATABASE_URL, FIRECRAWL_API_KEY, and R2 credentials from .env.
+ * Uses DATABASE_URL and R2 credentials from .env. No Firecrawl (RSS-only).
  *
  * Usage: pnpm run pipeline:acquire:local [-- --item-ids=id1,id2]
  */
@@ -23,7 +23,6 @@ function parseItemIds(): string[] | undefined {
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
-  const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
   const r2AccountId = process.env.R2_ACCOUNT_ID;
   const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID;
   const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
@@ -31,10 +30,6 @@ async function main() {
 
   if (!databaseUrl) {
     console.error("DATABASE_URL is required");
-    process.exit(1);
-  }
-  if (!firecrawlApiKey) {
-    console.error("FIRECRAWL_API_KEY is required");
     process.exit(1);
   }
   if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) {
@@ -53,10 +48,7 @@ async function main() {
     itemIds ? itemIds.join(",") : "next batch",
   );
 
-  const stats = await runAcquisition(
-    { db, firecrawlApiKey, r2Bucket },
-    { itemIds },
-  );
+  const stats = await runAcquisition({ db, r2Bucket }, { itemIds });
 
   console.log(JSON.stringify(stats, null, 2));
   console.log(

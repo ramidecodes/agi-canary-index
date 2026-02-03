@@ -8,7 +8,6 @@ import type { R2Bucket } from "@/lib/r2";
 export interface PipelineEnv {
   DATABASE_URL: string;
   OPENROUTER_API_KEY: string;
-  FIRECRAWL_API_KEY: string;
   DOCUMENTS: R2Bucket;
   BATCH_SIZE: string;
   TIME_BUDGET_MS: string;

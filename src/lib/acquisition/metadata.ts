@@ -1,10 +1,20 @@
 /**
- * Metadata extraction from Firecrawl response.
+ * Metadata extraction from Firecrawl response or from URL-only (RSS content fetch).
  * Maps Open Graph, article tags, and other metadata.
  */
 
 import type { ExtractedMetadata } from "./types";
 import type { FirecrawlScrapeResult } from "./types";
+
+/**
+ * Build minimal metadata when we only have the article URL (e.g. from RSS content fetch).
+ */
+export function extractMetadataFromUrl(url: string): ExtractedMetadata {
+  return {
+    sourceURL: url,
+    contentType: detectContentType({}, url),
+  };
+}
 
 function detectContentType(
   metadata: Record<string, unknown>,
@@ -44,6 +54,7 @@ function detectContentType(
 
 /**
  * Extract structured metadata from Firecrawl scrape result.
+ * For RSS-only pipeline, use extractMetadataFromUrl(url) instead.
  */
 export function extractMetadata(
   result: FirecrawlScrapeResult,
@@ -51,6 +62,10 @@ export function extractMetadata(
 ): ExtractedMetadata {
   const meta = result.data?.metadata ?? result.metadata ?? {};
   const m = meta as Record<string, unknown>;
+  const base = {
+    sourceURL: (m.sourceURL ?? url) as string | undefined,
+    contentType: detectContentType(m, url),
+  };
 
   return {
     title: (m.title ?? m["og:title"]) as string | undefined,
@@ -61,7 +76,6 @@ export function extractMetadata(
       | undefined,
     siteName: (m["og:site_name"] ?? m.siteName) as string | undefined,
     language: (m.language ?? m["og:locale"]) as string | undefined,
-    sourceURL: (m.sourceURL ?? url) as string | undefined,
-    contentType: detectContentType(m, url),
+    ...base,
   };
 }

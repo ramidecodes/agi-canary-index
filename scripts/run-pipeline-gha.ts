@@ -1,7 +1,7 @@
 /**
  * Pipeline runner for GitHub Actions.
  * Creates a run + DISCOVER job (cron mode), then drains the job queue until empty or time budget.
- * Requires env: DATABASE_URL, OPENROUTER_API_KEY, FIRECRAWL_API_KEY, R2_* (see createR2Bucket).
+ * Requires env: DATABASE_URL, OPENROUTER_API_KEY, R2_* (see createR2Bucket). No Firecrawl (RSS-only).
  *
  * Usage: pnpm run pipeline:gha
  * In GHA, set secrets and run this script; no .env (secrets are passed as env).
@@ -21,13 +21,21 @@ import {
 } from "../src/lib/pipeline";
 
 const STALE_JOB_LOCK_MINUTES = 15;
-const BATCH_SIZE = 15;
+const BATCH_SIZE = 25;
+const CONCURRENCY = 5;
 const TIME_BUDGET_MS = 55 * 60 * 1000; // 55 minutes
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+  return out;
+}
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-  const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
 
   if (!databaseUrl) {
     console.error("DATABASE_URL is required");
@@ -35,10 +43,6 @@ async function main() {
   }
   if (!openRouterApiKey) {
     console.error("OPENROUTER_API_KEY is required");
-    process.exit(1);
-  }
-  if (!firecrawlApiKey) {
-    console.error("FIRECRAWL_API_KEY is required");
     process.exit(1);
   }
 
@@ -60,7 +64,6 @@ async function main() {
   const env = {
     DATABASE_URL: databaseUrl,
     OPENROUTER_API_KEY: openRouterApiKey,
-    FIRECRAWL_API_KEY: firecrawlApiKey,
     DOCUMENTS: r2Bucket,
     BATCH_SIZE: String(BATCH_SIZE),
     TIME_BUDGET_MS: String(TIME_BUDGET_MS),
@@ -84,21 +87,29 @@ async function main() {
       continue;
     }
 
-    for (const job of jobs) {
-      try {
-        await processJob(job, env, db);
-        await markJobDone(db, job.id);
-        totalProcessed++;
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : String(e);
-        await markJobFailed(db, job.id, errorMsg);
-        console.error(
-          JSON.stringify({
-            event: "job_failed",
-            jobId: String(job.id),
-            error: errorMsg,
-          }),
-        );
+    const groups = chunk(jobs, CONCURRENCY);
+    for (const group of groups) {
+      const results = await Promise.allSettled(
+        group.map((job) => processJob(job, env, db)),
+      );
+      for (let i = 0; i < results.length; i++) {
+        const job = group[i];
+        const r = results[i];
+        if (r.status === "fulfilled") {
+          await markJobDone(db, job.id);
+          totalProcessed++;
+        } else {
+          const errorMsg =
+            r.reason instanceof Error ? r.reason.message : String(r.reason);
+          await markJobFailed(db, job.id, errorMsg);
+          console.error(
+            JSON.stringify({
+              event: "job_failed",
+              jobId: String(job.id),
+              error: errorMsg,
+            }),
+          );
+        }
       }
     }
 

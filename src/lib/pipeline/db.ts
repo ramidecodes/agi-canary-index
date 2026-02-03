@@ -63,22 +63,40 @@ export async function releaseStaleJobLocks(
 }
 
 /**
- * Claim a batch of jobs using SKIP LOCKED for safe concurrent claiming.
+ * Claim a batch of jobs using SKIP LOCKED, with source rotation so no single
+ * source dominates (round-robin by source_id for fetch/extract/map jobs).
  */
 export async function claimJobs(
   db: NeonDatabase,
   limit: number,
   lockedBy: string,
 ): Promise<Job[]> {
+  const poolSize = Math.max(limit * 3, 75);
   const result = await db.execute(sql`
-    WITH cte AS (
-      SELECT id
+    WITH locked AS (
+      SELECT id, priority, type, payload
       FROM jobs
       WHERE status IN ('pending', 'retry')
         AND available_at <= NOW()
-      ORDER BY priority ASC, id ASC
       FOR UPDATE SKIP LOCKED
-      LIMIT ${limit}
+      LIMIT ${poolSize}
+    ),
+    job_sources AS (
+      SELECT l.id, l.priority,
+        CASE l.type
+          WHEN 'fetch' THEN (SELECT i.source_id FROM items i WHERE i.id = (l.payload->>'itemId')::uuid LIMIT 1)
+          WHEN 'extract' THEN (SELECT i.source_id FROM documents d JOIN items i ON i.id = d.item_id WHERE d.id = (l.payload->>'documentId')::uuid LIMIT 1)
+          WHEN 'map' THEN (SELECT i.source_id FROM documents d JOIN items i ON i.id = d.item_id WHERE d.id = (l.payload->>'documentId')::uuid LIMIT 1)
+          ELSE NULL
+        END AS source_id
+      FROM locked l
+    ),
+    ranked AS (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY COALESCE(source_id::text, id::text) ORDER BY priority ASC, id ASC) AS rn
+      FROM job_sources
+    ),
+    cte AS (
+      SELECT id FROM ranked ORDER BY rn ASC, id ASC LIMIT ${limit}
     )
     UPDATE jobs
     SET status = 'running',

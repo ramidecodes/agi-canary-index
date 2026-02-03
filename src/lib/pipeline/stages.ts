@@ -117,7 +117,6 @@ async function processFetch(
   const stats = await runAcquisition(
     {
       db,
-      firecrawlApiKey: env.FIRECRAWL_API_KEY,
       r2Bucket,
     },
     { itemIds: [itemId] },
@@ -227,6 +226,7 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
       d.extracted_metadata,
       d.item_id,
       i.run_id,
+      i.url as item_url,
       s.trust_weight
     FROM documents d
     INNER JOIN items i ON d.item_id = i.id
@@ -244,6 +244,7 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
     extracted_metadata: SignalExtraction | null;
     item_id: string;
     run_id: string;
+    item_url: string | null;
     trust_weight: string;
   };
 
@@ -253,8 +254,9 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
 
   const extraction = doc.extracted_metadata;
   const trustWeight = doc.trust_weight;
+  const itemUrl = doc.item_url ?? "";
   const scoringVersion = "v1";
-  const CONFIDENCE_THRESHOLD = 0.3;
+  const CONFIDENCE_THRESHOLD = 0.5;
   const claims = extraction.claims ?? [];
 
   for (const claim of claims) {
@@ -267,7 +269,7 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
     if (!claim.axes_impacted?.length) continue;
 
     const citations = (claim.citations ?? []).map((c) => ({
-      url: c.url ?? "",
+      url: c.url && c.url.trim() !== "" ? c.url : itemUrl,
       quoted_span: c.text,
     }));
 
@@ -289,6 +291,7 @@ async function processMap(job: Job, db: NeonDatabase): Promise<void> {
         : null,
       confidence: String(Number(adjustedConfidence.toFixed(2))),
       citations,
+      sourceUrl: itemUrl || null,
       scoringVersion,
     });
   }

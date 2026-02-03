@@ -35,7 +35,6 @@ export async function GET(request: Request) {
 
   const dbUrl = process.env.DATABASE_URL;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const firecrawlKey = process.env.FIRECRAWL_API_KEY;
 
   if (!dbUrl || !openRouterKey) {
     return NextResponse.json(
@@ -54,20 +53,12 @@ export async function GET(request: Request) {
 
     let acquisitionStats = null;
     if (
-      firecrawlKey &&
       discoveryStats.itemsInserted > 0 &&
       discoveryStats.insertedItemIds?.length
     ) {
       const r2Bucket = createR2Bucket();
       const itemIds = discoveryStats.insertedItemIds.slice(0, 50);
-      acquisitionStats = await runAcquisition(
-        {
-          db,
-          firecrawlApiKey: firecrawlKey,
-          r2Bucket,
-        },
-        { itemIds },
-      );
+      acquisitionStats = await runAcquisition({ db, r2Bucket }, { itemIds });
     }
 
     return NextResponse.json({

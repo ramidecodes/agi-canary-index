@@ -39,13 +39,14 @@ const FETCHERS: Record<
   (
     src: {
       id: string;
+      name: string;
       url: string;
       queryConfig?: Record<string, unknown> | null;
     },
     apiKey: string,
   ) => Promise<{ items: DiscoveredItem[]; error?: string }>
 > = {
-  rss: (s) => fetchRss(s.url, s.id),
+  rss: (s) => fetchRss(s.url, s.id, s.name),
   search: (s, k) => fetchSearch(s.id, k, s.queryConfig ?? undefined),
   curated: (s) => fetchCurated(s.url, s.id),
   x: async () => ({ items: [], error: "X source type disabled" }),

@@ -1,6 +1,6 @@
 /**
  * Content acquisition pipeline.
- * Fetches content via Firecrawl, stores in R2, creates document records.
+ * Fetches content via direct HTTP + HTML parsing (RSS-only), stores in R2, creates document records.
  * @see docs/features/04-acquisition-pipeline.md
  */
 
@@ -12,6 +12,6 @@ export type {
   FirecrawlScrapeResult,
   AcquireItemResult,
 } from "./types";
-export { scrapeUrl } from "./firecrawl";
+export { fetchArticleContent } from "./rss-content";
 export { validateContent } from "./validate";
-export { extractMetadata } from "./metadata";
+export { extractMetadata, extractMetadataFromUrl } from "./metadata";

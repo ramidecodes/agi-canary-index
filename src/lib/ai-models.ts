@@ -6,10 +6,9 @@
 
 /**
  * Signal extraction: document → structured capability signals.
- * Claude Sonnet 4.5: 1M context, structured output support, strong document analysis.
- * See docs/MODELS.md
+ * Grok 4.1 Fast: cheaper, strong structured output. See docs/MODELS.md
  */
-export const SIGNAL_EXTRACTION_MODEL = "anthropic/claude-sonnet-4.5" as const;
+export const SIGNAL_EXTRACTION_MODEL = "x-ai/grok-4.1-fast" as const;
 
 /**
  * Web search discovery: find URLs via Perplexity Sonar (OpenRouter).

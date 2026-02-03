@@ -1,13 +1,14 @@
 /**
  * Content acquisition pipeline orchestration.
- * Fetches content via Firecrawl, validates, stores in R2, creates document records.
+ * Fetches content via direct HTTP + HTML parsing (RSS-only, no Firecrawl).
+ * Validates, stores in R2, creates document records.
  * @see docs/features/04-acquisition-pipeline.md
  */
 
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { documents, items, pipelineRuns } from "../db/schema";
-import { extractMetadata } from "./metadata";
-import { scrapeUrl } from "./firecrawl";
+import { extractMetadataFromUrl } from "./metadata";
+import { fetchArticleContent } from "./rss-content";
 import { validateContent } from "./validate";
 import type { AcquisitionRunStats, AcquireItemResult } from "./types";
 
@@ -29,7 +30,6 @@ export interface R2Bucket {
 
 export interface AcquisitionContext {
   db: ReturnType<typeof import("../db").createDb>;
-  firecrawlApiKey: string;
   r2Bucket: R2Bucket;
 }
 
@@ -37,9 +37,6 @@ export interface AcquisitionOptions {
   /** Specific item IDs to process; if not set, fetches up to BATCH_SIZE pending items */
   itemIds?: string[];
 }
-
-/** Permanent failure HTTP status codes (no retry) */
-const PERMANENT_FAILURE_CODES = [404, 410];
 
 type Db = AcquisitionContext["db"];
 
@@ -95,7 +92,7 @@ export async function runAcquisition(
   ctx: AcquisitionContext,
   options: AcquisitionOptions = {},
 ): Promise<AcquisitionRunStats> {
-  const { db, firecrawlApiKey, r2Bucket } = ctx;
+  const { db, r2Bucket } = ctx;
   const startMs = Date.now();
   const stats: AcquisitionRunStats = {
     itemsProcessed: 0,
@@ -124,7 +121,7 @@ export async function runAcquisition(
 
   for (let i = 0; i < toProcess.length; i++) {
     const item = toProcess[i];
-    const result = await acquireOne(db, r2Bucket, firecrawlApiKey, item);
+    const result = await acquireOne(db, r2Bucket, item);
     stats.itemsProcessed++;
     stats.perItem.push(result);
 
@@ -184,29 +181,22 @@ export async function runAcquisition(
 async function acquireOne(
   db: Db,
   r2Bucket: R2Bucket,
-  apiKey: string,
   item: { id: string; url: string },
 ): Promise<AcquireItemResult> {
-  const scrapeResult = await scrapeUrl({
-    url: item.url,
-    apiKey,
-    timeoutMs: 60_000,
+  const fetchResult = await fetchArticleContent(item.url, {
+    timeoutMs: 30_000,
   });
 
-  if (!scrapeResult.success) {
-    const errMsg = String(
-      scrapeResult.metadata?.error ?? "Scrape failed",
-    ).slice(0, 1024);
-    const statusCode = scrapeResult.metadata?.statusCode as number | undefined;
-    const permanentFail =
-      statusCode != null && PERMANENT_FAILURE_CODES.includes(statusCode);
-
-    await markItemFailed(db, item.id, errMsg, permanentFail);
+  if (!fetchResult.success) {
+    const errMsg =
+      fetchResult.wordCount === 0
+        ? "Fetch failed or empty response"
+        : `Content too short (${fetchResult.wordCount} words)`;
+    await markItemFailed(db, item.id, errMsg, false);
     return { itemId: item.id, success: false, error: errMsg };
   }
 
-  const rawMarkdown = scrapeResult.data?.markdown ?? "";
-  const validation = validateContent(rawMarkdown);
+  const validation = validateContent(fetchResult.content);
 
   if (!validation.valid || validation.paywalled) {
     const errMsg = validation.paywalled
@@ -216,7 +206,7 @@ async function acquireOne(
     return { itemId: item.id, success: false, error: errMsg };
   }
 
-  const extractedMeta = extractMetadata(scrapeResult, item.url);
+  const extractedMeta = extractMetadataFromUrl(item.url);
   const key = blobKey(item.id);
 
   try {

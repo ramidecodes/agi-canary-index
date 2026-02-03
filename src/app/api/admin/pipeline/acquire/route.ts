@@ -2,7 +2,7 @@
  * Manual acquisition pipeline trigger.
  * POST /api/admin/pipeline/acquire
  * Body: { itemIds?: string[] }
- * Runs acquisition directly via Firecrawl + R2.
+ * Runs acquisition via direct HTTP fetch + R2 (RSS-only, no Firecrawl).
  * @see docs/features/04-acquisition-pipeline.md
  */
 
@@ -19,14 +19,6 @@ export async function POST(request: Request) {
   const authRes = await requireAuth();
   if (authRes) return authRes;
 
-  const firecrawlKey = process.env.FIRECRAWL_API_KEY;
-  if (!firecrawlKey) {
-    return NextResponse.json(
-      { error: "FIRECRAWL_API_KEY not configured", ok: false },
-      { status: 500 },
-    );
-  }
-
   let body: { itemIds?: string[] } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -38,11 +30,7 @@ export async function POST(request: Request) {
     const db = getDb();
     const r2Bucket = createR2Bucket();
     const stats = await runAcquisition(
-      {
-        db,
-        firecrawlApiKey: firecrawlKey,
-        r2Bucket,
-      },
+      { db, r2Bucket },
       { itemIds: body.itemIds },
     );
     return NextResponse.json({ ok: true, ...stats });

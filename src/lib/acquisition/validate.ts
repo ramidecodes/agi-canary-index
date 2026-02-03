@@ -4,6 +4,7 @@
  */
 
 const MIN_CONTENT_LENGTH = 200;
+const MIN_WORD_COUNT = 300;
 const MAX_CONTENT_LENGTH = 100_000;
 
 const PAYWALL_INDICATORS = [
@@ -37,12 +38,16 @@ export function validateContent(rawContent: string): ValidationResult {
 
   const paywalled = PAYWALL_INDICATORS.some((re) => re.test(content));
 
-  if (content.length < MIN_CONTENT_LENGTH) {
+  const wordCountInitial = countWords(content);
+  if (
+    content.length < MIN_CONTENT_LENGTH ||
+    wordCountInitial < MIN_WORD_COUNT
+  ) {
     return {
       valid: false,
       paywalled,
       content,
-      wordCount: countWords(content),
+      wordCount: wordCountInitial,
     };
   }
 

@@ -276,6 +276,7 @@ export const signals = pgTable(
     confidence: decimal("confidence", { precision: 4, scale: 2 }).notNull(),
     citations:
       jsonb("citations").$type<Array<{ url: string; quoted_span?: string }>>(),
+    sourceUrl: varchar("source_url", { length: 2048 }),
     scoringVersion: varchar("scoring_version", { length: 64 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
