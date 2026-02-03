@@ -24,19 +24,19 @@ export interface NewsQueryParams {
 /** Cursor = base64(createdAt + ":" + signalId) for next page. */
 export async function queryNews(
   db: ReturnType<typeof getDb>,
-  params: NewsQueryParams,
+  params: NewsQueryParams
 ): Promise<{ articles: NewsArticle[]; nextCursor: string | null }> {
   const limit = Math.min(params.limit ?? 20, 50);
   const conditions: SQL[] = [];
 
   if (params.dateFrom && DATE_REGEX.test(params.dateFrom)) {
     conditions.push(
-      gte(signals.createdAt, new Date(`${params.dateFrom}T00:00:00Z`)),
+      gte(signals.createdAt, new Date(`${params.dateFrom}T00:00:00Z`))
     );
   }
   if (params.dateTo && DATE_REGEX.test(params.dateTo)) {
     conditions.push(
-      lte(signals.createdAt, new Date(`${params.dateTo}T23:59:59.999Z`)),
+      lte(signals.createdAt, new Date(`${params.dateTo}T23:59:59.999Z`))
     );
   }
   if (
@@ -44,7 +44,12 @@ export async function queryNews(
     VALID_TIERS.includes(params.sourceTier as (typeof VALID_TIERS)[number])
   ) {
     conditions.push(
-      eq(sources.tier, params.sourceTier as "TIER_0" | "TIER_1" | "DISCOVERY"),
+      eq(sources.tier, params.sourceTier as "TIER_0" | "TIER_1" | "DISCOVERY")
+    );
+  }
+  if (params.axis && AXES.includes(params.axis as (typeof AXES)[number])) {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM jsonb_array_elements(${signals.axesImpacted}) AS elem WHERE elem->>'axis' = ${params.axis})`
     );
   }
 
@@ -64,13 +69,13 @@ export async function queryNews(
   }
   if (cursorDate && cursorId) {
     conditions.push(
-      sql`(${signals.createdAt} < ${cursorDate} OR (${signals.createdAt} = ${cursorDate} AND ${signals.id} < ${cursorId}))`,
+      sql`(${signals.createdAt} < ${cursorDate} OR (${signals.createdAt} = ${cursorDate} AND ${signals.id} < ${cursorId}))`
     );
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
   const orderBy = desc(signals.createdAt);
-  const fetchLimit = Math.min(limit * 5, 300);
+  const fetchLimit = Math.min(limit * 8, 400);
 
   const rows = await db
     .select({
@@ -81,12 +86,13 @@ export async function queryNews(
       createdAt: signals.createdAt,
       documentId: signals.documentId,
       metric: signals.metric,
-      title: items.title,
-      url: items.url,
+      itemTitle: items.title,
+      itemUrl: items.url,
       publishedAt: items.publishedAt,
       sourceName: sources.name,
       sourceTier: sources.tier,
       domainType: sources.domainType,
+      extractedMetadata: documents.extractedMetadata,
     })
     .from(signals)
     .innerJoin(documents, eq(signals.documentId, documents.id))
@@ -96,13 +102,11 @@ export async function queryNews(
     .orderBy(orderBy)
     .limit(fetchLimit);
 
-  let filtered = rows;
-  if (params.axis && AXES.includes(params.axis as (typeof AXES)[number])) {
-    filtered = rows.filter((r) => {
-      const axes = (r.axesImpacted ?? []) as Array<{ axis: string }>;
-      return axes.some((a) => a.axis === params.axis);
-    });
-  }
+  type DocMetadata = { title?: string; sourceURL?: string } | null;
+  const resolveTitle = (meta: DocMetadata, itemTitle: string | null) =>
+    (meta?.title?.trim() || itemTitle) ?? null;
+  const resolveUrl = (meta: DocMetadata, itemUrl: string) =>
+    meta?.sourceURL?.trim() || itemUrl;
 
   const byDocument = new Map<
     string,
@@ -124,16 +128,17 @@ export async function queryNews(
     }
   >();
 
-  for (const r of filtered) {
+  for (const r of rows) {
     const docId = r.documentId;
     const existing = byDocument.get(docId);
     const confidence = Number(r.confidence) || 0;
     const hasMetric = r.metric != null;
+    const meta = (r.extractedMetadata ?? null) as DocMetadata;
     if (!existing || confidence > existing.best.confidence) {
       byDocument.set(docId, {
         documentId: docId,
-        title: r.title ?? null,
-        url: r.url ?? null,
+        title: resolveTitle(meta, r.itemTitle),
+        url: resolveUrl(meta, r.itemUrl),
         sourceName: r.sourceName ?? null,
         sourceTier: r.sourceTier ?? null,
         publishedAt: r.publishedAt ?? null,
@@ -192,7 +197,7 @@ export async function queryNews(
           nextEntry[1].best.createdAt instanceof Date
             ? nextEntry[1].best.createdAt.toISOString()
             : nextEntry[1].best.createdAt
-        }:${nextEntry[1].best.id}`,
+        }:${nextEntry[1].best.id}`
       ).toString("base64")
     : null;
 
