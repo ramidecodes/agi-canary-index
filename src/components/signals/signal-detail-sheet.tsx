@@ -77,7 +77,7 @@ export function SignalDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
+        <SheetHeader className="pr-12">
           {isLoading && (
             <div className="h-6 w-3/4 bg-muted/30 rounded animate-pulse" />
           )}
@@ -97,7 +97,7 @@ export function SignalDetailSheet({
         </SheetHeader>
 
         {signal && (
-          <div className="mt-6 space-y-6">
+          <div className="mt-6 px-6 pb-8 space-y-6">
             <div>
               <p className="text-sm text-foreground leading-relaxed">
                 {signal.claimSummary}
@@ -177,7 +177,10 @@ export function SignalDetailSheet({
                 </p>
                 <ul className="space-y-2">
                   {signal.citations.map((c, i) => (
-                    <li key={c.url ?? c.quoted_span ?? i} className="text-sm">
+                    <li
+                      key={c.url ?? c.quoted_span ?? i}
+                      className="text-sm min-w-0 overflow-hidden"
+                    >
                       {c.quoted_span && (
                         <blockquote className="border-l-2 border-muted pl-2 text-muted-foreground italic mb-1">
                           {c.quoted_span}
@@ -188,7 +191,7 @@ export function SignalDetailSheet({
                           href={c.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline break-all text-xs"
+                          className="text-primary hover:underline break-all text-xs block"
                         >
                           {c.url}
                         </a>
