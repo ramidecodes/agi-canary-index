@@ -1,3 +1,6 @@
+# Single-package repo; empty list means root package only (required for pnpm store/cache in CI).
+packages: []
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
