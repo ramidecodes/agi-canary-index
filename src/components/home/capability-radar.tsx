@@ -42,6 +42,8 @@ interface CapabilityRadarProps {
   onAxisClick?: (axis: string) => void;
   /** Axis keys to highlight (e.g. from active canary filter). */
   highlightAxes?: string[];
+  /** Show skeleton loading animation instead of data or empty text. */
+  isLoading?: boolean;
 }
 
 export function CapabilityRadar({
@@ -52,6 +54,7 @@ export function CapabilityRadar({
   selectedAxis: selectedAxisProp,
   onAxisClick,
   highlightAxes,
+  isLoading = false,
 }: CapabilityRadarProps) {
   const homeStore = useHomeStore();
   const selectedRadarAxis =
@@ -64,7 +67,7 @@ export function CapabilityRadar({
       }
     : homeStore.setSelectedRadarAxis;
 
-  const { polygons, axisPoints, center } = useMemo(() => {
+  const { polygons, axisPoints, center, skeletonPts } = useMemo(() => {
     const cx = size / 2;
     const cy = size / 2;
     const maxR = size * 0.38;
@@ -107,10 +110,18 @@ export function CapabilityRadar({
       pts: scoresToPolygon(h.axisScores),
     }));
 
+    // Skeleton polygon: a regular nonagon at ~40% of max radius for the loading state
+    const skeletonPts = AXES.map((_, i) => {
+      const angle = getAngle(i);
+      const r = maxR * 0.4;
+      return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
+    }).join(" ");
+
     return {
       polygons: { current: currentPolygon, ghosts },
       axisPoints,
       center,
+      skeletonPts,
     };
   }, [snapshot, history, size]);
 
@@ -453,20 +464,31 @@ export function CapabilityRadar({
               </Link>
             );
           })}
+          {/* Skeleton loading overlay — pulsing polygon + rotating sweep */}
+          {isLoading && !hasData && (
+            <>
+              <polygon
+                points={skeletonPts}
+                fill="url(#radar-fill)"
+                stroke="oklch(0.58 0.22 264)"
+                strokeWidth="1"
+                strokeOpacity="0.3"
+                className="animate-radar-skeleton-pulse"
+              />
+              <line
+                x1={center.x}
+                y1={center.y}
+                x2={center.x}
+                y2={center.y - size * 0.38}
+                stroke="oklch(0.58 0.22 264)"
+                strokeWidth="1"
+                strokeOpacity="0.25"
+                className="animate-radar-skeleton-sweep"
+                style={{ transformOrigin: `${center.x}px ${center.y}px` }}
+              />
+            </>
+          )}
         </svg>
-
-        {!hasData && (
-          <div
-            className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm animate-radar-await"
-            style={{
-              pointerEvents: "none",
-              fontFamily:
-                "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-            }}
-          >
-            Awaiting data
-          </div>
-        )}
       </div>
 
       {/* Legend */}

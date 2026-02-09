@@ -141,26 +141,44 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* Radar empty state: subtle pulse (respect reduced motion). */
-@keyframes radar-await-pulse {
+/* Radar skeleton: pulsing polygon + rotating sweep while loading (respect reduced motion). */
+@keyframes radar-skeleton-pulse {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.15;
   }
   50% {
-    opacity: 1;
+    opacity: 0.35;
+  }
+}
+@keyframes radar-skeleton-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  @keyframes radar-await-pulse {
+  @keyframes radar-skeleton-pulse {
     0%,
     100% {
-      opacity: 1;
+      opacity: 0.25;
+    }
+  }
+  @keyframes radar-skeleton-sweep {
+    0%,
+    100% {
+      transform: rotate(0deg);
     }
   }
 }
-.animate-radar-await {
-  animation: radar-await-pulse 2s ease-in-out infinite;
+.animate-radar-skeleton-pulse {
+  animation: radar-skeleton-pulse 2.4s ease-in-out infinite;
+}
+.animate-radar-skeleton-sweep {
+  animation: radar-skeleton-sweep 4s linear infinite;
+  transform-origin: center;
 }
 
 @layer base {

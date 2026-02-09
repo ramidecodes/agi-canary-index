@@ -64,11 +64,12 @@ function useCanaryFilterUrlSync() {
 
 export function HomePageClient() {
   const router = useRouter();
-  const { data: snapshotData } = useSWR<{ snapshot: Snapshot | null }>(
-    "/api/snapshot/latest",
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 },
-  );
+  const { data: snapshotData, isLoading: isSnapshotLoading } = useSWR<{
+    snapshot: Snapshot | null;
+  }>("/api/snapshot/latest", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000,
+  });
   const { data: historyData } = useSWR<{ history: SnapshotHistoryEntry[] }>(
     "/api/snapshot/history?days=90",
     fetcher,
@@ -124,7 +125,9 @@ export function HomePageClient() {
 
   useCanaryFilterUrlSync();
 
-  const hasNoData = !snapshot && canaries.length === 0 && events.length === 0;
+  const isLoading = isSnapshotLoading;
+  const hasNoData =
+    !isLoading && !snapshot && canaries.length === 0 && events.length === 0;
 
   const isMobile = useIsMobile();
   const heroRadarSize = isMobile ? 320 : 500;
@@ -171,13 +174,14 @@ export function HomePageClient() {
         </Card>
       )}
 
-      {!hasNoData && (
+      {(isLoading || !hasNoData) && (
         <HeroSection
           snapshot={snapshot}
           history={history}
           radarSize={heroRadarSize}
           showGhosts={showGhosts}
           highlightAxes={highlightAxes}
+          isLoading={isLoading}
         />
       )}
 
@@ -197,7 +201,7 @@ export function HomePageClient() {
         />
       )}
 
-      {!hasNoData && (
+      {(isLoading || !hasNoData) && (
         <>
           {/* Primary row: Movement (left) + Autonomy (right); equal weight; both visible on mobile (stacked) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">

@@ -14,6 +14,8 @@ interface HeroSectionProps {
   showGhosts: boolean;
   /** Axis keys to highlight (e.g. from active canary filter). */
   highlightAxes?: string[];
+  /** Data is still loading from the API. */
+  isLoading?: boolean;
 }
 
 export function HeroSection({
@@ -22,6 +24,7 @@ export function HeroSection({
   radarSize,
   showGhosts,
   highlightAxes,
+  isLoading = false,
 }: HeroSectionProps) {
   const { data: narrative } = useSWR<{
     headline: string;
@@ -34,7 +37,7 @@ export function HeroSection({
   return (
     <section
       className="relative rounded-xl border border-border/80 bg-card/60 dark:bg-card/50 backdrop-blur-md py-8 sm:py-12 md:py-14 px-4 sm:px-6 overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]"
-      aria-labelledby="hero-heading"
+      aria-label="Capability radar overview"
     >
       {/* Gradient overlay — clearly visible for control-room feel */}
       <div
@@ -53,20 +56,16 @@ export function HeroSection({
       />
 
       <div className="relative max-w-4xl mx-auto space-y-6 sm:space-y-8">
-        <header className="text-center space-y-3">
-          <h1
-            id="hero-heading"
-            className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground"
-          >
-            <span className="text-foreground">AGI</span>{" "}
-            <span className="text-canary-accent">Canary</span> Watcher
-          </h1>
-          {narrative?.headline && (
+        {/* Narrative headline (title is in the navbar) */}
+        <div className="text-center">
+          {isLoading && !narrative?.headline ? (
+            <div className="h-5 w-2/3 max-w-sm mx-auto bg-muted/30 rounded animate-pulse" />
+          ) : narrative?.headline ? (
             <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
               {narrative.headline}
             </p>
-          )}
-        </header>
+          ) : null}
+        </div>
 
         {/* AGI Progress Indicator — composite score gauge */}
         <AGIProgressIndicator className="pb-2" />
@@ -78,6 +77,7 @@ export function HeroSection({
               history={showGhosts ? history : []}
               size={radarSize}
               highlightAxes={highlightAxes}
+              isLoading={isLoading}
               className="drop-shadow-[0_0_24px_rgba(78,161,255,0.08)]"
             />
           </div>
