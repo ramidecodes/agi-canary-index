@@ -84,14 +84,24 @@ export async function GET() {
     const uAlign = scores.alignment_safety?.uncertainty ?? 0.3;
     const uncertainty = (uPlanning + uTool + uAlign) / 3;
 
-    const levelIndex = normalizedToLevel(level);
-    const levelLabel = AUTONOMY_LEVELS[levelIndex]?.label ?? "Unknown";
+    let levelIndex = normalizedToLevel(level);
+
+    // Confidence gate: if uncertainty is too high, cap at Level 2
+    const highUncertainty = uncertainty > 0.4;
+    if (highUncertainty && levelIndex > 2) {
+      levelIndex = 2;
+    }
+
+    const levelLabel = highUncertainty && levelIndex === 2
+      ? "Adaptive agent (Level 2) — high uncertainty"
+      : AUTONOMY_LEVELS[levelIndex]?.label ?? "Unknown";
 
     return NextResponse.json({
       level: Math.max(0, Math.min(1, level)),
       levelIndex,
       levelLabel,
       uncertainty: Math.max(0.1, Math.min(0.5, uncertainty)),
+      highUncertainty,
       levels: AUTONOMY_LEVELS,
       lastUpdated: row.createdAt?.toISOString() ?? null,
       insufficientData: false,

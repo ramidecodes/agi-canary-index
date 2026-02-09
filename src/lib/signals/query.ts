@@ -17,6 +17,8 @@ import {
 import { documents, items, signals, sources } from "@/lib/db/schema";
 import type { getDb } from "@/lib/db";
 import { AXES } from "@/lib/signal/schemas";
+import type { SignalClassification } from "@/lib/signals/types";
+import { toClassification } from "@/lib/signals/types";
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_TIERS = ["TIER_0", "TIER_1", "DISCOVERY"] as const;
@@ -55,7 +57,7 @@ export interface SignalExplorerResult {
   sourceName: string | null;
   sourceTier: string | null;
   sourceUrl: string | null;
-  classification: "benchmark" | "claim";
+  classification: SignalClassification;
 }
 
 export function parseExplorerFilters(
@@ -193,6 +195,7 @@ export async function querySignalsExplorer(
       axesImpacted: signals.axesImpacted,
       metric: signals.metric,
       confidence: signals.confidence,
+      classification: signals.classification,
       createdAt: signals.createdAt,
       documentId: signals.documentId,
       title: items.title,
@@ -238,7 +241,7 @@ export async function querySignalsExplorer(
     sourceName: r.sourceName ?? null,
     sourceTier: r.sourceTier ?? null,
     sourceUrl: r.sourceUrl ?? null,
-    classification: r.metric != null ? "benchmark" : "claim",
+    classification: toClassification(r.classification),
   }));
 
   // Total count (approximate for pagination - we'd need a separate count query for exact)
