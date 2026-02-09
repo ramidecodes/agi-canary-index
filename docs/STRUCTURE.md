@@ -82,8 +82,10 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`api/signals/export/route.ts`** — GET export filtered signals as CSV or JSON
 - **`api/signals/recent/route.ts`** — GET recent signals for autonomy axes (query: axes, limit)
 - **`api/canaries/route.ts`** — GET canary definitions with status (query: type=risk for risk canaries only)
+- **`api/composite/route.ts`** — GET composite AGI progress score (0-100), breakdown, trend, top movers
+- **`api/narrative/route.ts`** — GET template-based narrative summary (headline, summary, counts)
 - **`api/autonomy/`** — Autonomy & Risk APIs
-  - `current/route.ts` — GET current autonomy level and uncertainty
+  - `current/route.ts` — GET current autonomy level and uncertainty (with confidence gate + hysteresis)
   - `history/route.ts` — GET historical autonomy levels (query: days)
   - `coverage/route.ts` — GET evaluation coverage metrics
 - **`api/timeline/`** — Timeline APIs
@@ -119,11 +121,12 @@ Next.js 16 App Router: pages, layouts, and route handlers. UI uses **shadcn/ui**
 - **`hooks/use-mobile.ts`** — useIsMobile() (viewport &lt; 640px) for conditional UI
 - **`home/`** — Home page (Control Room) components
   - `home-page-client.tsx` — Client wrapper with SWR data fetching (no header/footer; layout provides)
-  - `capability-radar.tsx` — Declarative SVG radar (9 axes); optional onAxisClick for profile page; simplified on mobile (no ghost lines)
-  - `autonomy-thermometer.tsx` — 5-level gauge from `/api/autonomy/current`; see docs/features/17-home-autonomy-level-component.md
-  - `canary-strip.tsx` — Sticky canary indicators with popover; horizontal scroll + 44px touch on mobile
-  - `daily-brief-card.tsx` — Today's Movement card with expandable items, coverage, "View all" to /news
-  - `hero-section.tsx` — Hero with title and radar; home timeline uses `timeline/timeline-visualization.tsx` (left = older, right = newer)
+  - `agi-progress-indicator.tsx` — Composite AGI progress gauge (0-100%) with zone labels, trend arrow, and week-over-week delta
+  - `capability-radar.tsx` — Declarative SVG radar (9 axes); data-quality indicators (dashed for low-data axes); per-axis trend arrows; improved ghost visibility
+  - `autonomy-thermometer.tsx` — 5-level gauge with contextual interpretation text, confidence gate, and "what's needed for next level"
+  - `canary-strip.tsx` — Sticky canary indicators with status reasons, threshold details, and change history in popovers
+  - `daily-brief-card.tsx` — Today's Movement with narrative interpretation (not raw deltas), summary header, and data-gap detection
+  - `hero-section.tsx` — Hero with title, narrative headline from /api/narrative, AGI Progress Indicator, and radar
 - **`news/`** — News & Daily Brief page components
   - `news-page-client.tsx` — Client wrapper with SWR, URL state (date, filters)
   - `copy-brief-button.tsx` — Copy brief as formatted text; fallback modal
@@ -191,7 +194,7 @@ Shared code: DB, AI models, and future services.
   - `types.ts` — AxisHistoryPoint, AxisSourceEntry, SnapshotRange
 - **`signals/`** — Signal Explorer query logic
   - `query.ts` — parseExplorerFilters, querySignalsExplorer (shared with API)
-  - `types.ts` — SignalExplorerItem, SignalDetail, AXIS_LABELS, TIER_LABELS
+  - `types.ts` — SignalExplorerItem, SignalDetail, SignalClassification, AXIS_LABELS, TIER_LABELS, CLASSIFICATION_LABELS, CLASSIFICATION_COLORS
 - **`brief/`** — Daily Brief & News
   - `types.ts` — DailyBrief, BriefItem, NewsArticle, NewsFiltersOptions
   - `build-brief.ts` — getBriefForDate, build movements from snapshot/signals
@@ -200,7 +203,8 @@ Shared code: DB, AI models, and future services.
   - `schemas.ts` — Zod schemas for extraction output (claims, axes, citations)
   - `extract.ts` — AI extraction via `generateObject()` (OpenRouter + SIGNAL_EXTRACTION_MODEL)
   - `run.ts` — Orchestration (acquired docs → R2 fetch → extract → signals, mark processed)
-  - `snapshot.ts` — Daily snapshot aggregation (axis scores from signals)
+  - `snapshot.ts` — Daily snapshot aggregation with 7-day EMA smoothing, coverage_score, canary_statuses computation
+  - `detect-events.ts` — Automated timeline event detection (threshold crossings, rapid movements, canary changes, benchmark results)
   - `index.ts` — Re-exports
 - **`r2.ts`** — R2 S3 client for document fetch (Next.js app)
 - **`pipeline/`** — ETL pipeline (job queue + stages); used by GitHub Actions runner and admin discover
