@@ -6,7 +6,7 @@ import { AXES } from "@/lib/signal/schemas";
 import type { Snapshot, SnapshotHistoryEntry } from "@/lib/home/types";
 import { useHomeStore } from "@/lib/home/store";
 
-const AXIS_LABELS: Record<string, string> = {
+export const AXIS_LABELS: Record<string, string> = {
   reasoning: "Reasoning",
   learning_efficiency: "Learning",
   long_term_memory: "Memory",
@@ -23,13 +23,6 @@ const MIN_SIGNAL_BACKING = 3;
 
 function scoreToRadius(score: number): number {
   return Math.max(0, Math.min(1, (score + 1) / 2));
-}
-
-/** Get trend arrow character based on delta. */
-function getTrendArrow(delta: number): { char: string; color: string } {
-  if (delta > 0.02) return { char: "▲", color: "oklch(0.72 0.19 142)" }; // green
-  if (delta < -0.02) return { char: "▼", color: "oklch(0.63 0.24 25)" }; // red
-  return { char: "–", color: "currentColor" };
 }
 
 interface CapabilityRadarProps {
@@ -158,7 +151,7 @@ export function CapabilityRadar({
         <svg
           width={size}
           height={size}
-          className="overflow-hidden"
+          className="overflow-visible"
           style={{ maxWidth: "100%", height: "auto" }}
           aria-labelledby="radar-title"
         >
@@ -269,25 +262,6 @@ export function CapabilityRadar({
               strokeDasharray="4 3"
             />
           ))}
-          {/* Ghost date labels */}
-          {polygons.ghosts.length > 0 && size > 300 && (
-            <text
-              x={center.x}
-              y={8}
-              textAnchor="middle"
-              fill="currentColor"
-              fillOpacity={0.5}
-              fontSize="9"
-              style={{
-                fontFamily:
-                  "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-              }}
-            >
-              {polygons.ghosts.length > 0
-                ? `Ghost: ${polygons.ghosts.map((g) => g.date.slice(5)).join(", ")}`
-                : ""}
-            </text>
-          )}
 
           {/* Current capability polygon */}
           {polygons.current && (
@@ -339,7 +313,7 @@ export function CapabilityRadar({
               );
             })}
 
-          {/* Axis labels (clickable) with trend arrows */}
+          {/* Axis labels (clickable) */}
           {axisPoints.map(({ axis, label, x, y }) => {
             const isSelected = selectedRadarAxis === axis;
             const isHighlighted = highlightAxes?.includes(axis) ?? false;
@@ -347,18 +321,6 @@ export function CapabilityRadar({
             const angle = Math.atan2(y - center.y, x - center.x);
             const lx = center.x + labelR * Math.cos(angle);
             const ly = center.y + labelR * Math.sin(angle);
-
-            // Trend arrow data
-            const axisEntry = snapshot?.axisScores?.[axis] as
-              | {
-                  delta?: number;
-                  signalCount?: number;
-                }
-              | undefined;
-            const delta = axisEntry?.delta ?? 0;
-            const signalCount = axisEntry?.signalCount ?? 0;
-            const trend = getTrendArrow(delta);
-            const isLowData = signalCount < MIN_SIGNAL_BACKING;
 
             const labelContent = (
               <g
@@ -371,15 +333,7 @@ export function CapabilityRadar({
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="currentColor"
-                  fillOpacity={
-                    isLowData
-                      ? 0.55
-                      : isSelected
-                        ? 1
-                        : isHighlighted
-                          ? 0.95
-                          : 0.88
-                  }
+                  fillOpacity={isSelected ? 1 : isHighlighted ? 0.95 : 0.78}
                   fontSize={size > 400 ? "13" : "11"}
                   fontWeight={isSelected || isHighlighted ? 600 : 400}
                   style={{
@@ -389,42 +343,6 @@ export function CapabilityRadar({
                 >
                   {label}
                 </text>
-                {/* Trend arrow — shown when there is data */}
-                {snapshot?.axisScores && !isLowData && (
-                  <text
-                    x={lx + (size > 400 ? 38 : 30)}
-                    y={ly}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill={trend.color}
-                    fillOpacity={0.95}
-                    fontSize="9"
-                    style={{
-                      fontFamily:
-                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-                    }}
-                  >
-                    {trend.char}
-                  </text>
-                )}
-                {/* No data indicator */}
-                {isLowData && snapshot?.axisScores && (
-                  <text
-                    x={lx + (size > 400 ? 38 : 30)}
-                    y={ly}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill="currentColor"
-                    fillOpacity={0.45}
-                    fontSize="8"
-                    style={{
-                      fontFamily:
-                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-                    }}
-                  >
-                    ?
-                  </text>
-                )}
               </g>
             );
 
@@ -490,60 +408,6 @@ export function CapabilityRadar({
           )}
         </svg>
       </div>
-
-      {/* Legend */}
-      {hasData && (
-        <div
-          className="flex items-center justify-center gap-4 mt-2 text-[10px] text-muted-foreground"
-          style={{
-            fontFamily:
-              "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-          }}
-        >
-          <span className="flex items-center gap-1.5">
-            <svg width="16" height="6" role="presentation">
-              <line
-                x1="0"
-                y1="3"
-                x2="16"
-                y2="3"
-                stroke="oklch(0.58 0.22 264)"
-                strokeWidth="1.5"
-              />
-            </svg>
-            Current
-          </span>
-          {polygons.ghosts.length > 0 && (
-            <span className="flex items-center gap-1.5">
-              <svg width="16" height="6" role="presentation">
-                <line
-                  x1="0"
-                  y1="3"
-                  x2="16"
-                  y2="3"
-                  stroke="oklch(0.58 0.22 264)"
-                  strokeWidth="1"
-                  strokeDasharray="4 3"
-                  strokeOpacity="0.5"
-                />
-              </svg>
-              Previous days
-            </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <svg width="10" height="10" role="presentation">
-              <circle
-                cx="5"
-                cy="5"
-                r="4"
-                fill="oklch(0.58 0.22 264)"
-                fillOpacity="0.2"
-              />
-            </svg>
-            Uncertainty
-          </span>
-        </div>
-      )}
     </div>
   );
 }

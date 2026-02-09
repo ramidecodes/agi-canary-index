@@ -70,16 +70,14 @@ export function AGIProgressIndicator({
 
   const { compositeScore, weekOverWeekDelta } = data;
   const zone = getZone(compositeScore);
-  const fillWidth = Math.max(2, Math.min(100, compositeScore));
 
   return (
     <div
-      className={cn("w-full max-w-md mx-auto", className)}
+      className={cn("w-full", className)}
       role="img"
       aria-label={`AGI Progress: ${compositeScore.toFixed(1)}% — ${zone.label}`}
     >
-      {/* Score and trend */}
-      <div className="flex items-center justify-center gap-3 mb-2">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
           <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden />
           <span
@@ -101,52 +99,14 @@ export function AGIProgressIndicator({
           {zone.label}
         </span>
         {weekOverWeekDelta !== 0 && (
-          <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <TrendIcon delta={weekOverWeekDelta} />
-            {weekOverWeekDelta > 0 ? "+" : ""}
-            {weekOverWeekDelta.toFixed(1)}% / wk
+            <span>
+              {weekOverWeekDelta > 0 ? "+" : ""}
+              {weekOverWeekDelta.toFixed(1)}% this week
+            </span>
           </span>
         )}
-      </div>
-
-      {/* Gauge bar */}
-      <div className="relative h-2.5 w-full rounded-full overflow-hidden bg-muted/50">
-        {/* Zone background segments */}
-        <div className="absolute inset-0 flex">
-          {ZONES.map((z) => (
-            <div
-              key={z.label}
-              className="h-full border-r border-background/40 last:border-r-0"
-              style={{ width: `${z.max - z.min}%` }}
-            />
-          ))}
-        </div>
-        {/* Fill */}
-        <div
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${fillWidth}%`,
-            background:
-              "linear-gradient(90deg, oklch(0.58 0.22 264 / 0.6), oklch(0.58 0.22 264 / 0.9))",
-          }}
-        />
-        {/* Zone markers */}
-        {[25, 50, 75].map((pct) => (
-          <div
-            key={pct}
-            className="absolute top-0 bottom-0 w-px bg-border/60"
-            style={{ left: `${pct}%` }}
-          />
-        ))}
-      </div>
-
-      {/* Zone labels */}
-      <div className="flex justify-between mt-1 text-[10px] text-muted-foreground/70">
-        {ZONES.map((z) => (
-          <span key={z.label} className="text-center" style={{ width: "25%" }}>
-            {z.label}
-          </span>
-        ))}
       </div>
     </div>
   );
