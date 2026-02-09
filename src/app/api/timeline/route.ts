@@ -20,6 +20,8 @@ function toEvent(r: {
   category: string;
   sourceUrl: string | null;
   axesImpacted: string[] | null;
+  isMilestone: boolean;
+  significance: number;
 }) {
   return {
     id: r.id,
@@ -30,6 +32,8 @@ function toEvent(r: {
     category: r.category,
     sourceUrl: r.sourceUrl,
     axesImpacted: r.axesImpacted ?? [],
+    isMilestone: r.isMilestone,
+    significance: r.significance,
   };
 }
 

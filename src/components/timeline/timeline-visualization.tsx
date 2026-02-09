@@ -21,15 +21,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   research: "hsl(var(--chart-4))",
 };
 
-/** Determine dot size based on event significance. */
+/** Determine dot size based on significance field (1-5 scale). */
 function getEventSize(event: TimelineEvent): number {
-  // Auto-detected events from signals get a medium size
-  // Curated/seeded events (those with source URLs or longer descriptions) get larger
-  const hasSource = !!event.sourceUrl;
-  const hasImpact = (event.axesImpacted?.length ?? 0) > 0;
-
-  if (hasSource && hasImpact) return 14;
-  if (hasSource || hasImpact) return 12;
+  const sig = event.significance ?? 1;
+  if (sig >= 5) return 18;
+  if (sig >= 4) return 16;
+  if (sig >= 3) return 14;
+  if (sig >= 2) return 12;
   return 10;
 }
 
@@ -166,28 +164,38 @@ export function TimelineVisualization({
           >
             {positionedEvents.map((e) => {
               const dotSize = getEventSize(e);
+              const isMilestone = e.isMilestone;
               return (
                 <button
                   key={e.id}
                   type="button"
                   onClick={() => onEventClick(e)}
-                  className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background z-10"
+                  className="absolute border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background z-10"
                   style={{
                     left: e.x - dotSize / 2,
                     top: 1 + (14 - dotSize) / 2,
                     width: dotSize,
                     height: dotSize,
                     backgroundColor: e.color,
+                    borderRadius: isMilestone ? "2px" : "50%",
+                    transform: isMilestone ? "rotate(45deg)" : undefined,
+                    boxShadow: isMilestone
+                      ? `0 0 6px ${e.color}`
+                      : undefined,
                   }}
-                  title={`${formatDate(e.date)}: ${e.title}`}
-                  aria-label={`${e.title}, ${formatDate(e.date)}`}
+                  title={`${isMilestone ? "★ " : ""}${formatDate(e.date)}: ${e.title}`}
+                  aria-label={`${isMilestone ? "Milestone: " : ""}${e.title}, ${formatDate(e.date)}`}
                 />
               );
             })}
             {positionedEvents.map((e) => (
               <div
                 key={`label-${e.id}`}
-                className="absolute text-xs text-muted-foreground whitespace-nowrap pointer-events-none rounded border border-border bg-card px-1.5 py-0.5 shadow-sm"
+                className={`absolute text-xs whitespace-nowrap pointer-events-none rounded border px-1.5 py-0.5 shadow-sm ${
+                  e.isMilestone
+                    ? "border-primary/40 bg-card text-foreground"
+                    : "border-border bg-card text-muted-foreground"
+                }`}
                 style={{
                   left: Math.max(0, e.x - LABEL_WIDTH / 2),
                   top: DOT_ROW_HEIGHT + e.lane * LANE_HEIGHT,
@@ -196,8 +204,8 @@ export function TimelineVisualization({
                 }}
               >
                 <span className="block font-mono">{formatDate(e.date)}</span>
-                <span className="block font-medium text-foreground truncate">
-                  {shortTitle(e.title)}
+                <span className={`block font-medium truncate ${e.isMilestone ? "text-foreground" : "text-foreground"}`}>
+                  {e.isMilestone ? "★ " : ""}{shortTitle(e.title)}
                 </span>
               </div>
             ))}

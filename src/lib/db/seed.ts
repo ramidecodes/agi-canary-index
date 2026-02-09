@@ -305,6 +305,7 @@ async function seed() {
       category: "research" as const,
       sourceUrl: "https://arxiv.org/abs/1706.03762",
       axesImpacted: ["reasoning", "learning_efficiency"],
+      significance: 5,
     },
     // LLM era
     {
@@ -337,6 +338,19 @@ async function seed() {
       sourceUrl:
         "https://www.deepmind.com/blog/alphastar-mastering-the-real-time-strategy-game-starcraft-ii",
       axesImpacted: ["planning", "tool_use"],
+      significance: 4,
+    },
+    {
+      date: "2020-07-01",
+      title: "AlphaFold 2",
+      description:
+        "DeepMind's AlphaFold 2 solved protein structure prediction with near-experimental accuracy. Demonstrated AI's potential to solve fundamental scientific problems.",
+      eventType: "reality" as const,
+      category: "research" as const,
+      sourceUrl: "https://www.deepmind.com/blog/alphafold-a-solution-to-a-50-year-old-grand-challenge-in-biology",
+      axesImpacted: ["reasoning", "learning_efficiency"],
+      isMilestone: true,
+      significance: 5,
     },
     {
       date: "2020-05-01",
@@ -347,6 +361,7 @@ async function seed() {
       category: "model" as const,
       sourceUrl: "https://arxiv.org/abs/2005.14165",
       axesImpacted: ["reasoning", "learning_efficiency"],
+      significance: 5,
     },
     {
       date: "2020-11-01",
@@ -386,6 +401,7 @@ async function seed() {
       category: "model" as const,
       sourceUrl: "https://openai.com/chatgpt",
       axesImpacted: ["reasoning", "social_cognition"],
+      significance: 5,
     },
     {
       date: "2023-03-14",
@@ -396,6 +412,7 @@ async function seed() {
       category: "model" as const,
       sourceUrl: "https://openai.com/research/gpt-4",
       axesImpacted: ["reasoning", "tool_use", "planning"],
+      significance: 5,
     },
     {
       date: "2023-12-06",
@@ -407,6 +424,7 @@ async function seed() {
       sourceUrl:
         "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
       axesImpacted: ["alignment_safety"],
+      significance: 5,
     },
     // Recent milestones (2024+)
     {
@@ -469,6 +487,55 @@ async function seed() {
       category: "model" as const,
       sourceUrl: "https://openai.com/index/introducing-o1/",
       axesImpacted: ["reasoning", "planning"],
+      significance: 4,
+    },
+    {
+      date: "2023-10-30",
+      title: "US Executive Order on AI",
+      description:
+        "President Biden signed the Executive Order on Safe, Secure, and Trustworthy AI. Established safety testing requirements for dual-use foundation models.",
+      eventType: "reality" as const,
+      category: "policy" as const,
+      sourceUrl: "https://www.whitehouse.gov/briefing-room/presidential-actions/2023/10/30/executive-order-on-the-safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence/",
+      axesImpacted: ["alignment_safety"],
+      isMilestone: true,
+      significance: 4,
+    },
+    {
+      date: "2024-11-01",
+      title: "Claude 3.5 Sonnet / Computer Use",
+      description:
+        "Anthropic released Claude 3.5 Sonnet with computer use capability. First major model with direct GUI interaction and tool use in desktop environments.",
+      eventType: "reality" as const,
+      category: "model" as const,
+      sourceUrl: "https://www.anthropic.com/news/3-5-models-and-computer-use",
+      axesImpacted: ["tool_use", "planning", "multimodal_perception"],
+      isMilestone: true,
+      significance: 4,
+    },
+    {
+      date: "2024-12-01",
+      title: "Gemini 2.0 & Project Astra",
+      description:
+        "Google DeepMind released Gemini 2.0 with native tool use and agentic capabilities. Project Astra demonstrated real-time multimodal AI assistants.",
+      eventType: "reality" as const,
+      category: "model" as const,
+      sourceUrl: "https://deepmind.google/technologies/gemini/",
+      axesImpacted: ["tool_use", "multimodal_perception", "reasoning"],
+      isMilestone: true,
+      significance: 4,
+    },
+    {
+      date: "2025-01-20",
+      title: "DeepSeek-R1 open weights",
+      description:
+        "DeepSeek released R1, a reasoning-focused model with open weights that matched frontier performance. Demonstrated viability of open-source frontier AI.",
+      eventType: "reality" as const,
+      category: "model" as const,
+      sourceUrl: "https://github.com/deepseek-ai/DeepSeek-R1",
+      axesImpacted: ["reasoning", "learning_efficiency"],
+      isMilestone: true,
+      significance: 4,
     },
     {
       date: "2025-05-01",
@@ -497,6 +564,8 @@ async function seed() {
       category: e.category,
       sourceUrl: e.sourceUrl ?? null,
       axesImpacted: e.axesImpacted ?? null,
+      isMilestone: e.isMilestone ?? true,
+      significance: e.significance ?? 3,
     })),
   );
 

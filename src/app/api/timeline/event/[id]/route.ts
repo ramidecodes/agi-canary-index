@@ -40,6 +40,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       category: row.category,
       sourceUrl: row.sourceUrl,
       axesImpacted: row.axesImpacted ?? [],
+      isMilestone: row.isMilestone,
+      significance: row.significance,
     });
   } catch (err) {
     console.error("[api/timeline/event]", err);

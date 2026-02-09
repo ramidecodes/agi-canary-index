@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
         category: r.category,
         sourceUrl: r.sourceUrl,
         axesImpacted: r.axesImpacted ?? [],
+        isMilestone: r.isMilestone,
+        significance: r.significance,
       })),
     });
   } catch (err) {

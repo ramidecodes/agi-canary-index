@@ -374,6 +374,8 @@ export const timelineEvents = pgTable(
     category: varchar("category", { length: 128 }).notNull(),
     sourceUrl: varchar("source_url", { length: 2048 }),
     axesImpacted: jsonb("axes_impacted").$type<string[]>(),
+    isMilestone: boolean("is_milestone").notNull().default(false),
+    significance: integer("significance").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
