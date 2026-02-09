@@ -37,10 +37,7 @@ export function MobileNavSheet({
       <SheetHeader className="sr-only">
         <SheetTitle>Menu</SheetTitle>
       </SheetHeader>
-      <nav
-        className="flex flex-col gap-4 py-4"
-        aria-label="Site navigation"
-      >
+      <nav className="flex flex-col gap-4 py-4" aria-label="Site navigation">
         {/* Standalone links (Home) */}
         <div className="flex flex-col gap-1">
           {standalone.map((item) => (

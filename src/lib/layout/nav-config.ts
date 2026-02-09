@@ -81,7 +81,11 @@ export function getMobileBottomNavItems(): PrimaryNavItem[] {
 }
 
 /** Items for hamburger sheet: all links from the desktop header, grouped. */
-export function getMobileMenuNavGroups(): { standalone: NavItem[]; groups: NavGroup[]; external: NavItem[] } {
+export function getMobileMenuNavGroups(): {
+  standalone: NavItem[];
+  groups: NavGroup[];
+  external: NavItem[];
+} {
   return {
     standalone: [{ href: "/", label: "Home" }],
     groups: HEADER_NAV_GROUPS,
