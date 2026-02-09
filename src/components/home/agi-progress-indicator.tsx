@@ -8,10 +8,30 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 /** Zone labels for the composite gauge. */
 const ZONES = [
-  { min: 0, max: 25, label: "Narrow AI", color: "bg-blue-500/20 text-blue-600 dark:text-blue-400" },
-  { min: 25, max: 50, label: "Emerging Capabilities", color: "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400" },
-  { min: 50, max: 75, label: "Broad Competence", color: "bg-amber-500/20 text-amber-600 dark:text-amber-400" },
-  { min: 75, max: 100, label: "AGI-Level", color: "bg-red-500/20 text-red-600 dark:text-red-400" },
+  {
+    min: 0,
+    max: 25,
+    label: "Narrow AI",
+    color: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
+  },
+  {
+    min: 25,
+    max: 50,
+    label: "Emerging Capabilities",
+    color: "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400",
+  },
+  {
+    min: 50,
+    max: 75,
+    label: "Broad Competence",
+    color: "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+  },
+  {
+    min: 75,
+    max: 100,
+    label: "AGI-Level",
+    color: "bg-red-500/20 text-red-600 dark:text-red-400",
+  },
 ];
 
 function getZone(score: number) {
@@ -30,7 +50,9 @@ interface AGIProgressIndicatorProps {
   className?: string;
 }
 
-export function AGIProgressIndicator({ className = "" }: AGIProgressIndicatorProps) {
+export function AGIProgressIndicator({
+  className = "",
+}: AGIProgressIndicatorProps) {
   const { data, error } = useSWR<{
     compositeScore: number;
     trend: string;

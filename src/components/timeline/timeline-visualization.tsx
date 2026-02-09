@@ -179,9 +179,7 @@ export function TimelineVisualization({
                     backgroundColor: e.color,
                     borderRadius: isMilestone ? "2px" : "50%",
                     transform: isMilestone ? "rotate(45deg)" : undefined,
-                    boxShadow: isMilestone
-                      ? `0 0 6px ${e.color}`
-                      : undefined,
+                    boxShadow: isMilestone ? `0 0 6px ${e.color}` : undefined,
                   }}
                   title={`${isMilestone ? "★ " : ""}${formatDate(e.date)}: ${e.title}`}
                   aria-label={`${isMilestone ? "Milestone: " : ""}${e.title}, ${formatDate(e.date)}`}
@@ -204,8 +202,11 @@ export function TimelineVisualization({
                 }}
               >
                 <span className="block font-mono">{formatDate(e.date)}</span>
-                <span className={`block font-medium truncate ${e.isMilestone ? "text-foreground" : "text-foreground"}`}>
-                  {e.isMilestone ? "★ " : ""}{shortTitle(e.title)}
+                <span
+                  className={`block font-medium truncate ${e.isMilestone ? "text-foreground" : "text-foreground"}`}
+                >
+                  {e.isMilestone ? "★ " : ""}
+                  {shortTitle(e.title)}
                 </span>
               </div>
             ))}

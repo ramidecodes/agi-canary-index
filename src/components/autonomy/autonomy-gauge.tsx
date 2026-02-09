@@ -11,10 +11,30 @@ import { cn } from "@/lib/utils";
 
 const LEVELS = [
   { id: 0, short: "L0", label: "Tool-only", color: "oklch(0.696 0.17 162.48)" },
-  { id: 1, short: "L1", label: "Scripted agent", color: "oklch(0.769 0.188 70.08)" },
-  { id: 2, short: "L2", label: "Adaptive agent", color: "oklch(0.704 0.191 22.216)" },
-  { id: 3, short: "L3", label: "Long-horizon agent", color: "oklch(0.645 0.246 16.439)" },
-  { id: 4, short: "L4", label: "Self-directed", color: "oklch(0.577 0.245 27.325)" },
+  {
+    id: 1,
+    short: "L1",
+    label: "Scripted agent",
+    color: "oklch(0.769 0.188 70.08)",
+  },
+  {
+    id: 2,
+    short: "L2",
+    label: "Adaptive agent",
+    color: "oklch(0.704 0.191 22.216)",
+  },
+  {
+    id: 3,
+    short: "L3",
+    label: "Long-horizon agent",
+    color: "oklch(0.645 0.246 16.439)",
+  },
+  {
+    id: 4,
+    short: "L4",
+    label: "Self-directed",
+    color: "oklch(0.577 0.245 27.325)",
+  },
 ] as const;
 
 function withAlpha(color: string, alpha: number): string {
@@ -65,7 +85,9 @@ export function AutonomyGauge({
               "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
           }}
         >
-          {insufficientData ? "Insufficient data" : `${currentLevel?.label} (Level ${levelIndex})`}
+          {insufficientData
+            ? "Insufficient data"
+            : `${currentLevel?.label} (Level ${levelIndex})`}
         </span>
         {!insufficientData && (
           <span
@@ -156,7 +178,9 @@ export function AutonomyGauge({
               key={l.id}
               className={cn(
                 "flex-1 text-center",
-                isActive ? "text-foreground font-medium" : "text-muted-foreground/60",
+                isActive
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground/60",
               )}
             >
               <div

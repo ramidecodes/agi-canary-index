@@ -347,7 +347,8 @@ async function seed() {
         "DeepMind's AlphaFold 2 solved protein structure prediction with near-experimental accuracy. Demonstrated AI's potential to solve fundamental scientific problems.",
       eventType: "reality" as const,
       category: "research" as const,
-      sourceUrl: "https://www.deepmind.com/blog/alphafold-a-solution-to-a-50-year-old-grand-challenge-in-biology",
+      sourceUrl:
+        "https://www.deepmind.com/blog/alphafold-a-solution-to-a-50-year-old-grand-challenge-in-biology",
       axesImpacted: ["reasoning", "learning_efficiency"],
       isMilestone: true,
       significance: 5,
@@ -496,7 +497,8 @@ async function seed() {
         "President Biden signed the Executive Order on Safe, Secure, and Trustworthy AI. Established safety testing requirements for dual-use foundation models.",
       eventType: "reality" as const,
       category: "policy" as const,
-      sourceUrl: "https://www.whitehouse.gov/briefing-room/presidential-actions/2023/10/30/executive-order-on-the-safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence/",
+      sourceUrl:
+        "https://www.whitehouse.gov/briefing-room/presidential-actions/2023/10/30/executive-order-on-the-safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence/",
       axesImpacted: ["alignment_safety"],
       isMilestone: true,
       significance: 4,

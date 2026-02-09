@@ -95,7 +95,10 @@ function BriefItemRow({
     return (
       <li className="flex items-center gap-2 text-sm py-1.5">
         {isDataGap ? (
-          <Minus className="h-4 w-4 text-muted-foreground/50 shrink-0" aria-hidden />
+          <Minus
+            className="h-4 w-4 text-muted-foreground/50 shrink-0"
+            aria-hidden
+          />
         ) : (
           <DirectionIcon direction={item.direction} />
         )}
@@ -117,11 +120,16 @@ function BriefItemRow({
           >
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground data-[state=open]:rotate-90 transition-transform" />
             {isDataGap ? (
-              <Minus className="h-4 w-4 text-muted-foreground/50 shrink-0" aria-hidden />
+              <Minus
+                className="h-4 w-4 text-muted-foreground/50 shrink-0"
+                aria-hidden
+              />
             ) : (
               <DirectionIcon direction={item.direction} />
             )}
-            <span className={cn("flex-1", isDataGap && "text-muted-foreground/70")}>
+            <span
+              className={cn("flex-1", isDataGap && "text-muted-foreground/70")}
+            >
               {narrative}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -220,9 +228,15 @@ export function DailyBriefCard({
                 }}
               >
                 {(() => {
-                  const up = movements.filter((m) => m.direction === "up").length;
-                  const down = movements.filter((m) => m.direction === "down").length;
-                  const stable = movements.filter((m) => m.direction === "stable").length;
+                  const up = movements.filter(
+                    (m) => m.direction === "up",
+                  ).length;
+                  const down = movements.filter(
+                    (m) => m.direction === "down",
+                  ).length;
+                  const stable = movements.filter(
+                    (m) => m.direction === "stable",
+                  ).length;
                   return `Today: ${up} advanced, ${down} declined, ${stable} stable`;
                 })()}
               </p>

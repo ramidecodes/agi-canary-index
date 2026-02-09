@@ -5,7 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { NewsArticle } from "@/lib/brief/types";
 import { AXIS_LABELS } from "@/lib/brief/types";
-import { ExternalLink, TrendingUp, AlertTriangle, Newspaper } from "lucide-react";
+import {
+  ExternalLink,
+  TrendingUp,
+  AlertTriangle,
+  Newspaper,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NewsArticleListProps {
@@ -93,7 +98,9 @@ function ArticleCard({
             <CardTitle
               className={cn(
                 "leading-tight",
-                isHighlighted ? "text-base font-semibold" : "text-sm font-medium",
+                isHighlighted
+                  ? "text-base font-semibold"
+                  : "text-sm font-medium",
               )}
             >
               {article.title ?? "Untitled"}
@@ -170,9 +177,7 @@ export function NewsArticleList({
 }: NewsArticleListProps) {
   // Sort by significance (impact = confidence), group high-impact first
   const sortedArticles = useMemo(() => {
-    return [...articles].sort(
-      (a, b) => b.confidence - a.confidence,
-    );
+    return [...articles].sort((a, b) => b.confidence - a.confidence);
   }, [articles]);
 
   // Group by axis for the digest
@@ -228,9 +233,7 @@ export function NewsArticleList({
               className="inline-flex items-center gap-1 bg-muted/50 rounded px-2 py-0.5"
             >
               <span className="font-medium">{AXIS_LABELS[axis] ?? axis}</span>
-              <span className="text-muted-foreground/70">
-                ({items.length})
-              </span>
+              <span className="text-muted-foreground/70">({items.length})</span>
             </span>
           ))}
         </div>

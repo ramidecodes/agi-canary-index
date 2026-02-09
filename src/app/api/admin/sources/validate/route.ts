@@ -27,9 +27,12 @@ interface ValidationResult {
   durationMs: number;
 }
 
-async function validateSource(
-  source: { id: string; name: string; url: string; sourceType: string },
-): Promise<ValidationResult> {
+async function validateSource(source: {
+  id: string;
+  name: string;
+  url: string;
+  sourceType: string;
+}): Promise<ValidationResult> {
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT);
@@ -144,10 +147,7 @@ export async function POST() {
             .update(sources)
             .set({ isActive: false, updatedAt: new Date() })
             .where(
-              and(
-                eq(sources.id, result.sourceId),
-                eq(sources.isActive, true),
-              ),
+              and(eq(sources.id, result.sourceId), eq(sources.isActive, true)),
             );
           autoDisabled++;
         }

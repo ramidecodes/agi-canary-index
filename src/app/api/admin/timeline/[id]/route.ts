@@ -29,11 +29,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updates.description = String(body.description).slice(0, 2000);
     if (body.eventType != null) updates.eventType = body.eventType;
     if (body.category != null) updates.category = body.category;
-    if (body.sourceUrl !== undefined) updates.sourceUrl = body.sourceUrl || null;
+    if (body.sourceUrl !== undefined)
+      updates.sourceUrl = body.sourceUrl || null;
     if (body.axesImpacted != null) updates.axesImpacted = body.axesImpacted;
-    if (body.isMilestone != null) updates.isMilestone = Boolean(body.isMilestone);
+    if (body.isMilestone != null)
+      updates.isMilestone = Boolean(body.isMilestone);
     if (body.significance != null)
-      updates.significance = Math.max(1, Math.min(5, Number(body.significance) || 1));
+      updates.significance = Math.max(
+        1,
+        Math.min(5, Number(body.significance) || 1),
+      );
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

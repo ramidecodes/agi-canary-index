@@ -92,9 +92,10 @@ export async function GET() {
       levelIndex = 2;
     }
 
-    const levelLabel = highUncertainty && levelIndex === 2
-      ? "Adaptive agent (Level 2) — high uncertainty"
-      : AUTONOMY_LEVELS[levelIndex]?.label ?? "Unknown";
+    const levelLabel =
+      highUncertainty && levelIndex === 2
+        ? "Adaptive agent (Level 2) — high uncertainty"
+        : (AUTONOMY_LEVELS[levelIndex]?.label ?? "Unknown");
 
     return NextResponse.json({
       level: Math.max(0, Math.min(1, level)),

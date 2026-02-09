@@ -237,7 +237,9 @@ export function CanaryStrip({
                             if (!canary.lastChange) return "";
                             const daysAgo = Math.floor(
                               (Date.now() -
-                                new Date(`${canary.lastChange}T12:00:00`).getTime()) /
+                                new Date(
+                                  `${canary.lastChange}T12:00:00`,
+                                ).getTime()) /
                                 (1000 * 60 * 60 * 24),
                             );
                             if (daysAgo === 0) return " (today)";

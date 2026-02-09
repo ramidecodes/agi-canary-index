@@ -50,18 +50,21 @@ export function DomainBreakdown({
   const rows = useMemo(() => {
     if (!snapshot?.axisScores) return [];
     const entries = AXES.map((axis) => {
-      const entry = snapshot.axisScores[axis] as {
-        score?: number;
-        uncertainty?: number;
-        delta?: number;
-        signalCount?: number;
-      } | undefined;
+      const entry = snapshot.axisScores[axis] as
+        | {
+            score?: number;
+            uncertainty?: number;
+            delta?: number;
+            signalCount?: number;
+          }
+        | undefined;
       const score = entry?.score != null ? Number(entry.score) : null;
       const uncertainty = entry?.uncertainty ?? 0.3;
       const delta = entry?.delta ?? 0;
       const signalCount = entry?.signalCount ?? sourceCountByAxis[axis] ?? 0;
       // Determine if this axis has actual signal backing
-      const hasData = signalCount > 0 || (score != null && Math.abs(score) > 0.01);
+      const hasData =
+        signalCount > 0 || (score != null && Math.abs(score) > 0.01);
       return {
         axis,
         label: AXIS_LABELS[axis] ?? axis,
@@ -131,7 +134,9 @@ export function DomainBreakdown({
             >
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{row.label}</span>
+                  <span className="font-medium text-foreground">
+                    {row.label}
+                  </span>
                   {/* Signal count badge */}
                   <span
                     className={cn(

@@ -18,7 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Download } from "lucide-react";
-import type { SignalExplorerItem, SignalClassification } from "@/lib/signals/types";
+import type {
+  SignalExplorerItem,
+  SignalClassification,
+} from "@/lib/signals/types";
 import {
   AXIS_LABELS,
   CLASSIFICATION_LABELS,
@@ -229,12 +232,14 @@ export function SignalExplorerClient() {
                           <span
                             className={cn(
                               "px-1.5 py-0.5 rounded border text-[10px]",
-                              CLASSIFICATION_COLORS[cls as SignalClassification] ??
-                                CLASSIFICATION_COLORS.other,
+                              CLASSIFICATION_COLORS[
+                                cls as SignalClassification
+                              ] ?? CLASSIFICATION_COLORS.other,
                             )}
                           >
-                            {CLASSIFICATION_LABELS[cls as SignalClassification] ??
-                              cls}
+                            {CLASSIFICATION_LABELS[
+                              cls as SignalClassification
+                            ] ?? cls}
                           </span>
                           <span className="text-muted-foreground">{count}</span>
                         </div>
@@ -262,7 +267,10 @@ export function SignalExplorerClient() {
                       .sort(([, a], [, b]) => b - a)
                       .slice(0, 6)
                       .map(([axis, count]) => (
-                        <div key={axis} className="flex items-center gap-2 text-xs">
+                        <div
+                          key={axis}
+                          className="flex items-center gap-2 text-xs"
+                        >
                           <span className="font-medium w-20 truncate">
                             {AXIS_LABELS[axis] ?? axis}
                           </span>
@@ -291,7 +299,8 @@ export function SignalExplorerClient() {
                     {[
                       {
                         label: "High (≥80%)",
-                        count: signals.filter((s) => s.confidence >= 0.8).length,
+                        count: signals.filter((s) => s.confidence >= 0.8)
+                          .length,
                         color: "bg-emerald-500",
                       },
                       {
@@ -329,9 +338,7 @@ export function SignalExplorerClient() {
                         Sources:{" "}
                         {
                           new Set(
-                            signals
-                              .map((s) => s.sourceName)
-                              .filter(Boolean),
+                            signals.map((s) => s.sourceName).filter(Boolean),
                           ).size
                         }{" "}
                         unique

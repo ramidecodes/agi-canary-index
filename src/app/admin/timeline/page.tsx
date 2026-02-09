@@ -247,9 +247,7 @@ function EventForm({
         <Checkbox
           id="evt-milestone"
           checked={form.isMilestone}
-          onCheckedChange={(v) =>
-            setForm({ ...form, isMilestone: Boolean(v) })
-          }
+          onCheckedChange={(v) => setForm({ ...form, isMilestone: Boolean(v) })}
         />
         <Label htmlFor="evt-milestone" className="text-sm font-normal">
           Mark as milestone (featured on timeline)
@@ -264,11 +262,7 @@ function EventForm({
 }
 
 export default function AdminTimelinePage() {
-  const {
-    data,
-    error,
-    mutate,
-  } = useSWR<{ events: TimelineEventRow[] }>(
+  const { data, error, mutate } = useSWR<{ events: TimelineEventRow[] }>(
     "/api/admin/timeline",
     fetcher,
   );
@@ -383,9 +377,7 @@ export default function AdminTimelinePage() {
           <TableBody>
             {events.map((evt) => (
               <TableRow key={evt.id}>
-                <TableCell className="font-mono text-xs">
-                  {evt.date}
-                </TableCell>
+                <TableCell className="font-mono text-xs">{evt.date}</TableCell>
                 <TableCell>
                   <span className="font-medium">{evt.title}</span>
                   {evt.sourceUrl && (
@@ -435,8 +427,12 @@ export default function AdminTimelinePage() {
             ))}
             {events.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No timeline events yet. Click &quot;Add Event&quot; to create one.
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground py-8"
+                >
+                  No timeline events yet. Click &quot;Add Event&quot; to create
+                  one.
                 </TableCell>
               </TableRow>
             )}

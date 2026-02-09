@@ -34,7 +34,9 @@ const DiscoveredSourceSchema = z.object({
       suggestedTier: z
         .enum(["TIER_0", "TIER_1", "DISCOVERY"])
         .describe("Suggested trust tier"),
-      rationale: z.string().describe("Why this source is relevant for AGI tracking"),
+      rationale: z
+        .string()
+        .describe("Why this source is relevant for AGI tracking"),
     }),
   ),
 });
@@ -79,9 +81,7 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    const existingNames = existingSources.map((s) =>
-      s.name.toLowerCase(),
-    );
+    const existingNames = existingSources.map((s) => s.name.toLowerCase());
 
     const prompt = `Find AI research blogs, publications, and RSS feeds that regularly publish about:
 ${keywords.map((k) => `- ${k}`).join("\n")}
@@ -118,7 +118,11 @@ Prioritize sources with RSS/Atom feeds. Include the feed URL when available.`;
         const isDuplicate =
           existingDomains.has(domain) ||
           (feedDomain && existingDomains.has(feedDomain)) ||
-          existingNames.some((n) => s.name.toLowerCase().includes(n) || n.includes(s.name.toLowerCase()));
+          existingNames.some(
+            (n) =>
+              s.name.toLowerCase().includes(n) ||
+              n.includes(s.name.toLowerCase()),
+          );
         return !isDuplicate;
       } catch {
         return true;
@@ -133,7 +137,10 @@ Prioritize sources with RSS/Atom feeds. Include the feed URL when available.`;
   } catch (err) {
     console.error("[api/admin/sources/discover] POST error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to discover sources" },
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to discover sources",
+      },
       { status: 500 },
     );
   }

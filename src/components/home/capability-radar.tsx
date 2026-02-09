@@ -163,8 +163,20 @@ export function CapabilityRadar({
               </feMerge>
             </filter>
             {/* Dark halo behind text labels for contrast on any background */}
-            <filter id="label-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="black" floodOpacity="0.7" />
+            <filter
+              id="label-shadow"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
+              <feDropShadow
+                dx="0"
+                dy="0"
+                stdDeviation="3"
+                floodColor="black"
+                floodOpacity="0.7"
+              />
             </filter>
             {/* Cold blue accent — tuned to pop on dark background (Instrumental Minimalism) */}
             <linearGradient id="radar-fill" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -280,18 +292,23 @@ export function CapabilityRadar({
           {/* Low-data axis indicators — dashed lines for axes with insufficient signal backing */}
           {snapshot?.axisScores &&
             axisPoints.map(({ axis, x, y }) => {
-              const entry = snapshot.axisScores[axis] as {
-                signalCount?: number;
-              } | undefined;
+              const entry = snapshot.axisScores[axis] as
+                | {
+                    signalCount?: number;
+                  }
+                | undefined;
               const signalCount = entry?.signalCount ?? 0;
               if (signalCount >= MIN_SIGNAL_BACKING) return null;
 
               // Draw a dashed circle segment at the axis endpoint
-              const r = size * 0.38 * scoreToRadius(
-                snapshot.axisScores[axis]?.score != null
-                  ? Number(snapshot.axisScores[axis].score)
-                  : 0,
-              );
+              const r =
+                size *
+                0.38 *
+                scoreToRadius(
+                  snapshot.axisScores[axis]?.score != null
+                    ? Number(snapshot.axisScores[axis].score)
+                    : 0,
+                );
               const angle = Math.atan2(y - center.y, x - center.x);
               const px = center.x + r * Math.cos(angle);
               const py = center.y + r * Math.sin(angle);
@@ -321,17 +338,22 @@ export function CapabilityRadar({
             const ly = center.y + labelR * Math.sin(angle);
 
             // Trend arrow data
-            const axisEntry = snapshot?.axisScores?.[axis] as {
-              delta?: number;
-              signalCount?: number;
-            } | undefined;
+            const axisEntry = snapshot?.axisScores?.[axis] as
+              | {
+                  delta?: number;
+                  signalCount?: number;
+                }
+              | undefined;
             const delta = axisEntry?.delta ?? 0;
             const signalCount = axisEntry?.signalCount ?? 0;
             const trend = getTrendArrow(delta);
             const isLowData = signalCount < MIN_SIGNAL_BACKING;
 
             const labelContent = (
-              <g className="pointer-events-none select-none" filter="url(#label-shadow)">
+              <g
+                className="pointer-events-none select-none"
+                filter="url(#label-shadow)"
+              >
                 <text
                   x={lx}
                   y={ly}
@@ -339,7 +361,13 @@ export function CapabilityRadar({
                   dominantBaseline="middle"
                   fill="currentColor"
                   fillOpacity={
-                    isLowData ? 0.55 : isSelected ? 1 : isHighlighted ? 0.95 : 0.88
+                    isLowData
+                      ? 0.55
+                      : isSelected
+                        ? 1
+                        : isHighlighted
+                          ? 0.95
+                          : 0.88
                   }
                   fontSize={size > 400 ? "13" : "11"}
                   fontWeight={isSelected || isHighlighted ? 600 : 400}

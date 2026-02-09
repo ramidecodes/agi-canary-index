@@ -188,7 +188,12 @@ async function computeCanaryStatuses(
   db: ReturnType<typeof createDb>,
   axisScores: Record<
     string,
-    { score: number; uncertainty?: number; delta?: number; signalCount?: number }
+    {
+      score: number;
+      uncertainty?: number;
+      delta?: number;
+      signalCount?: number;
+    }
   >,
   prevCanaryStatuses: Array<{
     canary_id: string;
@@ -220,7 +225,11 @@ async function computeCanaryStatuses(
     const thresholds = (def.thresholds ?? {}) as Record<string, unknown>;
 
     if (axesWatched.length === 0) {
-      return { canary_id: def.id, status: "gray", reason: "No axes configured" };
+      return {
+        canary_id: def.id,
+        status: "gray",
+        reason: "No axes configured",
+      };
     }
 
     // Compute average normalized score across watched axes
@@ -240,7 +249,11 @@ async function computeCanaryStatuses(
     }
 
     if (count === 0) {
-      return { canary_id: def.id, status: "gray", reason: "No data for watched axes" };
+      return {
+        canary_id: def.id,
+        status: "gray",
+        reason: "No data for watched axes",
+      };
     }
 
     const avgScore = sum / count;
@@ -281,9 +294,7 @@ async function computeCanaryStatuses(
 
     const prev = prevMap.get(def.id);
     const lastChange =
-      prev?.status !== status
-        ? dateStr
-        : prev?.last_change ?? dateStr;
+      prev?.status !== status ? dateStr : (prev?.last_change ?? dateStr);
 
     return {
       canary_id: def.id,
@@ -479,7 +490,10 @@ export async function createDailySnapshot(
   for (const axis of AXES) {
     axisSourceCounts[axis] = axisWindowSourceIds[axis]?.size ?? 0;
   }
-  const coverageScore = computeCoverageScore(axisWindowCounts, axisSourceCounts);
+  const coverageScore = computeCoverageScore(
+    axisWindowCounts,
+    axisSourceCounts,
+  );
 
   // Compute canary statuses
   const canaryStatuses = await computeCanaryStatuses(

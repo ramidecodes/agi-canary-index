@@ -41,7 +41,8 @@ export async function GET() {
     if (!latest || !latest.axisScores) {
       return NextResponse.json({
         headline: "Awaiting first data collection.",
-        summary: "No snapshot data is available yet. The pipeline needs to run to generate the first daily snapshot.",
+        summary:
+          "No snapshot data is available yet. The pipeline needs to run to generate the first daily snapshot.",
         date: null,
       });
     }
@@ -82,9 +83,9 @@ export async function GET() {
 
     const topMover =
       advancing.length > 0
-        ? AXIS_LABELS[advancing[0].axis] ?? advancing[0].axis
+        ? (AXIS_LABELS[advancing[0].axis] ?? advancing[0].axis)
         : declining.length > 0
-          ? AXIS_LABELS[declining[0].axis] ?? declining[0].axis
+          ? (AXIS_LABELS[declining[0].axis] ?? declining[0].axis)
           : null;
 
     const headline = topMover

@@ -20,10 +20,7 @@ export interface AutonomyHistoryPoint {
 }
 
 /** Simple moving average smoothing for trend line. */
-function computeSmoothedTrend(
-  data: { level: number }[],
-  window = 3,
-): number[] {
+function computeSmoothedTrend(data: { level: number }[], window = 3): number[] {
   return data.map((_, i) => {
     const start = Math.max(0, i - Math.floor(window / 2));
     const end = Math.min(data.length, i + Math.ceil(window / 2) + 1);

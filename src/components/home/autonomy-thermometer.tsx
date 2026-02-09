@@ -9,8 +9,18 @@ const LEVELS = [
   { id: 0, short: "L0", label: "Tool-only", color: "oklch(0.696 0.17 162.48)" },
   { id: 1, short: "L1", label: "Scripted", color: "oklch(0.769 0.188 70.08)" },
   { id: 2, short: "L2", label: "Adaptive", color: "oklch(0.704 0.191 22.216)" },
-  { id: 3, short: "L3", label: "Long-horizon", color: "oklch(0.645 0.246 16.439)" },
-  { id: 4, short: "L4", label: "Self-directed", color: "oklch(0.577 0.245 27.325)" },
+  {
+    id: 3,
+    short: "L3",
+    label: "Long-horizon",
+    color: "oklch(0.645 0.246 16.439)",
+  },
+  {
+    id: 4,
+    short: "L4",
+    label: "Self-directed",
+    color: "oklch(0.577 0.245 27.325)",
+  },
 ] as const;
 
 /** Append valid oklch alpha so e.g. "oklch(0.7 0.17 162)" -> "oklch(0.7 0.17 162 / 0.3)". */

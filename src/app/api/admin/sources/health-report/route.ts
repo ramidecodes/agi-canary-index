@@ -23,10 +23,7 @@ export async function GET() {
 
   try {
     const db = getDb();
-    const allSources = await db
-      .select()
-      .from(sources)
-      .orderBy(sources.name);
+    const allSources = await db.select().from(sources).orderBy(sources.name);
 
     const grouped: Record<
       SourceHealthStatus,
@@ -99,9 +96,7 @@ export async function GET() {
     const active = allSources.filter((s) => s.isActive);
     const activeGreen = grouped.green.filter((s) => s.isActive).length;
     const healthScore =
-      active.length > 0
-        ? Math.round((activeGreen / active.length) * 100)
-        : 0;
+      active.length > 0 ? Math.round((activeGreen / active.length) * 100) : 0;
 
     return NextResponse.json({
       summary: {

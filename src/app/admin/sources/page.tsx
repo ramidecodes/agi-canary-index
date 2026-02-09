@@ -108,10 +108,10 @@ export default function AdminSourcesPage() {
     isLoading,
     mutate,
   } = useSWR<SourceRow[]>("/api/admin/sources", fetcher);
-  const {
-    data: healthReport,
-    mutate: mutateHealth,
-  } = useSWR<HealthReport>("/api/admin/sources/health-report", fetcher);
+  const { data: healthReport, mutate: mutateHealth } = useSWR<HealthReport>(
+    "/api/admin/sources/health-report",
+    fetcher,
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<
     "enable" | "disable" | "change_tier"

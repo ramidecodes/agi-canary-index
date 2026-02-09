@@ -65,11 +65,16 @@ export async function GET() {
     // Compute weighted composite
     let weightedSum = 0;
     let totalWeight = 0;
-    const breakdown: Record<string, { score: number; weight: number; normalized: number }> = {};
+    const breakdown: Record<
+      string,
+      { score: number; weight: number; normalized: number }
+    > = {};
     const gapAxes: string[] = [];
 
     for (const axis of AXES) {
-      const entry = scores[axis] as { score?: number; signalCount?: number } | undefined;
+      const entry = scores[axis] as
+        | { score?: number; signalCount?: number }
+        | undefined;
       const weight = AXIS_WEIGHTS[axis] ?? 1;
       const signalCount = (entry as { signalCount?: number })?.signalCount ?? 0;
 
@@ -119,7 +124,9 @@ export async function GET() {
 
     // Top movers (by absolute delta)
     const topMovers = AXES.map((axis) => {
-      const entry = scores[axis] as { score?: number; delta?: number } | undefined;
+      const entry = scores[axis] as
+        | { score?: number; delta?: number }
+        | undefined;
       return {
         axis,
         delta: (entry as { delta?: number })?.delta ?? 0,

@@ -15,7 +15,10 @@ import {
   CLASSIFICATION_LABELS,
   CLASSIFICATION_COLORS,
 } from "@/lib/signals/types";
-import type { SignalExplorerItem, SignalClassification } from "@/lib/signals/types";
+import type {
+  SignalExplorerItem,
+  SignalClassification,
+} from "@/lib/signals/types";
 import { cn } from "@/lib/utils";
 
 export interface SignalListTableProps {

@@ -112,16 +112,15 @@ export async function detectAndCreateEvents(
 
   // 3. Canary state changes
   const currentCanaries = currentSnapshot.canaryStatuses ?? [];
-  const prevCanaryMap = new Map(
-    prevCanaries.map((c) => [c.canary_id, c]),
-  );
+  const prevCanaryMap = new Map(prevCanaries.map((c) => [c.canary_id, c]));
 
   for (const canary of currentCanaries) {
     const prev = prevCanaryMap.get(canary.canary_id);
     if (prev && prev.status !== canary.status) {
       detected.push({
         title: `Canary "${canary.canary_id}" changed: ${prev.status} → ${canary.status}`,
-        description: `Risk canary "${canary.canary_id}" changed from ${prev.status} to ${canary.status}. ${canary.reason ?? ""}`.trim(),
+        description:
+          `Risk canary "${canary.canary_id}" changed from ${prev.status} to ${canary.status}. ${canary.reason ?? ""}`.trim(),
         category: "policy",
         axesImpacted: [],
       });
@@ -174,7 +173,11 @@ export async function detectAndCreateEvents(
         .onConflictDoNothing(); // no unique constraint, but safe to call
       eventsCreated++;
     } catch (err) {
-      console.error("[detect-events] Failed to insert event:", event.title, err);
+      console.error(
+        "[detect-events] Failed to insert event:",
+        event.title,
+        err,
+      );
     }
   }
 
