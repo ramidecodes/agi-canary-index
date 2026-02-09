@@ -80,7 +80,11 @@ export function getMobileBottomNavItems(): PrimaryNavItem[] {
   return PRIMARY_NAV.filter((item) => !item.desktopOnlyOnMobile);
 }
 
-/** Items for hamburger sheet: secondary + primary (for consistency) or just secondary. */
-export function getMobileMenuNavItems(): NavItem[] {
-  return [...SECONDARY_NAV];
+/** Items for hamburger sheet: all links from the desktop header, grouped. */
+export function getMobileMenuNavGroups(): { standalone: NavItem[]; groups: NavGroup[]; external: NavItem[] } {
+  return {
+    standalone: [{ href: "/", label: "Home" }],
+    groups: HEADER_NAV_GROUPS,
+    external: EXTERNAL_NAV,
+  };
 }
