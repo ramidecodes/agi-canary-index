@@ -1,32 +1,30 @@
 "use client";
 
 /**
- * Vertical autonomy scale gauge (custom SVG, no D3).
- * Levels 0–4: Tool-only → Scripted → Adaptive → Long-horizon → Self-directed.
+ * Horizontal autonomy scale gauge (redesigned for clarity).
+ * Levels 0-4: Tool-only -> Scripted -> Adaptive -> Long-horizon -> Self-directed.
  * Shows current position, uncertainty zone, never shows "AGI".
  * @see docs/features/08-autonomy-risk.md
  */
 
+import { cn } from "@/lib/utils";
+
 const LEVELS = [
-  { id: 0, label: "Tool-only (Level 0)" },
-  { id: 1, label: "Scripted agent (Level 1)" },
-  { id: 2, label: "Adaptive agent (Level 2)" },
-  { id: 3, label: "Long-horizon agent (Level 3)" },
-  { id: 4, label: "Self-directed (Level 4)" },
+  { id: 0, short: "L0", label: "Tool-only", color: "oklch(0.696 0.17 162.48)" },
+  { id: 1, short: "L1", label: "Scripted agent", color: "oklch(0.769 0.188 70.08)" },
+  { id: 2, short: "L2", label: "Adaptive agent", color: "oklch(0.704 0.191 22.216)" },
+  { id: 3, short: "L3", label: "Long-horizon agent", color: "oklch(0.645 0.246 16.439)" },
+  { id: 4, short: "L4", label: "Self-directed", color: "oklch(0.577 0.245 27.325)" },
 ] as const;
 
-const COLORS = [
-  "oklch(0.696 0.17 162.48)",
-  "oklch(0.769 0.188 70.08)",
-  "oklch(0.704 0.191 22.216)",
-  "oklch(0.645 0.246 16.439)",
-  "oklch(0.577 0.245 27.325)",
-];
+function withAlpha(color: string, alpha: number): string {
+  return color.replace(/\)$/, ` / ${alpha})`);
+}
 
 interface AutonomyGaugeProps {
-  /** Normalized 0–1 autonomy level */
+  /** Normalized 0-1 autonomy level */
   level: number;
-  /** Uncertainty range (e.g. 0.2 = ±20%) */
+  /** Uncertainty range (e.g. 0.2 = +/-20%) */
   uncertainty?: number;
   insufficientData?: boolean;
   size?: number;
@@ -37,7 +35,6 @@ export function AutonomyGauge({
   level = 0.35,
   uncertainty = 0.2,
   insufficientData = false,
-  size = 200,
   className = "",
 }: AutonomyGaugeProps) {
   const normalized = Math.max(0, Math.min(1, level));
@@ -45,143 +42,146 @@ export function AutonomyGauge({
   const low = Math.max(0, normalized - unc);
   const high = Math.min(1, normalized + unc);
 
-  const w = 48;
-  const h = size;
-  const padding = 8;
-  const trackTop = padding;
-  const trackBottom = h - padding;
-  const trackH = trackBottom - trackTop;
-
-  const yToPx = (y: number) => trackBottom - y * trackH;
-  const markerY = yToPx(normalized);
-  const lowY = yToPx(high);
-  const highY = yToPx(low);
-
   const levelIndex = Math.min(4, Math.floor(normalized * 5));
-  const currentColor = COLORS[levelIndex] ?? COLORS[0];
+  const currentLevel = LEVELS[levelIndex];
+  const pctLabel = `${Math.round(normalized * 100)}%`;
 
   return (
     <div
-      className={className}
+      className={cn("w-full max-w-md", className)}
       role="img"
       aria-label={
         insufficientData
           ? "Insufficient data to determine autonomy level"
-          : `Autonomy level: ${
-              LEVELS[levelIndex]?.label ?? "Unknown"
-            }, ${Math.round(normalized * 100)}%`
+          : `Autonomy level: ${currentLevel?.label ?? "Unknown"}, ${pctLabel}`
       }
     >
-      <svg
-        width={w}
-        height={h}
-        className="overflow-visible"
-        style={{ maxWidth: "100%", height: "auto" }}
-        aria-labelledby="autonomy-gauge-title"
-      >
-        <title id="autonomy-gauge-title">
-          {insufficientData
-            ? "Insufficient data to determine autonomy level"
-            : `Autonomy level: ${
-                LEVELS[levelIndex]?.label ?? "Unknown"
-              }, ${Math.round(normalized * 100)}%`}
-        </title>
-        <defs>
-          <linearGradient id="autonomy-fill" x1="0%" y1="100%" x2="0%" y2="0%">
-            {COLORS.map((c, i) => (
-              <stop
-                key={c}
-                offset={`${(i / (COLORS.length - 1)) * 100}%`}
-                stopColor={c}
-                stopOpacity="0.3"
-              />
-            ))}
-          </linearGradient>
-          <filter
-            id="uncertainty-blur"
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
-          >
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Background track segments */}
-        <rect
-          x={0}
-          y={trackTop}
-          width={w}
-          height={trackH}
-          fill="url(#autonomy-fill)"
-          rx={4}
-          opacity={insufficientData ? 0.4 : 0.6}
-        />
-
-        {/* Uncertainty zone (blurred) */}
-        {!insufficientData && high > low && (
-          <rect
-            x={0}
-            y={highY}
-            width={w}
-            height={Math.max(4, lowY - highY)}
-            fill={currentColor}
-            fillOpacity="0.35"
-            rx={2}
-            filter="url(#uncertainty-blur)"
-          />
-        )}
-
-        {/* Current position marker */}
+      {/* Header: current level + percentage */}
+      <div className="flex items-baseline justify-between mb-3">
+        <span
+          className="text-sm font-medium text-foreground"
+          style={{
+            fontFamily:
+              "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+          }}
+        >
+          {insufficientData ? "Insufficient data" : `${currentLevel?.label} (Level ${levelIndex})`}
+        </span>
         {!insufficientData && (
-          <line
-            x1={0}
-            y1={markerY}
-            x2={w}
-            y2={markerY}
-            stroke={currentColor}
-            strokeWidth={2.5}
-            strokeLinecap="round"
+          <span
+            className="text-sm text-muted-foreground tabular-nums"
+            style={{
+              fontFamily:
+                "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+            }}
+          >
+            {pctLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Horizontal segmented bar */}
+      <div className="relative flex h-10 rounded-lg overflow-hidden border border-border">
+        {LEVELS.map((l) => {
+          const isActive = l.id === levelIndex;
+          const isPast = l.id < levelIndex;
+
+          return (
+            <div
+              key={l.id}
+              className="relative flex-1 flex items-center justify-center border-r last:border-r-0 border-border/30 transition-colors"
+              style={{
+                backgroundColor: insufficientData
+                  ? "var(--muted)"
+                  : isActive
+                    ? withAlpha(l.color, 0.55)
+                    : isPast
+                      ? withAlpha(l.color, 0.25)
+                      : withAlpha(l.color, 0.08),
+              }}
+            >
+              <span
+                className={cn(
+                  "text-[10px] sm:text-xs leading-none font-medium select-none truncate px-1",
+                  isActive
+                    ? "text-foreground"
+                    : isPast
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/50",
+                  insufficientData && "text-muted-foreground/40",
+                )}
+                style={{
+                  fontFamily:
+                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                }}
+              >
+                {l.short}
+              </span>
+
+              {/* Active marker arrow */}
+              {isActive && !insufficientData && (
+                <div
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0"
+                  style={{
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderBottom: `6px solid ${l.color}`,
+                  }}
+                  aria-hidden
+                />
+              )}
+            </div>
+          );
+        })}
+
+        {/* Uncertainty band overlay */}
+        {!insufficientData && high > low && (
+          <div
+            className="absolute inset-y-0 border-x-2 border-dashed border-muted-foreground/25 pointer-events-none"
+            style={{
+              left: `${low * 100}%`,
+              width: `${(high - low) * 100}%`,
+            }}
+            aria-hidden
           />
         )}
+      </div>
 
-        {/* Level divider lines */}
-        {[0.2, 0.4, 0.6, 0.8].map((y) => (
-          <line
-            key={y}
-            x1={0}
-            y1={yToPx(y)}
-            x2={w}
-            y2={yToPx(y)}
-            stroke="currentColor"
-            strokeOpacity="0.15"
-            strokeWidth="0.5"
-          />
-        ))}
-      </svg>
-
-      <div className="mt-2 space-y-0.5">
-        {LEVELS.map((l, i) => (
-          <div
-            key={l.id}
-            className="text-xs text-muted-foreground flex items-center gap-2"
-          >
+      {/* Level labels below the bar with tick marks */}
+      <div className="flex mt-1">
+        {LEVELS.map((l) => {
+          const isActive = l.id === levelIndex;
+          return (
             <div
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: COLORS[i] ?? "currentColor" }}
-            />
-            {l.label}
-          </div>
-        ))}
+              key={l.id}
+              className={cn(
+                "flex-1 text-center",
+                isActive ? "text-foreground font-medium" : "text-muted-foreground/60",
+              )}
+            >
+              <div
+                className="mx-auto w-px h-1.5 mb-0.5"
+                style={{
+                  backgroundColor: isActive ? l.color : "currentColor",
+                  opacity: isActive ? 1 : 0.3,
+                }}
+              />
+              <span
+                className="text-[9px] sm:text-[10px] leading-tight block truncate"
+                style={{
+                  fontFamily:
+                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                }}
+              >
+                {l.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {insufficientData && (
-        <p className="mt-2 text-xs text-muted-foreground italic">
+        <p className="mt-3 text-xs text-muted-foreground italic">
           Insufficient data
         </p>
       )}

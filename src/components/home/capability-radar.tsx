@@ -127,7 +127,7 @@ export function CapabilityRadar({
       const entry = scores[axis];
       const s = entry?.score != null ? scoreToRadius(Number(entry.score)) : 0;
       const u = entry?.uncertainty ?? 0.3;
-      const r = (s + u) * maxR;
+      const r = Math.min(1, s + u) * maxR;
       const angle = getAngle(i);
       return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
     });
@@ -147,7 +147,7 @@ export function CapabilityRadar({
         <svg
           width={size}
           height={size}
-          className="overflow-visible"
+          className="overflow-hidden"
           style={{ maxWidth: "100%", height: "auto" }}
           aria-labelledby="radar-title"
         >
@@ -161,6 +161,10 @@ export function CapabilityRadar({
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
+            </filter>
+            {/* Dark halo behind text labels for contrast on any background */}
+            <filter id="label-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="black" floodOpacity="0.7" />
             </filter>
             {/* Cold blue accent — tuned to pop on dark background (Instrumental Minimalism) */}
             <linearGradient id="radar-fill" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -200,7 +204,7 @@ export function CapabilityRadar({
                 r={r}
                 fill="none"
                 stroke="currentColor"
-                strokeOpacity="0.12"
+                strokeOpacity="0.18"
                 strokeWidth="0.5"
               />
             );
@@ -215,7 +219,7 @@ export function CapabilityRadar({
               x2={x}
               y2={y}
               stroke="currentColor"
-              strokeOpacity="0.2"
+              strokeOpacity="0.28"
               strokeWidth="0.5"
             />
           ))}
@@ -249,7 +253,7 @@ export function CapabilityRadar({
               y={8}
               textAnchor="middle"
               fill="currentColor"
-              fillOpacity={0.3}
+              fillOpacity={0.5}
               fontSize="9"
               style={{
                 fontFamily:
@@ -327,7 +331,7 @@ export function CapabilityRadar({
             const isLowData = signalCount < MIN_SIGNAL_BACKING;
 
             const labelContent = (
-              <g className="pointer-events-none select-none">
+              <g className="pointer-events-none select-none" filter="url(#label-shadow)">
                 <text
                   x={lx}
                   y={ly}
@@ -335,7 +339,7 @@ export function CapabilityRadar({
                   dominantBaseline="middle"
                   fill="currentColor"
                   fillOpacity={
-                    isLowData ? 0.4 : isSelected ? 1 : isHighlighted ? 0.95 : 0.7
+                    isLowData ? 0.55 : isSelected ? 1 : isHighlighted ? 0.95 : 0.88
                   }
                   fontSize={size > 400 ? "13" : "11"}
                   fontWeight={isSelected || isHighlighted ? 600 : 400}
@@ -354,7 +358,7 @@ export function CapabilityRadar({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fill={trend.color}
-                    fillOpacity={0.8}
+                    fillOpacity={0.95}
                     fontSize="9"
                     style={{
                       fontFamily:
@@ -372,7 +376,7 @@ export function CapabilityRadar({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fill="currentColor"
-                    fillOpacity={0.3}
+                    fillOpacity={0.45}
                     fontSize="8"
                     style={{
                       fontFamily:
@@ -436,6 +440,60 @@ export function CapabilityRadar({
           </div>
         )}
       </div>
+
+      {/* Legend */}
+      {hasData && (
+        <div
+          className="flex items-center justify-center gap-4 mt-2 text-[10px] text-muted-foreground"
+          style={{
+            fontFamily:
+              "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+          }}
+        >
+          <span className="flex items-center gap-1.5">
+            <svg width="16" height="6" role="presentation">
+              <line
+                x1="0"
+                y1="3"
+                x2="16"
+                y2="3"
+                stroke="oklch(0.58 0.22 264)"
+                strokeWidth="1.5"
+              />
+            </svg>
+            Current
+          </span>
+          {polygons.ghosts.length > 0 && (
+            <span className="flex items-center gap-1.5">
+              <svg width="16" height="6" role="presentation">
+                <line
+                  x1="0"
+                  y1="3"
+                  x2="16"
+                  y2="3"
+                  stroke="oklch(0.58 0.22 264)"
+                  strokeWidth="1"
+                  strokeDasharray="4 3"
+                  strokeOpacity="0.5"
+                />
+              </svg>
+              Previous days
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <svg width="10" height="10" role="presentation">
+              <circle
+                cx="5"
+                cy="5"
+                r="4"
+                fill="oklch(0.58 0.22 264)"
+                fillOpacity="0.2"
+              />
+            </svg>
+            Uncertainty
+          </span>
+        </div>
+      )}
     </div>
   );
 }

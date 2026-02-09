@@ -6,38 +6,22 @@ import { cn } from "@/lib/utils";
 
 /** 5-level scale matching /api/autonomy/current and autonomy-gauge. @see docs/features/17-home-autonomy-level-component.md */
 const LEVELS = [
-  { id: 0, label: "Tool-only (Level 0)", color: "oklch(0.696 0.17 162.48)" },
-  {
-    id: 1,
-    label: "Scripted agent (Level 1)",
-    color: "oklch(0.769 0.188 70.08)",
-  },
-  {
-    id: 2,
-    label: "Adaptive agent (Level 2)",
-    color: "oklch(0.704 0.191 22.216)",
-  },
-  {
-    id: 3,
-    label: "Long-horizon agent (Level 3)",
-    color: "oklch(0.645 0.246 16.439)",
-  },
-  {
-    id: 4,
-    label: "Self-directed (Level 4)",
-    color: "oklch(0.577 0.245 27.325)",
-  },
+  { id: 0, short: "L0", label: "Tool-only", color: "oklch(0.696 0.17 162.48)" },
+  { id: 1, short: "L1", label: "Scripted", color: "oklch(0.769 0.188 70.08)" },
+  { id: 2, short: "L2", label: "Adaptive", color: "oklch(0.704 0.191 22.216)" },
+  { id: 3, short: "L3", label: "Long-horizon", color: "oklch(0.645 0.246 16.439)" },
+  { id: 4, short: "L4", label: "Self-directed", color: "oklch(0.577 0.245 27.325)" },
 ] as const;
 
-/** Append valid oklch alpha so e.g. "oklch(0.7 0.17 162)" → "oklch(0.7 0.17 162 / 0.3)". */
+/** Append valid oklch alpha so e.g. "oklch(0.7 0.17 162)" -> "oklch(0.7 0.17 162 / 0.3)". */
 function withAlpha(color: string, alpha: number): string {
   return color.replace(/\)$/, ` / ${alpha})`);
 }
 
 interface AutonomyThermometerProps {
-  /** 0–1 normalized autonomy level (from /api/autonomy/current) */
+  /** 0-1 normalized autonomy level (from /api/autonomy/current) */
   level?: number;
-  /** Discrete level 0–4 from API; when provided, used for fill color to match API label */
+  /** Discrete level 0-4 from API; when provided, used for fill color to match API label */
   levelIndex?: number;
   /** Uncertainty range (e.g. 0.2); optional visual band */
   uncertainty?: number;
@@ -58,9 +42,6 @@ export function AutonomyThermometer({
 }: AutonomyThermometerProps) {
   const normalized = Math.max(0, Math.min(1, level));
   const levelIndex = levelIndexProp ?? Math.min(4, Math.round(normalized * 4));
-  const segmentHeight = 100 / LEVELS.length;
-  /** Ensure fill is visible: minimum 18% height so low values (e.g. 0.35) still read clearly */
-  const fillHeight = Math.max(18, normalized * 100);
 
   return (
     <Card
@@ -87,8 +68,9 @@ export function AutonomyThermometer({
               : "View Autonomy & Risk details"
           }
         >
+          {/* Horizontal segmented bar */}
           <div
-            className="relative h-32 w-12 rounded-lg overflow-hidden border border-border"
+            className="relative flex h-9 rounded-lg overflow-hidden border border-border"
             role="img"
             aria-label={
               insufficientData
@@ -98,83 +80,96 @@ export function AutonomyThermometer({
                   }`
             }
           >
-            {/* Background gradient segments (5 levels) */}
-            <div className="absolute inset-0 flex flex-col">
-              {LEVELS.map((l) => (
+            {LEVELS.map((l) => {
+              const isActive = l.id === levelIndex;
+              const isPast = l.id < levelIndex;
+
+              return (
                 <div
                   key={l.id}
-                  className="flex-1 transition-colors"
+                  className={cn(
+                    "relative flex-1 flex items-center justify-center transition-colors border-r last:border-r-0 border-border/30",
+                  )}
                   style={{
-                    backgroundColor: withAlpha(l.color, 0.15),
-                    minHeight: `${segmentHeight}%`,
+                    backgroundColor: insufficientData
+                      ? "var(--muted)"
+                      : isActive
+                        ? withAlpha(l.color, 0.55)
+                        : isPast
+                          ? withAlpha(l.color, 0.25)
+                          : withAlpha(l.color, 0.08),
                   }}
-                />
-              ))}
-            </div>
+                >
+                  {/* Label inside each segment */}
+                  <span
+                    className={cn(
+                      "text-[10px] leading-none font-medium select-none truncate px-0.5",
+                      isActive
+                        ? "text-foreground"
+                        : isPast
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground/50",
+                      insufficientData && "text-muted-foreground/40",
+                    )}
+                    style={{
+                      fontFamily:
+                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                    }}
+                  >
+                    {l.short}
+                  </span>
 
-            {/* Fill indicator — stronger opacity for visibility */}
-            <div
-              className={cn(
-                "absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out",
-                insufficientData && "opacity-50",
-              )}
-              style={{
-                height: `${fillHeight}%`,
-                background: insufficientData
-                  ? "var(--muted)"
-                  : withAlpha(LEVELS[levelIndex].color, 0.6),
-              }}
-            />
+                  {/* Active marker arrow */}
+                  {isActive && !insufficientData && (
+                    <div
+                      className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-0 h-0"
+                      style={{
+                        borderLeft: "5px solid transparent",
+                        borderRight: "5px solid transparent",
+                        borderBottom: `5px solid ${l.color}`,
+                      }}
+                      aria-hidden
+                    />
+                  )}
+                </div>
+              );
+            })}
 
-            {/* Optional uncertainty band (subtle) */}
+            {/* Uncertainty band overlay */}
             {!insufficientData && uncertainty != null && uncertainty > 0 && (
               <div
-                className="absolute left-0 right-0 border border-dashed border-muted-foreground/30 rounded-sm pointer-events-none"
+                className="absolute inset-y-0 border-x border-dashed border-muted-foreground/30 pointer-events-none"
                 style={{
-                  bottom: `${Math.max(0, (normalized - uncertainty) * 100)}%`,
-                  height: `${Math.min(100, uncertainty * 2 * 100)}%`,
+                  left: `${Math.max(0, (normalized - uncertainty) * 100)}%`,
+                  width: `${Math.min(100, uncertainty * 2 * 100)}%`,
                 }}
                 aria-hidden
               />
             )}
-
-            {/* Level markers */}
-            <div className="absolute inset-0 flex flex-col justify-between py-1">
-              {LEVELS.map((l) => (
-                <div
-                  key={l.id}
-                  className="h-px w-full"
-                  style={{ backgroundColor: withAlpha(l.color, 0.31) }}
-                />
-              ))}
-            </div>
           </div>
 
-          <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-            {LEVELS.map((l) => (
-              <div
-                key={l.id}
-                className={cn(
-                  "flex items-center gap-2",
-                  l.id === levelIndex && "font-medium text-foreground",
-                )}
-                style={{
-                  fontFamily:
-                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-                }}
-              >
+          {/* Level labels below the bar */}
+          <div className="flex mt-1.5">
+            {LEVELS.map((l) => {
+              const isActive = l.id === levelIndex;
+              return (
                 <div
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: l.color }}
-                />
-                {l.label}
-                {l.id === levelIndex && (
-                  <span className="text-[10px] text-muted-foreground ml-1">
-                    ← current
-                  </span>
-                )}
-              </div>
-            ))}
+                  key={l.id}
+                  className={cn(
+                    "flex-1 text-center text-[9px] leading-tight truncate",
+                    isActive
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground/60",
+                  )}
+                  style={{
+                    fontFamily:
+                      "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                  }}
+                >
+                  {l.label}
+                </div>
+              );
+            })}
           </div>
 
           {/* Contextual interpretation */}
@@ -210,7 +205,7 @@ export function AutonomyThermometer({
                 {/* High uncertainty disclaimer */}
                 {uncertainty != null && uncertainty > 0.35 && (
                   <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
-                    ⚠ High uncertainty in underlying data — level may shift with
+                    High uncertainty in underlying data — level may shift with
                     more signals.
                   </p>
                 )}

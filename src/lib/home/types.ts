@@ -51,6 +51,8 @@ export interface TimelineEvent {
   category: string;
   sourceUrl: string | null;
   axesImpacted: string[];
+  isMilestone: boolean;
+  significance: number;
 }
 
 export interface Movement {

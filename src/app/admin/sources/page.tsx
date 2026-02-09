@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import useSWR from "swr";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -88,6 +89,18 @@ function StatusBadge({
 
 const TIER_OPTIONS = ["TIER_0", "TIER_1", "DISCOVERY"] as const;
 
+type HealthReport = {
+  summary: {
+    total: number;
+    active: number;
+    green: number;
+    yellow: number;
+    red: number;
+    healthScore: number;
+  };
+  suggestions: string[];
+};
+
 export default function AdminSourcesPage() {
   const {
     data: sources,
@@ -95,12 +108,31 @@ export default function AdminSourcesPage() {
     isLoading,
     mutate,
   } = useSWR<SourceRow[]>("/api/admin/sources", fetcher);
+  const {
+    data: healthReport,
+    mutate: mutateHealth,
+  } = useSWR<HealthReport>("/api/admin/sources/health-report", fetcher);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<
     "enable" | "disable" | "change_tier"
   >("enable");
   const [bulkTier, setBulkTier] = useState<string>("TIER_1");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [candidates, setCandidates] = useState<
+    Array<{
+      name: string;
+      url: string;
+      feedUrl?: string;
+      description: string;
+      domainType: string;
+      sourceType: string;
+      suggestedTier: string;
+      rationale: string;
+    }>
+  >([]);
+  const [addingSource, setAddingSource] = useState<string | null>(null);
 
   const toggleSelect = useCallback((id: string) => {
     setSelected((prev) => {
@@ -149,6 +181,79 @@ export default function AdminSourcesPage() {
     }
   }, [selected, bulkAction, bulkTier, mutate]);
 
+  const handleValidate = useCallback(async () => {
+    setIsValidating(true);
+    try {
+      const res = await fetch("/api/admin/sources/validate", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Validation failed");
+      toast.success(
+        `Validated ${data.validated} sources: ${data.passing} passing, ${data.failing} failing${data.autoDisabled > 0 ? `, ${data.autoDisabled} auto-disabled` : ""}`,
+      );
+      mutate();
+      mutateHealth();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Validation failed");
+    } finally {
+      setIsValidating(false);
+    }
+  }, [mutate, mutateHealth]);
+
+  const handleDiscover = useCallback(async () => {
+    setIsDiscovering(true);
+    try {
+      const res = await fetch("/api/admin/sources/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Discovery failed");
+      setCandidates(data.candidates ?? []);
+      toast.success(
+        `Found ${data.candidates?.length ?? 0} new source candidates (${data.filtered} duplicates filtered)`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Discovery failed");
+    } finally {
+      setIsDiscovering(false);
+    }
+  }, []);
+
+  const handleAddCandidate = useCallback(
+    async (candidate: (typeof candidates)[0]) => {
+      setAddingSource(candidate.url);
+      try {
+        const res = await fetch("/api/admin/sources", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: candidate.name,
+            url: candidate.feedUrl || candidate.url,
+            tier: candidate.suggestedTier,
+            trustWeight: candidate.suggestedTier === "TIER_0" ? "0.85" : "0.5",
+            cadence: "weekly",
+            domainType: candidate.domainType,
+            sourceType: candidate.sourceType,
+            isActive: true,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to add source");
+        toast.success(`Added "${candidate.name}" as a new source`);
+        setCandidates((prev) => prev.filter((c) => c.url !== candidate.url));
+        mutate();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to add source");
+      } finally {
+        setAddingSource(null);
+      }
+    },
+    [mutate],
+  );
+
   if (error) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
@@ -166,11 +271,21 @@ export default function AdminSourcesPage() {
     );
   }
 
+  const summary = healthReport?.summary;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Source Registry</h1>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleValidate}
+            disabled={isValidating}
+          >
+            {isValidating ? "Validating..." : "Run Health Check"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => mutate()}>
             Refresh
           </Button>
@@ -179,6 +294,85 @@ export default function AdminSourcesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Health summary dashboard */}
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Card>
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs text-muted-foreground font-normal">
+                Health Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <span
+                className={`text-2xl font-bold tabular-nums ${
+                  summary.healthScore >= 80
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : summary.healthScore >= 50
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-destructive"
+                }`}
+              >
+                {summary.healthScore}%
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs text-muted-foreground font-normal">
+                Green
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {summary.green}
+              </span>
+              <span className="text-xs text-muted-foreground ml-1">
+                / {summary.total}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs text-muted-foreground font-normal">
+                Yellow
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                {summary.yellow}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="text-xs text-muted-foreground font-normal">
+                Red
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <span className="text-2xl font-bold text-destructive tabular-nums">
+                {summary.red}
+              </span>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Suggestions */}
+      {healthReport?.suggestions && healthReport.suggestions.length > 0 && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-1">
+          <h3 className="text-sm font-medium text-amber-600 dark:text-amber-400">
+            Suggestions
+          </h3>
+          <ul className="text-xs text-muted-foreground space-y-0.5">
+            {healthReport.suggestions.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
@@ -329,6 +523,88 @@ export default function AdminSourcesPage() {
           or add one.
         </p>
       )}
+
+      {/* Discover New Sources */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">
+              Discover New Sources
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDiscover}
+              disabled={isDiscovering}
+            >
+              {isDiscovering ? "Searching..." : "Find Sources"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Uses AI search to find new AI research blogs, RSS feeds, and
+            publications. Duplicates are automatically filtered.
+          </p>
+        </CardHeader>
+        {candidates.length > 0 && (
+          <CardContent>
+            <div className="space-y-3">
+              {candidates.map((c) => (
+                <div
+                  key={c.url}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border p-3"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{c.name}</span>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {c.suggestedTier}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {c.sourceType}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {c.description}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70 italic">
+                      {c.rationale}
+                    </p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <a
+                        href={c.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline truncate max-w-xs"
+                      >
+                        {c.url}
+                      </a>
+                      {c.feedUrl && c.feedUrl !== c.url && (
+                        <a
+                          href={c.feedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          (feed)
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAddCandidate(c)}
+                    disabled={addingSource === c.url}
+                    className="shrink-0"
+                  >
+                    {addingSource === c.url ? "Adding..." : "Add"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }
