@@ -50,18 +50,28 @@ export function DomainBreakdown({
   const rows = useMemo(() => {
     if (!snapshot?.axisScores) return [];
     const entries = AXES.map((axis) => {
-      const entry = snapshot.axisScores[axis];
+      const entry = snapshot.axisScores[axis] as {
+        score?: number;
+        uncertainty?: number;
+        delta?: number;
+        signalCount?: number;
+      } | undefined;
       const score = entry?.score != null ? Number(entry.score) : null;
       const uncertainty = entry?.uncertainty ?? 0.3;
       const delta = entry?.delta ?? 0;
+      const signalCount = entry?.signalCount ?? sourceCountByAxis[axis] ?? 0;
+      // Determine if this axis has actual signal backing
+      const hasData = signalCount > 0 || (score != null && Math.abs(score) > 0.01);
       return {
         axis,
         label: AXIS_LABELS[axis] ?? axis,
         score,
-        scorePct: score != null ? scoreToPct(score) : null,
+        scorePct: hasData && score != null ? scoreToPct(score) : null,
         uncertainty,
         delta,
         sourceCount: sourceCountByAxis[axis] ?? 0,
+        signalCount,
+        hasData,
       };
     });
 
@@ -120,36 +130,85 @@ export function DomainBreakdown({
               )}
             >
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="font-medium text-foreground">{row.label}</span>
                 <div className="flex items-center gap-2">
-                  {row.scorePct != null && (
+                  <span className="font-medium text-foreground">{row.label}</span>
+                  {/* Signal count badge */}
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full",
+                      row.hasData
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                    )}
+                    style={{
+                      fontFamily:
+                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                    }}
+                  >
+                    {row.hasData
+                      ? `${row.signalCount} signal${row.signalCount !== 1 ? "s" : ""}`
+                      : "No signals"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {row.hasData && row.scorePct != null ? (
                     <span className="text-sm text-muted-foreground">
                       {row.scorePct}%
                     </span>
+                  ) : !row.hasData ? (
+                    <span className="text-xs text-muted-foreground/60 italic">
+                      No data
+                    </span>
+                  ) : null}
+                  {row.hasData && (
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        row.delta > 0 && "text-green-600",
+                        row.delta < 0 && "text-red-600",
+                      )}
+                    >
+                      {deltaLabel}
+                    </span>
                   )}
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      row.delta > 0 && "text-green-600",
-                      row.delta < 0 && "text-red-600",
-                    )}
-                  >
-                    {deltaLabel}
-                  </span>
                 </div>
               </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden mb-2">
+              {/* Progress bar: striped gray for "no data", normal for real scores */}
+              {row.hasData ? (
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{
+                      width: `${row.scorePct ?? 0}%`,
+                      minWidth:
+                        row.scorePct != null && row.scorePct > 0 ? "4px" : "0",
+                    }}
+                  />
+                </div>
+              ) : (
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  className="h-2 w-full rounded-full overflow-hidden mb-2"
+                  role="img"
                   style={{
-                    width: `${row.scorePct ?? 0}%`,
-                    minWidth:
-                      row.scorePct != null && row.scorePct > 0 ? "4px" : "0",
+                    background:
+                      "repeating-linear-gradient(45deg, hsl(var(--muted)), hsl(var(--muted)) 4px, transparent 4px, transparent 8px)",
                   }}
+                  aria-label="No data available"
                 />
-              </div>
+              )}
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Uncertainty: ±{(row.uncertainty * 50).toFixed(0)}%</span>
+                {/* Qualitative uncertainty labels instead of raw percentage */}
+                <span>
+                  {!row.hasData
+                    ? "Insufficient data"
+                    : row.uncertainty <= 0.15
+                      ? "High confidence"
+                      : row.uncertainty <= 0.3
+                        ? "Moderate confidence"
+                        : row.uncertainty <= 0.4
+                          ? "Low confidence"
+                          : "Very uncertain"}
+                </span>
                 <div className="flex gap-2">
                   <button
                     type="button"

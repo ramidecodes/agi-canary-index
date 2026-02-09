@@ -154,7 +154,10 @@ export function AutonomyThermometer({
             {LEVELS.map((l) => (
               <div
                 key={l.id}
-                className="flex items-center gap-2"
+                className={cn(
+                  "flex items-center gap-2",
+                  l.id === levelIndex && "font-medium text-foreground",
+                )}
                 style={{
                   fontFamily:
                     "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
@@ -165,8 +168,54 @@ export function AutonomyThermometer({
                   style={{ backgroundColor: l.color }}
                 />
                 {l.label}
+                {l.id === levelIndex && (
+                  <span className="text-[10px] text-muted-foreground ml-1">
+                    ← current
+                  </span>
+                )}
               </div>
             ))}
+          </div>
+
+          {/* Contextual interpretation */}
+          <div className="mt-3 pt-2 border-t border-border/50 space-y-1.5">
+            {insufficientData ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Insufficient data for reliable autonomy assessment. More signals
+                are needed.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {levelIndex <= 1 &&
+                    "Current AI systems operate at Level 0-1: they follow scripts and adapt within narrow domains."}
+                  {levelIndex === 2 &&
+                    "AI agents can adapt to novel situations within their trained domains, but lack long-horizon planning."}
+                  {levelIndex === 3 &&
+                    "Some AI systems demonstrate multi-step planning and tool composition across complex tasks."}
+                  {levelIndex >= 4 &&
+                    "AI systems show self-directed learning and autonomous goal-setting capabilities."}
+                </p>
+                {levelIndex < 4 && (
+                  <p className="text-[10px] text-muted-foreground/70">
+                    Next level requires:{" "}
+                    {levelIndex <= 1 &&
+                      "improved planning and cross-domain tool use."}
+                    {levelIndex === 2 &&
+                      "sustained long-horizon task completion and tool creation."}
+                    {levelIndex === 3 &&
+                      "autonomous research capability and self-improvement loops."}
+                  </p>
+                )}
+                {/* High uncertainty disclaimer */}
+                {uncertainty != null && uncertainty > 0.35 && (
+                  <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                    ⚠ High uncertainty in underlying data — level may shift with
+                    more signals.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </Link>
       </CardContent>

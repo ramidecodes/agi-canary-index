@@ -46,6 +46,40 @@ function DirectionIcon({ direction }: { direction: BriefDirection }) {
   );
 }
 
+/** Generate human-readable narrative for a movement instead of raw delta. */
+function narrativeForItem(item: BriefItem): string {
+  const isDataGap = Math.abs(item.delta) > 0.3 && item.confidence < 0.4;
+
+  if (isDataGap) {
+    return `No new data for ${item.axisLabel.toLowerCase()} today.`;
+  }
+
+  const magnitude = Math.abs(item.delta);
+  let description: string;
+
+  if (item.direction === "up") {
+    if (magnitude > 0.15)
+      description = `${item.axisLabel} showed notable improvement`;
+    else if (magnitude > 0.05)
+      description = `${item.axisLabel} improved moderately`;
+    else description = `${item.axisLabel} edged slightly higher`;
+  } else if (item.direction === "down") {
+    if (magnitude > 0.15)
+      description = `${item.axisLabel} saw a significant decline`;
+    else if (magnitude > 0.05)
+      description = `${item.axisLabel} declined moderately`;
+    else description = `${item.axisLabel} dipped slightly`;
+  } else {
+    description = `${item.axisLabel} remained stable`;
+  }
+
+  if (item.source && item.source !== "unknown") {
+    description += `, driven by ${item.source}`;
+  }
+
+  return `${description}.`;
+}
+
 function BriefItemRow({
   item,
   defaultOpen = false,
@@ -54,29 +88,19 @@ function BriefItemRow({
   defaultOpen?: boolean;
 }) {
   const hasDetails = Boolean(item.claimSummary || item.url);
-  const deltaStr =
-    item.direction !== "stable"
-      ? `${item.delta > 0 ? "+" : ""}${(item.delta * 100).toFixed(2)}%`
-      : null;
+  const isDataGap = Math.abs(item.delta) > 0.3 && item.confidence < 0.4;
+  const narrative = narrativeForItem(item);
 
   if (!hasDetails) {
     return (
-      <li className="flex items-center gap-2 text-sm py-1">
-        <DirectionIcon direction={item.direction} />
-        <span>
-          <span className="font-medium">{item.axisLabel}</span>
-          {deltaStr && (
-            <span className="text-muted-foreground ml-1">{deltaStr}</span>
-          )}
-          <span className="text-muted-foreground text-xs ml-1">
-            ({item.source})
-          </span>
-          <span
-            className="text-muted-foreground text-xs ml-1"
-            title="Confidence"
-          >
-            {Math.round(item.confidence * 100)}%
-          </span>
+      <li className="flex items-center gap-2 text-sm py-1.5">
+        {isDataGap ? (
+          <Minus className="h-4 w-4 text-muted-foreground/50 shrink-0" aria-hidden />
+        ) : (
+          <DirectionIcon direction={item.direction} />
+        )}
+        <span className={cn(isDataGap && "text-muted-foreground/70")}>
+          {narrative}
         </span>
       </li>
     );
@@ -92,21 +116,13 @@ function BriefItemRow({
             aria-expanded={defaultOpen}
           >
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground data-[state=open]:rotate-90 transition-transform" />
-            <DirectionIcon direction={item.direction} />
-            <span className="flex-1">
-              <span className="font-medium">{item.axisLabel}</span>
-              {deltaStr && (
-                <span className="text-muted-foreground ml-1">{deltaStr}</span>
-              )}
-              <span className="text-muted-foreground text-xs ml-1">
-                ({item.source})
-              </span>
-              <span
-                className="text-muted-foreground text-xs ml-1"
-                title="Confidence"
-              >
-                {Math.round(item.confidence * 100)}%
-              </span>
+            {isDataGap ? (
+              <Minus className="h-4 w-4 text-muted-foreground/50 shrink-0" aria-hidden />
+            ) : (
+              <DirectionIcon direction={item.direction} />
+            )}
+            <span className={cn("flex-1", isDataGap && "text-muted-foreground/70")}>
+              {narrative}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
@@ -194,6 +210,23 @@ export function DailyBriefCard({
         )}
         {!error && brief && (
           <>
+            {/* 1-sentence summary header */}
+            {movements.length > 0 && (
+              <p
+                className="text-xs text-muted-foreground border-b border-border/50 pb-2 mb-1"
+                style={{
+                  fontFamily:
+                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                }}
+              >
+                {(() => {
+                  const up = movements.filter((m) => m.direction === "up").length;
+                  const down = movements.filter((m) => m.direction === "down").length;
+                  const stable = movements.filter((m) => m.direction === "stable").length;
+                  return `Today: ${up} advanced, ${down} declined, ${stable} stable`;
+                })()}
+              </p>
+            )}
             {movements.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {axesToShow?.length

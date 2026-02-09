@@ -1,7 +1,11 @@
 "use client";
 
+import useSWR from "swr";
 import { CapabilityRadar } from "./capability-radar";
+import { AGIProgressIndicator } from "./agi-progress-indicator";
 import type { Snapshot, SnapshotHistoryEntry } from "@/lib/home/types";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 interface HeroSectionProps {
   snapshot: Snapshot | null;
@@ -19,6 +23,14 @@ export function HeroSection({
   showGhosts,
   highlightAxes,
 }: HeroSectionProps) {
+  const { data: narrative } = useSWR<{
+    headline: string;
+    summaryLine: string;
+  }>("/api/narrative", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000,
+  });
+
   return (
     <section
       className="relative rounded-xl border border-border/80 bg-card/60 dark:bg-card/50 backdrop-blur-md py-8 sm:py-12 md:py-14 px-4 sm:px-6 overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]"
@@ -41,7 +53,7 @@ export function HeroSection({
       />
 
       <div className="relative max-w-4xl mx-auto space-y-6 sm:space-y-8">
-        <header className="text-center">
+        <header className="text-center space-y-3">
           <h1
             id="hero-heading"
             className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground"
@@ -49,7 +61,15 @@ export function HeroSection({
             <span className="text-foreground">AGI</span>{" "}
             <span className="text-canary-accent">Canary</span> Watcher
           </h1>
+          {narrative?.headline && (
+            <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
+              {narrative.headline}
+            </p>
+          )}
         </header>
+
+        {/* AGI Progress Indicator — composite score gauge */}
+        <AGIProgressIndicator className="pb-2" />
 
         <div className="flex justify-center">
           <div className="transition-opacity duration-500 ease-out">
@@ -62,6 +82,19 @@ export function HeroSection({
             />
           </div>
         </div>
+
+        {/* Summary line below radar */}
+        {narrative?.summaryLine && (
+          <p
+            className="text-center text-xs text-muted-foreground/80"
+            style={{
+              fontFamily:
+                "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+            }}
+          >
+            {narrative.summaryLine}
+          </p>
+        )}
       </div>
     </section>
   );

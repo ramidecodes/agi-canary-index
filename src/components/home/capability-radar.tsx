@@ -18,8 +18,18 @@ const AXIS_LABELS: Record<string, string> = {
   alignment_safety: "Alignment",
 };
 
+/** Minimum 7-day signal count for axis to be considered "backed". */
+const MIN_SIGNAL_BACKING = 3;
+
 function scoreToRadius(score: number): number {
   return Math.max(0, Math.min(1, (score + 1) / 2));
+}
+
+/** Get trend arrow character based on delta. */
+function getTrendArrow(delta: number): { char: string; color: string } {
+  if (delta > 0.02) return { char: "▲", color: "oklch(0.72 0.19 142)" }; // green
+  if (delta < -0.02) return { char: "▼", color: "oklch(0.63 0.24 25)" }; // red
+  return { char: "–", color: "currentColor" };
 }
 
 interface CapabilityRadarProps {
@@ -220,18 +230,37 @@ export function CapabilityRadar({
             />
           )}
 
-          {/* Ghost lines (historical) */}
+          {/* Ghost lines (historical) — improved visibility */}
           {polygons.ghosts.map((g, idx) => (
             <polygon
               key={`ghost-${g.date}`}
               points={g.pts}
               fill="none"
-              stroke="currentColor"
-              strokeOpacity={0.08 - idx * 0.02}
+              stroke="oklch(0.58 0.22 264)"
+              strokeOpacity={0.2 - idx * 0.05}
               strokeWidth="1"
-              strokeDasharray="2 2"
+              strokeDasharray="4 3"
             />
           ))}
+          {/* Ghost date labels */}
+          {polygons.ghosts.length > 0 && size > 300 && (
+            <text
+              x={center.x}
+              y={8}
+              textAnchor="middle"
+              fill="currentColor"
+              fillOpacity={0.3}
+              fontSize="9"
+              style={{
+                fontFamily:
+                  "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+              }}
+            >
+              {polygons.ghosts.length > 0
+                ? `Ghost: ${polygons.ghosts.map((g) => g.date.slice(5)).join(", ")}`
+                : ""}
+            </text>
+          )}
 
           {/* Current capability polygon */}
           {polygons.current && (
@@ -244,7 +273,41 @@ export function CapabilityRadar({
             />
           )}
 
-          {/* Axis labels (clickable) */}
+          {/* Low-data axis indicators — dashed lines for axes with insufficient signal backing */}
+          {snapshot?.axisScores &&
+            axisPoints.map(({ axis, x, y }) => {
+              const entry = snapshot.axisScores[axis] as {
+                signalCount?: number;
+              } | undefined;
+              const signalCount = entry?.signalCount ?? 0;
+              if (signalCount >= MIN_SIGNAL_BACKING) return null;
+
+              // Draw a dashed circle segment at the axis endpoint
+              const r = size * 0.38 * scoreToRadius(
+                snapshot.axisScores[axis]?.score != null
+                  ? Number(snapshot.axisScores[axis].score)
+                  : 0,
+              );
+              const angle = Math.atan2(y - center.y, x - center.x);
+              const px = center.x + r * Math.cos(angle);
+              const py = center.y + r * Math.sin(angle);
+
+              return (
+                <circle
+                  key={`low-data-${axis}`}
+                  cx={px}
+                  cy={py}
+                  r={4}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeOpacity={0.3}
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                />
+              );
+            })}
+
+          {/* Axis labels (clickable) with trend arrows */}
           {axisPoints.map(({ axis, label, x, y }) => {
             const isSelected = selectedRadarAxis === axis;
             const isHighlighted = highlightAxes?.includes(axis) ?? false;
@@ -253,24 +316,73 @@ export function CapabilityRadar({
             const lx = center.x + labelR * Math.cos(angle);
             const ly = center.y + labelR * Math.sin(angle);
 
+            // Trend arrow data
+            const axisEntry = snapshot?.axisScores?.[axis] as {
+              delta?: number;
+              signalCount?: number;
+            } | undefined;
+            const delta = axisEntry?.delta ?? 0;
+            const signalCount = axisEntry?.signalCount ?? 0;
+            const trend = getTrendArrow(delta);
+            const isLowData = signalCount < MIN_SIGNAL_BACKING;
+
             const labelContent = (
-              <text
-                x={lx}
-                y={ly}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="currentColor"
-                fillOpacity={isSelected ? 1 : isHighlighted ? 0.95 : 0.7}
-                fontSize={size > 400 ? "13" : "11"}
-                fontWeight={isSelected || isHighlighted ? 600 : 400}
-                style={{
-                  fontFamily:
-                    "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
-                }}
-                className="pointer-events-none select-none"
-              >
-                {label}
-              </text>
+              <g className="pointer-events-none select-none">
+                <text
+                  x={lx}
+                  y={ly}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="currentColor"
+                  fillOpacity={
+                    isLowData ? 0.4 : isSelected ? 1 : isHighlighted ? 0.95 : 0.7
+                  }
+                  fontSize={size > 400 ? "13" : "11"}
+                  fontWeight={isSelected || isHighlighted ? 600 : 400}
+                  style={{
+                    fontFamily:
+                      "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                  }}
+                >
+                  {label}
+                </text>
+                {/* Trend arrow — shown when there is data */}
+                {snapshot?.axisScores && !isLowData && (
+                  <text
+                    x={lx + (size > 400 ? 38 : 30)}
+                    y={ly}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={trend.color}
+                    fillOpacity={0.8}
+                    fontSize="9"
+                    style={{
+                      fontFamily:
+                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                    }}
+                  >
+                    {trend.char}
+                  </text>
+                )}
+                {/* No data indicator */}
+                {isLowData && snapshot?.axisScores && (
+                  <text
+                    x={lx + (size > 400 ? 38 : 30)}
+                    y={ly}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="currentColor"
+                    fillOpacity={0.3}
+                    fontSize="8"
+                    style={{
+                      fontFamily:
+                        "var(--font-ibm-plex-mono), var(--font-geist-mono), ui-monospace, monospace",
+                    }}
+                  >
+                    ?
+                  </text>
+                )}
+              </g>
             );
 
             if (onAxisClick) {

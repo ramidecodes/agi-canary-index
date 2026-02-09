@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { TimelineEvent } from "@/lib/timeline/types";
 
-const MIN_YEAR = 1950;
-const MAX_YEAR = 2030;
-const PX_PER_YEAR = 48;
+/** Focus on recent events by default — span from 2020 to current year + 1. */
+const CURRENT_YEAR = new Date().getFullYear();
+const MIN_YEAR = 2020;
+const MAX_YEAR = CURRENT_YEAR + 1;
+const PX_PER_YEAR = 120; // More pixels per year for focused view
 const LABEL_WIDTH = 120;
 const LANE_HEIGHT = 36;
 const MIN_LABEL_GAP = 8;
@@ -18,6 +20,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   policy: "hsl(var(--chart-3))",
   research: "hsl(var(--chart-4))",
 };
+
+/** Determine dot size based on event significance. */
+function getEventSize(event: TimelineEvent): number {
+  // Auto-detected events from signals get a medium size
+  // Curated/seeded events (those with source URLs or longer descriptions) get larger
+  const hasSource = !!event.sourceUrl;
+  const hasImpact = (event.axesImpacted?.length ?? 0) > 0;
+
+  if (hasSource && hasImpact) return 14;
+  if (hasSource || hasImpact) return 12;
+  return 10;
+}
 
 function dateToX(dateStr: string, pxPerYear: number): number {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -150,23 +164,26 @@ export function TimelineVisualization({
               height: trackHeight,
             }}
           >
-            {positionedEvents.map((e) => (
-              <button
-                key={e.id}
-                type="button"
-                onClick={() => onEventClick(e)}
-                className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background z-10"
-                style={{
-                  left: e.x - 6,
-                  top: 1,
-                  width: 12,
-                  height: 12,
-                  backgroundColor: e.color,
-                }}
-                title={`${formatDate(e.date)}: ${e.title}`}
-                aria-label={`${e.title}, ${formatDate(e.date)}`}
-              />
-            ))}
+            {positionedEvents.map((e) => {
+              const dotSize = getEventSize(e);
+              return (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => onEventClick(e)}
+                  className="absolute rounded-full border-2 border-background transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background z-10"
+                  style={{
+                    left: e.x - dotSize / 2,
+                    top: 1 + (14 - dotSize) / 2,
+                    width: dotSize,
+                    height: dotSize,
+                    backgroundColor: e.color,
+                  }}
+                  title={`${formatDate(e.date)}: ${e.title}`}
+                  aria-label={`${e.title}, ${formatDate(e.date)}`}
+                />
+              );
+            })}
             {positionedEvents.map((e) => (
               <div
                 key={`label-${e.id}`}
@@ -188,19 +205,34 @@ export function TimelineVisualization({
         </div>
       </section>
 
-      {/* Mini-map: decade strip */}
+      {/* Mini-map: year strip */}
       <div className="flex gap-0.5 p-2 border-t border-border bg-muted/20">
-        {Array.from({ length: 8 }, (_, i) => {
-          const year = MIN_YEAR + i * 10;
+        {Array.from({ length: MAX_YEAR - MIN_YEAR }, (_, i) => {
+          const year = MIN_YEAR + i;
+          const yearEvents = positionedEvents.filter(
+            (e) => new Date(`${e.date}T00:00:00`).getFullYear() === year,
+          );
           return (
             <button
               key={year}
               type="button"
               onClick={() => handleScrollToYear(year)}
-              className="flex-1 h-2 rounded-sm bg-muted hover:bg-muted-foreground/30 transition-colors"
-              title={`${year}s`}
-              aria-label={`Jump to ${year}s`}
-            />
+              className="flex-1 h-3 rounded-sm transition-colors relative"
+              style={{
+                backgroundColor:
+                  yearEvents.length > 0
+                    ? `hsl(var(--chart-1) / ${Math.min(0.6, 0.15 + yearEvents.length * 0.08)})`
+                    : "hsl(var(--muted))",
+              }}
+              title={`${year} (${yearEvents.length} events)`}
+              aria-label={`Jump to ${year}`}
+            >
+              {yearEvents.length > 0 && (
+                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-medium text-foreground/70">
+                  {yearEvents.length}
+                </span>
+              )}
+            </button>
           );
         })}
       </div>

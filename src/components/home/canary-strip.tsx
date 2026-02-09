@@ -204,22 +204,74 @@ export function CanaryStrip({
                         )}
                       />
                       <span className="font-medium">{canary.name}</span>
+                      <span
+                        className={cn(
+                          "text-xs px-1.5 py-0.5 rounded-full border",
+                          canary.status === "green" &&
+                            "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+                          canary.status === "yellow" &&
+                            "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+                          canary.status === "red" &&
+                            "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30",
+                          canary.status === "gray" &&
+                            "bg-muted text-muted-foreground border-border",
+                        )}
+                      >
+                        {STATUS_LABELS[canary.status]}
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {canary.description}
                     </p>
+                    {/* Status reason from computed canary data */}
+                    {(canary as { reason?: string }).reason && (
+                      <p className="text-xs text-foreground/70 bg-muted/50 rounded px-2 py-1">
+                        {(canary as { reason?: string }).reason}
+                      </p>
+                    )}
                     <div className="text-xs text-muted-foreground space-y-0.5">
-                      {STATUS_LABELS[canary.status] && (
-                        <p>Status: {STATUS_LABELS[canary.status]}</p>
-                      )}
                       {canary.lastChange && (
-                        <p>Last change: {canary.lastChange}</p>
+                        <p>
+                          Last change: {canary.lastChange}
+                          {(() => {
+                            if (!canary.lastChange) return "";
+                            const daysAgo = Math.floor(
+                              (Date.now() -
+                                new Date(`${canary.lastChange}T12:00:00`).getTime()) /
+                                (1000 * 60 * 60 * 24),
+                            );
+                            if (daysAgo === 0) return " (today)";
+                            if (daysAgo === 1) return " (yesterday)";
+                            return ` (${daysAgo} days ago)`;
+                          })()}
+                        </p>
                       )}
                       {canary.confidence != null && (
                         <p>
                           Confidence: {(canary.confidence * 100).toFixed(0)}%
                         </p>
                       )}
+                      {/* Score vs threshold indication */}
+                      {canary.thresholds &&
+                        Object.keys(canary.thresholds).length > 0 && (
+                          <div className="flex gap-2 mt-1">
+                            {Object.entries(canary.thresholds).map(
+                              ([level, threshold]) => (
+                                <span
+                                  key={level}
+                                  className={cn(
+                                    "text-[10px] px-1 py-0.5 rounded border",
+                                    canary.status === level
+                                      ? "border-foreground/30 font-medium"
+                                      : "border-border/50 opacity-60",
+                                  )}
+                                >
+                                  {level}: {String(threshold)}
+                                </span>
+                              ),
+                            )}
+                          </div>
+                        )}
                     </div>
                     <Button
                       variant="outline"
