@@ -133,7 +133,7 @@ async function buildMovementsFromSnapshot(
         axisLabel: AXIS_LABELS[axis] ?? axis,
         direction: toDirection(delta),
         delta,
-        source: "Daily snapshot",
+        source: "",
         confidence: 0.5,
         signalId: "",
       });
@@ -230,7 +230,7 @@ async function buildMovementsFromSnapshot(
       axisLabel: AXIS_LABELS[axis] ?? axis,
       direction: toDirection(delta),
       delta,
-      source: meta?.sourceName ?? "Daily snapshot",
+      source: meta?.sourceName ?? "",
       confidence: meta?.confidence ?? 0.5,
       signalId: best?.signalId ?? "",
       claimSummary: meta?.claimSummary ?? undefined,
