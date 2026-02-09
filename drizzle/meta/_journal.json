@@ -43,6 +43,13 @@
       "when": 1769950100000,
       "tag": "0005_source_updates_rss_only",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770681600000,
+      "tag": "0006_add_signals_classification",
+      "breakpoints": true
     }
   ]
 }

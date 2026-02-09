@@ -274,6 +274,8 @@ export const signals = pgTable(
       unit?: string;
     }>(),
     confidence: decimal("confidence", { precision: 4, scale: 2 }).notNull(),
+    /** Signal classification: benchmark_result, policy_update, research_finding, opinion, announcement, other */
+    classification: text("classification"),
     citations:
       jsonb("citations").$type<Array<{ url: string; quoted_span?: string }>>(),
     sourceUrl: varchar("source_url", { length: 2048 }),
