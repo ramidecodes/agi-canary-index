@@ -121,9 +121,7 @@ export function SiteHeader({ children, className }: SiteHeaderProps) {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="hidden lg:inline-flex">
-            <ThemeToggle />
-          </span>
+          <ThemeToggle />
           <MobileNavSheet withTrigger />
         </div>
       </div>
