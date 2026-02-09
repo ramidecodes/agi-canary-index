@@ -129,8 +129,8 @@ export function AutonomyGauge({
                     ? "text-foreground"
                     : isPast
                       ? "text-muted-foreground"
-                      : "text-muted-foreground/50",
-                  insufficientData && "text-muted-foreground/40",
+                      : "text-muted-foreground/70",
+                  insufficientData && "text-muted-foreground/60",
                 )}
                 style={{
                   fontFamily:

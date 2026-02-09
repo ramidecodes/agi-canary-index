@@ -67,7 +67,7 @@ export function HistoricalAutonomyChart({
     <div className={`relative h-[280px] w-full ${className}`}>
       {/* Limited data watermark */}
       {limitedData && (
-        <div className="absolute top-2 right-2 z-10 text-[10px] text-muted-foreground/50 bg-background/80 px-2 py-0.5 rounded border border-border/30">
+        <div className="absolute top-2 right-2 z-10 text-[10px] text-muted-foreground/70 bg-background/80 px-2 py-0.5 rounded border border-border/30">
           Limited data ({history.length} points)
         </div>
       )}

@@ -97,13 +97,13 @@
   --secondary: oklch(0.22 0.01 250);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.22 0.01 250);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted-foreground: oklch(0.75 0.01 250);
   --accent: oklch(0.22 0.01 250);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.65 0.01 250);
   --canary-accent: oklch(0.62 0.2 25);
   --chart-1: oklch(0.55 0.22 264); /* cold blue accent */
   --chart-2: oklch(0.696 0.17 162.48);

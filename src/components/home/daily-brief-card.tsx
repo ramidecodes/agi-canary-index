@@ -96,13 +96,13 @@ function BriefItemRow({
       <li className="flex items-center gap-2 text-sm py-1.5">
         {isDataGap ? (
           <Minus
-            className="h-4 w-4 text-muted-foreground/50 shrink-0"
+            className="h-4 w-4 text-muted-foreground/70 shrink-0"
             aria-hidden
           />
         ) : (
           <DirectionIcon direction={item.direction} />
         )}
-        <span className={cn(isDataGap && "text-muted-foreground/70")}>
+        <span className={cn(isDataGap && "text-muted-foreground/80")}>
           {narrative}
         </span>
       </li>
@@ -121,14 +121,14 @@ function BriefItemRow({
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground data-[state=open]:rotate-90 transition-transform" />
             {isDataGap ? (
               <Minus
-                className="h-4 w-4 text-muted-foreground/50 shrink-0"
+                className="h-4 w-4 text-muted-foreground/70 shrink-0"
                 aria-hidden
               />
             ) : (
               <DirectionIcon direction={item.direction} />
             )}
             <span
-              className={cn("flex-1", isDataGap && "text-muted-foreground/70")}
+              className={cn("flex-1", isDataGap && "text-muted-foreground/80")}
             >
               {narrative}
             </span>
