@@ -9,8 +9,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AXIS_LABELS, TIER_LABELS } from "@/lib/signals/types";
-import type { SignalExplorerItem } from "@/lib/signals/types";
+import {
+  AXIS_LABELS,
+  TIER_LABELS,
+  CLASSIFICATION_LABELS,
+  CLASSIFICATION_COLORS,
+} from "@/lib/signals/types";
+import type { SignalExplorerItem, SignalClassification } from "@/lib/signals/types";
+import { cn } from "@/lib/utils";
 
 export interface SignalListTableProps {
   signals: SignalExplorerItem[];
@@ -126,14 +132,17 @@ export function SignalListTable({
                 </TableCell>
                 <TableCell className="py-2">
                   <Badge
-                    variant={
-                      signal.classification === "benchmark"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className="text-xs"
+                    variant="outline"
+                    className={cn(
+                      "text-xs border",
+                      CLASSIFICATION_COLORS[
+                        signal.classification as SignalClassification
+                      ] ?? CLASSIFICATION_COLORS.other,
+                    )}
                   >
-                    {signal.classification}
+                    {CLASSIFICATION_LABELS[
+                      signal.classification as SignalClassification
+                    ] ?? signal.classification}
                   </Badge>
                 </TableCell>
                 <TableCell

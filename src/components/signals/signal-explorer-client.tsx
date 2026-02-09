@@ -18,7 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Download } from "lucide-react";
-import type { SignalExplorerItem } from "@/lib/signals/types";
+import type { SignalExplorerItem, SignalClassification } from "@/lib/signals/types";
+import {
+  AXIS_LABELS,
+  CLASSIFICATION_LABELS,
+  CLASSIFICATION_COLORS,
+} from "@/lib/signals/types";
+import { cn } from "@/lib/utils";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -192,6 +198,151 @@ export function SignalExplorerClient() {
             />
           </CardContent>
         </Card>
+
+        {/* Aggregate summary bar */}
+        {!isLoading && signals.length > 0 && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Classification distribution */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    By Classification
+                  </p>
+                  <div className="space-y-1">
+                    {Object.entries(
+                      signals.reduce(
+                        (acc, s) => {
+                          const cls = s.classification as SignalClassification;
+                          acc[cls] = (acc[cls] ?? 0) + 1;
+                          return acc;
+                        },
+                        {} as Record<string, number>,
+                      ),
+                    )
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([cls, count]) => (
+                        <div
+                          key={cls}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded border text-[10px]",
+                              CLASSIFICATION_COLORS[cls as SignalClassification] ??
+                                CLASSIFICATION_COLORS.other,
+                            )}
+                          >
+                            {CLASSIFICATION_LABELS[cls as SignalClassification] ??
+                              cls}
+                          </span>
+                          <span className="text-muted-foreground">{count}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Axis distribution */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    By Axis
+                  </p>
+                  <div className="space-y-1">
+                    {Object.entries(
+                      signals.reduce(
+                        (acc, s) => {
+                          for (const a of s.axesImpacted ?? []) {
+                            acc[a.axis] = (acc[a.axis] ?? 0) + 1;
+                          }
+                          return acc;
+                        },
+                        {} as Record<string, number>,
+                      ),
+                    )
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 6)
+                      .map(([axis, count]) => (
+                        <div key={axis} className="flex items-center gap-2 text-xs">
+                          <span className="font-medium w-20 truncate">
+                            {AXIS_LABELS[axis] ?? axis}
+                          </span>
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary/60 rounded-full"
+                              style={{
+                                width: `${Math.min(100, (count / signals.length) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-muted-foreground w-6 text-right">
+                            {count}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Confidence distribution */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Confidence Distribution
+                  </p>
+                  <div className="space-y-1">
+                    {[
+                      {
+                        label: "High (≥80%)",
+                        count: signals.filter((s) => s.confidence >= 0.8).length,
+                        color: "bg-emerald-500",
+                      },
+                      {
+                        label: "Medium (50-79%)",
+                        count: signals.filter(
+                          (s) => s.confidence >= 0.5 && s.confidence < 0.8,
+                        ).length,
+                        color: "bg-amber-500",
+                      },
+                      {
+                        label: "Low (<50%)",
+                        count: signals.filter((s) => s.confidence < 0.5).length,
+                        color: "bg-red-500",
+                      },
+                    ].map((bucket) => (
+                      <div
+                        key={bucket.label}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <span
+                          className={cn(
+                            "w-2 h-2 rounded-full shrink-0",
+                            bucket.color,
+                          )}
+                        />
+                        <span className="flex-1">{bucket.label}</span>
+                        <span className="text-muted-foreground">
+                          {bucket.count}
+                        </span>
+                      </div>
+                    ))}
+                    {/* Source diversity */}
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <p className="text-[10px] text-muted-foreground">
+                        Sources:{" "}
+                        {
+                          new Set(
+                            signals
+                              .map((s) => s.sourceName)
+                              .filter(Boolean),
+                          ).size
+                        }{" "}
+                        unique
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-sm text-muted-foreground">

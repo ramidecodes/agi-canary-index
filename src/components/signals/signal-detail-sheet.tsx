@@ -143,7 +143,7 @@ export function SignalDetailSheet({
                 {(signal.confidence * 100).toFixed(0)}% ·{" "}
                 <Badge
                   variant={
-                    signal.classification === "benchmark"
+                    signal.classification === "benchmark_result"
                       ? "default"
                       : "secondary"
                   }

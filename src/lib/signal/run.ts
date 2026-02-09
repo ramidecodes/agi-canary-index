@@ -164,6 +164,7 @@ function mapClaimToSignalRow(
   }>;
   metric: { name: string; value: number; unit?: string } | null;
   confidence: string;
+  classification: string;
   citations: Array<{ url: string; quoted_span?: string }>;
   scoringVersion: string;
 } | null {
@@ -193,6 +194,7 @@ function mapClaimToSignalRow(
         }
       : null,
     confidence: String(Number(conf.toFixed(2))),
+    classification: claim.classification ?? "other",
     citations,
     scoringVersion,
   };
@@ -250,6 +252,7 @@ async function processOneDocument(
         axesImpacted: signalRow.axesImpacted,
         metric: signalRow.metric,
         confidence: signalRow.confidence,
+        classification: signalRow.classification,
         citations: signalRow.citations,
         scoringVersion: signalRow.scoringVersion,
       });
