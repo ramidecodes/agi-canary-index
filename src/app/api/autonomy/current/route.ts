@@ -69,6 +69,12 @@ export async function GET() {
       });
     }
 
+    const [latestSignal] = await db
+      .select({ createdAt: signals.createdAt })
+      .from(signals)
+      .orderBy(desc(signals.createdAt))
+      .limit(1);
+
     const scores = row.axisScores;
     const planning = scores.planning?.score;
     const toolUse = scores.tool_use?.score;
@@ -97,6 +103,8 @@ export async function GET() {
         ? "Adaptive agent (Level 2) — high uncertainty"
         : (AUTONOMY_LEVELS[levelIndex]?.label ?? "Unknown");
 
+    const lastUpdated = latestSignal?.createdAt?.toISOString() ?? null;
+
     return NextResponse.json({
       level: Math.max(0, Math.min(1, level)),
       levelIndex,
@@ -104,7 +112,7 @@ export async function GET() {
       uncertainty: Math.max(0.1, Math.min(0.5, uncertainty)),
       highUncertainty,
       levels: AUTONOMY_LEVELS,
-      lastUpdated: row.createdAt?.toISOString() ?? null,
+      lastUpdated,
       insufficientData: false,
     });
   } catch (err) {

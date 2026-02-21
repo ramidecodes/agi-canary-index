@@ -356,7 +356,7 @@ export async function createDailySnapshot(
       })
       .from(documents)
       .innerJoin(items, eq(documents.itemId, items.id))
-      .where(sql`${documents.id} = ANY(${docIds})`);
+      .where(sql`${documents.id} = ANY(${docIds}::uuid[])`);
     for (const r of docSourceRows) {
       docSourceMap.set(r.docId, r.sourceId);
     }
@@ -373,7 +373,7 @@ export async function createDailySnapshot(
       })
       .from(documents)
       .innerJoin(items, eq(documents.itemId, items.id))
-      .where(sql`${documents.id} = ANY(${windowDocIds})`);
+      .where(sql`${documents.id} = ANY(${windowDocIds}::uuid[])`);
     for (const r of windowDocSourceRows) {
       windowDocSourceMap.set(r.docId, r.sourceId);
     }

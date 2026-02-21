@@ -4,9 +4,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { dailySnapshots } from "@/lib/db/schema";
+import { dailySnapshots, signals } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +68,12 @@ export async function GET() {
       );
     }
 
+    const [latestSignal] = await db
+      .select({ createdAt: signals.createdAt })
+      .from(signals)
+      .orderBy(desc(signals.createdAt))
+      .limit(1);
+
     const scores = (row.axisScores ?? {}) as Record<string, AxisEntry>;
 
     // Compute compositeScore
@@ -112,6 +118,9 @@ export async function GET() {
       return (entry?.signalCount ?? 0) === 0;
     });
 
+    // Use latest signal date as "last updated" - reflects actual data freshness
+    const lastUpdated = latestSignal?.createdAt?.toISOString() ?? null;
+
     return NextResponse.json({
       snapshot: {
         id: row.id,
@@ -121,7 +130,7 @@ export async function GET() {
         coverageScore: row.coverageScore ? Number(row.coverageScore) : null,
         signalIds: row.signalIds ?? [],
         notes: row.notes ?? [],
-        createdAt: row.createdAt?.toISOString(),
+        createdAt: lastUpdated,
         compositeScore,
         trend,
         topMovers,

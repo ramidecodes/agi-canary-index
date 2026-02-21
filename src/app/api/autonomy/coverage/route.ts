@@ -7,7 +7,7 @@
 import { NextResponse } from "next/server";
 import { desc } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { dailySnapshots } from "@/lib/db/schema";
+import { dailySnapshots, signals } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +45,12 @@ export async function GET() {
 
     const coverageScore = row?.coverageScore ? Number(row.coverageScore) : 0.4;
 
+    const [latestSignal] = await db
+      .select({ createdAt: signals.createdAt })
+      .from(signals)
+      .orderBy(desc(signals.createdAt))
+      .limit(1);
+
     const breakdown = EVAL_TYPES.map((t, i) => {
       const offset = [0.95, 0.85, 1.05, 0.9][i] ?? 1;
       const score = Math.max(0.15, Math.min(1, coverageScore * offset));
@@ -62,11 +68,13 @@ export async function GET() {
     );
     const gapCount = breakdown.filter((b) => b.isGap).length;
 
+    const lastUpdated = latestSignal?.createdAt?.toISOString() ?? null;
+
     return NextResponse.json({
       overallCoverage,
       gapCount,
       breakdown,
-      lastUpdated: row?.createdAt?.toISOString() ?? null,
+      lastUpdated,
     });
   } catch (err) {
     console.error("[api/autonomy/coverage]", err);
